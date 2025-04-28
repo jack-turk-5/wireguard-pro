@@ -14,8 +14,8 @@
 # 📦 1. Clone the Project
 
 ```bash
-git clone https://github.com/yourusername/wg-dashboard-ultrapro.git
-cd wg-dashboard-ultrapro
+git clone https://github.com/yourusername/wireguard-pro.git
+cd wireguard-pro
 ```
 
 ---
