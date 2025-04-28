@@ -33,6 +33,6 @@ RUN python3 -m venv venv && \
     . venv/bin/activate && \
     pip install --no-cache-dir -r /requirements.txt
 
-ENV PATH="/venv/bin:$PATH"
+ENV PATH="/src/venv/bin:$PATH"
 
-ENTRYPOINT ["/venv/bin/gunicorn", "--bind=fd://3", "--workers=4", "--timeout=30", "--graceful-timeout=20", "app:app"]
+ENTRYPOINT ["/src/venv/bin/gunicorn", "--bind=fd://3", "--workers=4", "--timeout=30", "--graceful-timeout=20", "app:app"]
