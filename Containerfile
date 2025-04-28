@@ -35,4 +35,4 @@ RUN python3 -m venv venv && \
 
 ENV PATH="/src/venv/bin:$PATH"
 
-ENTRYPOINT ["/src/venv/bin/gunicorn", "--bind=0.0.0.0:10086", "--workers=4", "--timeout=30", "--graceful-timeout=20", "--preload", "--reuse-port", "app:app"]
+ENTRYPOINT ["/src/venv/bin/gunicorn", "--bind", "0.0.0.0:10086", "--workers=4", "--timeout=30", "--graceful-timeout=20", "app:app"]
