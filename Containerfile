@@ -12,13 +12,7 @@ RUN cargo install boringtun-cli
 
 COPY requirements.txt .
 
-# 🔥 Critical debug: Make sure gunicorn installed
-RUN python3 -m venv venv && \
-    . venv/bin/activate && \
-    pip install --no-cache-dir -r requirements.txt && \
-    which gunicorn && \
-    gunicorn --version
-
+# (no venv created yet)
 COPY src /build/src
 COPY container/bootstrap.py /build/bootstrap.py
 
@@ -28,12 +22,16 @@ FROM docker.io/python:3.13-alpine
 RUN apk add --no-cache bash wireguard-tools socat iproute2
 
 COPY --from=builder /cargo/bin/boringtun-cli /usr/local/bin/boringtun-cli
-
-COPY --from=builder /build/venv /venv
 COPY --from=builder /build/src /src
 COPY --from=builder /build/bootstrap.py /bootstrap.py
+COPY --from=builder /build/requirements.txt /requirements.txt
 
 WORKDIR /src
+
+# Recreate venv freshly inside final stage
+RUN python3 -m venv venv && \
+    . venv/bin/activate && \
+    pip install --no-cache-dir -r /requirements.txt
 
 ENV PATH="/venv/bin:$PATH"
 
