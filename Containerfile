@@ -1,5 +1,5 @@
-# === Stage 1: Builder ===
-FROM docker.io/python:3.13-alpine AS builder
+# === Stage 1: Build boringtun and venv ===
+FROM python:3.13-alpine AS builder
 
 RUN apk add --no-cache gcc musl-dev linux-headers libffi-dev openssl-dev cargo
 
@@ -11,13 +11,11 @@ WORKDIR /build
 RUN cargo install boringtun-cli
 
 COPY requirements.txt .
-
-# (no venv created yet)
 COPY src /build/src
 COPY container/bootstrap.py /build/bootstrap.py
 
-# === Stage 2: Final Runtime ===
-FROM docker.io/python:3.13-alpine
+# === Stage 2: Final runtime ===
+FROM python:3.13-alpine
 
 RUN apk add --no-cache bash wireguard-tools socat iproute2
 
@@ -28,11 +26,10 @@ COPY --from=builder /build/requirements.txt /requirements.txt
 
 WORKDIR /src
 
-# Recreate venv freshly inside final stage
 RUN python3 -m venv venv && \
     . venv/bin/activate && \
     pip install --no-cache-dir -r /requirements.txt
 
 ENV PATH="/src/venv/bin:$PATH"
 
-ENTRYPOINT ["/src/venv/bin/gunicorn", "--preload", "--bind", "0.0.0.0:10086", "--workers=4", "--timeout=30", "--graceful-timeout=20", "--reuse-port", "app:app"]
+ENTRYPOINT ["/bootstrap.py"]
