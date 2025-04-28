@@ -1,0 +1,31 @@
+[Unit]
+Description=WireGuard Pro Container
+
+[Container]
+Image=localhost/wireguard/wireguard-pro:latest
+ContainerName=wireguard-pro
+User=wguser
+
+AddCapability=NET_ADMIN
+AddCapability=NET_RAW
+AddDevice=/dev/net/tun:/dev/net/tun:rwm
+
+Sysctl=net.ipv4.ip_forward=1
+Sysctl=net.ipv6.conf.all.forwarding=1
+
+Volume=boringtun-data:/etc/wireguard:Z,U
+Volume=dashboard-data:/data:Z,U
+
+Secret=wg-pro-privatekey:/run/secrets/wg_privatekey
+
+Network=wireguard-internal.network
+
+Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
+Environment=public_ip=127.0.0.1
+Environment=global_dns=1.1.1.1
+
+Environment=GUNICORN_CMD_ARGS=--bind=fd://3 --workers=4
+EnvironmentFile=/etc/wireguard-dashboard/env.conf
+
+[Install]
+WantedBy=default.target

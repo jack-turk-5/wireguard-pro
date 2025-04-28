@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WG-Dashboard UltraPro</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+</head>
+<body>
+
+<div class="banner">
+  WG-Dashboard UltraPro 🛡️ Rootless VPN Dashboard
+</div>
+
+<div class="toggle-darkmode">
+  <button id="darkModeToggle">🌙 Toggle Dark Mode</button>
+</div>
+
+<div class="container">
+  <h1>Peers</h1>
+  <button id="addPeerBtn">Add Peer</button>
+  <table id="peersTable">
+    <thead>
+      <tr>
+        <th>Public Key</th>
+        <th>IPv4</th>
+        <th>IPv6</th>
+        <th>Expires</th>
+        <th>QR Code</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Peers populate here -->
+    </tbody>
+  </table>
+
+  <hr>
+
+  <div class="stats-container">
+    <h2>Live VPN Peer Stats</h2>
+    <button id="refreshStatsBtn">Refresh Stats Now</button>
+    <table id="statsTable">
+      <thead>
+        <tr>
+          <th>Public Key</th>
+          <th>Last Handshake (seconds ago)</th>
+          <th>Received (MB)</th>
+          <th>Sent (MB)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Stats populate here -->
+      </tbody>
+    </table>
+
+    <div class="charts">
+      <canvas id="rxChart"></canvas>
+      <canvas id="txChart"></canvas>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="server-metrics">
+    <h2>Server Info</h2>
+    <p id="uptimeInfo">Uptime: Loading...</p>
+    <p id="loadAvgInfo">Load Average: Loading...</p>
+  </div>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

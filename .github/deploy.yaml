@@ -1,0 +1,33 @@
+name: Build and Deploy WireGuard Pro
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Podman
+      uses: containers/podman-install@v2
+
+    - name: Build Podman image
+      run: |
+        podman build -t wireguard-dashboard:latest .
+
+    - name: SSH into Server and Deploy
+      uses: appleboy/ssh-action@v0.1.8
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
+        script: |
+          cd ~/wg-dashboard-ultrapro
+          git pull origin main
+          make build
+          make reload
