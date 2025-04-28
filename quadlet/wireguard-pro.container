@@ -16,7 +16,7 @@ Sysctl=net.ipv6.conf.all.forwarding=1
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=dashboard-data:/data:Z,U
 
-Secret=wg-pro-privatekey:/run/secrets/wg_privatekey
+Secret=wg-pro-privatekey
 
 Network=wireguard-internal.network
 
