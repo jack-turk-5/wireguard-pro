@@ -73,30 +73,6 @@ def api_peer_stats():
     """
     return jsonify(peer_stats())
 
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-@app.route('/api/peers/new', methods=['POST'])
-def api_create_peer():
-    data = request.get_json()
-    peer = create_peer(data.get('days_valid', 7))
-    return jsonify(peer)
-
-@app.route('/api/peers/delete', methods=['POST'])
-def api_delete_peer():
-    data = request.get_json()
-    success = delete_peer(data['public_key'])
-    return jsonify({"deleted": success})
-
-@app.route('/api/peers/list', methods=['GET'])
-def api_list_peers():
-    return jsonify(list_peers())
-
-@app.route('/api/peers/stats', methods=['GET'])
-def api_peer_stats():
-    return jsonify(peer_stats())
-
 @app.route('/serverinfo', methods=['GET'])
 def server_info():
     try:
