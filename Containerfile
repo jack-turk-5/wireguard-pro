@@ -31,5 +31,5 @@ RUN python3 -m venv venv && \
     pip install --no-cache-dir -r /requirements.txt
 
 ENV PATH="/src/venv/bin:$PATH"
-RUN chmod +x bootstrap.py
+RUN chmod +x /bootstrap.py
 ENTRYPOINT ["/bootstrap.py"]
