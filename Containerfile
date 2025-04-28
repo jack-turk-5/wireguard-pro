@@ -38,4 +38,4 @@ WORKDIR /src
 
 ENV PATH="/venv/bin:$PATH"
 
-ENTRYPOINT ["gunicorn", "--bind=fd://3", "--workers=4", "--timeout=30", "--graceful-timeout=20", "app:app"]
+ENTRYPOINT ["./venv/bin/gunicorn", "--bind=fd://3", "--workers=4", "--timeout=30", "--graceful-timeout=20", "app:app"]

@@ -22,7 +22,6 @@ Network=wireguard-internal.network
 Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
 Environment=public_ip=127.0.0.1
 Environment=global_dns=1.1.1.1
-Environment=GUNICORN_CMD_ARGS=--bind=fd://3 --workers=4 --timeout=30 --graceful-timeout=20
 
 [Install]
 WantedBy=default.target
