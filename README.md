@@ -1,12 +1,6 @@
---- FILE: QUICKSTART.md ---
+# WireGuard Pro 🛡️
 
-(content preserved)
-
---- FILE: README.md ---
-
-# WireGuard Dashboard Pro 🛡️
-
-[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/wg-dashboard-Pro/actions)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/wireguard-pro/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Rootless-Podman](https://img.shields.io/badge/podman-rootless-blueviolet)](https://podman.io/)
 [![API Docs](https://img.shields.io/badge/docs-Swagger-informational)](http://your-server-ip:10086/apidocs/)
@@ -36,8 +30,8 @@
 ## 📦 Quickstart
 
 ```bash
-git clone https://github.com/yourusername/wg-dashboard-Pro.git
-cd wg-dashboard-Pro
+git clone https://github.com/yourusername/wireguard-pro.git
+cd wireguard-pro
 make deploy
 ```
 
