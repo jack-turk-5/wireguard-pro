@@ -4,6 +4,12 @@ import subprocess
 import sys
 from datetime import time
 
+# Close stray systemd socket FD to prevent Protocol not available errors
+try:
+    os.close(3)
+except OSError:
+    pass
+
 # Generate WireGuard config if missing
 wg_conf = '/etc/wireguard/wg0.conf'
 secret_path = '/run/secrets/wg_privatekey'
@@ -30,9 +36,9 @@ ListenPort = 51820
 SaveConfig = true
 """)
 
-# Exec gunicorn
+# Exec Gunicorn without inherited socket FDs
 os.execv('/src/venv/bin/gunicorn', [
-    'gunicorn',
+    '/src/venv/bin/gunicorn',
     '--preload',
     '--bind', '0.0.0.0:10086',
     '--workers', '4',
