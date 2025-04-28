@@ -11,7 +11,7 @@ build:
 
 ## Reload the container and socket (zero downtime)
 reload:
-	podman container stop --time 10 $(CONTAINER_NAME) || true
+	-systemctl --user stop $(CONTAINER_NAME).service
 	systemctl --user restart $(CONTAINER_NAME).service
 	systemctl --user restart $(CONTAINER_NAME).socket
 
@@ -32,8 +32,8 @@ stop:
 
 ## Clean container and image
 clean:
-	podman container rm -f $(CONTAINER_NAME) || true
-	podman rmi $(IMAGE_NAME):latest || true
+	-podman container rm -f $(CONTAINER_NAME)
+	-podman rmi $(IMAGE_NAME):latest
 	systemctl --user daemon-reload
 
 ## Upgrade container (build + reload)
