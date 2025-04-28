@@ -1,5 +1,5 @@
 [Unit]
-Description=WireGuard Pro Container (UltraPro)
+Description=WireGuard Pro Container
 
 [Container]
 Image=localhost/wireguard/wireguard-pro:latest
@@ -24,8 +24,6 @@ Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
 Environment=public_ip=127.0.0.1
 Environment=global_dns=1.1.1.1
 Environment=GUNICORN_CMD_ARGS=--bind=fd://3 --workers=4 --timeout=30 --graceful-timeout=20
-
-EnvironmentFile=/etc/wireguard-dashboard/env.conf
 
 [Install]
 WantedBy=default.target
