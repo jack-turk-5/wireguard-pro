@@ -22,6 +22,8 @@ Secret=wg-pro-privatekey
 Network=wireguard-internal.network
 
 Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
+Environment=LISTEN_FDS=1
+Environment=LISTEN_PID=1
 Environment=public_ip=127.0.0.1
 Environment=global_dns=1.1.1.1
 
