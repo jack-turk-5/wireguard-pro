@@ -4,7 +4,6 @@ Description=WireGuard Pro Container
 [Container]
 Image=localhost/wireguard/wireguard-pro:latest
 ContainerName=wireguard-pro
-User=wguser
 
 AddCapability=NET_ADMIN
 AddCapability=NET_RAW
