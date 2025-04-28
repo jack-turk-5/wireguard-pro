@@ -3,7 +3,7 @@ FROM docker.io/python:3.13-alpine AS builder
 
 RUN apk add --no-cache gcc musl-dev linux-headers libffi-dev openssl-dev cargo
 
-# Set CARGO_HOME explicitly so we know where binaries go
+# Set explicit Cargo home for predictable builds
 ENV CARGO_HOME=/cargo
 ENV PATH=$CARGO_HOME/bin:$PATH
 
@@ -29,13 +29,15 @@ RUN apk add --no-cache bash wireguard-tools socat iproute2
 # Copy boringtun binary from builder stage
 COPY --from=builder /cargo/bin/boringtun-cli /usr/local/bin/boringtun-cli
 
-# Copy compiled venv and source
+# Copy compiled virtualenv and source code
 COPY --from=builder /build/venv /venv
 COPY --from=builder /build/src /src
 COPY --from=builder /build/bootstrap.py /bootstrap.py
 
 WORKDIR /src
 
+# Set venv as default PATH
 ENV PATH="/venv/bin:$PATH"
 
+# Explicitly call gunicorn inside venv
 ENTRYPOINT ["./venv/bin/gunicorn", "--bind=fd://3", "--workers=4", "--timeout=30", "--graceful-timeout=20", "app:app"]
