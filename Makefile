@@ -2,11 +2,16 @@ IMAGE_NAME=localhost/wireguard/wireguard-pro
 CONTAINER_NAME=wireguard-pro
 SECRETS_NAME=wg-pro-privatekey
 
-.PHONY: build reload start stop secrets clean upgrade deploy status logs
+.PHONY: build optimize reload start stop secrets clean upgrade deploy status logs
 
 ## Build the container and reload systemd
 build:
 	podman build -t $(IMAGE_NAME):latest -f Containerfile
+	systemctl --user daemon-reload
+
+## Build optimized container (strip binaries first)
+optimize:
+	podman build --build-arg STRIP=true -t $(IMAGE_NAME):latest -f Containerfile
 	systemctl --user daemon-reload
 
 ## Reload the container and socket (zero downtime)
