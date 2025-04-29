@@ -24,8 +24,8 @@ cd wireguard-pro
 
 ```bash
 mkdir -p secrets
-wg genkey | tee secrets/wg_privatekey | wg pubkey > secrets/wg_publickey
-podman secret create wg-pro-privatekey ./secrets/wg_privatekey
+wg genkey | tee secrets/wg-privatekey | wg pubkey > secrets/wg-publickey
+podman secret create wg-privatekey ./secrets/wg-privatekey
 ```
 
 ---

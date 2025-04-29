@@ -1,6 +1,6 @@
 IMAGE_NAME=localhost/wireguard/wireguard-pro
 CONTAINER_NAME=wireguard-pro
-SECRETS_NAME=wg-pro-privatekey
+SECRETS_NAME=wg-privatekey
 
 .PHONY: build optimize reload start stop secrets clean upgrade deploy status logs
 
@@ -33,7 +33,7 @@ reload:
 ## Create secrets if missing
 secrets:
 	@echo "Checking/creating Podman secret..."
-	podman secret exists $(SECRETS_NAME) || podman secret create $(SECRETS_NAME) ./secrets/wg_privatekey
+	podman secret exists $(SECRETS_NAME) || podman secret create $(SECRETS_NAME) ./secrets/wg-privatekey
 
 ## Start container and socket
 start:

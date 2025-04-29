@@ -3,7 +3,7 @@ import os, subprocess, time
 
 
 os.environ.setdefault('LISTEN_FDS', os.environ.get('LISTEN_FDS', '2'))
-WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg_privatekey'
+WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
 if not os.path.isfile(WG_CONF):
     os.makedirs(os.path.dirname(WG_CONF), exist_ok=True)
     if os.path.exists(SECRET):
@@ -57,11 +57,10 @@ os.execv(
     [
             '/venv/bin/gunicorn',
             '--preload',
-            '--bind', 'fd://3',
             '--workers', '4',
             '--timeout', '30',
             '--graceful-timeout', '20',
             '--reuse-port',
             'app:app'
-        ]
+    ]
 )
