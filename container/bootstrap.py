@@ -32,7 +32,7 @@ SaveConfig = true
 subprocess.Popen(
     ['socat',
      'UDP4-LISTEN:51820,bind=0.0.0.0,reuseaddr,fork',
-     'UDP4:127.0.0.1:51820'],
+     'UDP4:0.0.0.0:51820'],
     close_fds=False
 )
 # 3) Start BoringTun CLI in foreground (inherits FD 4)
