@@ -15,7 +15,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN python3 -m venv /venv && \
     /venv/bin/pip install --no-cache-dir \
-      --only-binary=:all: -r requirements.txt
+      -r requirements.txt
 
 
 # === Stage 2: Runtime ===
