@@ -34,7 +34,7 @@ SaveConfig = true
 subprocess.Popen([
     'socat',
     'TCP4-LISTEN:10086,bind=0.0.0.0,reuseaddr,fork',
-    'TCP4:127.0.0.1:10086'
+    'TCP4:127.0.0.1:8000'
 ], env=os.environ)
 
 # 4. Proxy UDP: public 51820 → local 51820
@@ -58,7 +58,7 @@ os.execv(
     [
         '/venv/bin/gunicorn',
         '--preload',
-        '--bind', '127.0.0.1:10086',
+        '--bind', '127.0.0.1:8000',
         '--workers', '4',
         '--timeout', '30',
         '--graceful-timeout', '20',
