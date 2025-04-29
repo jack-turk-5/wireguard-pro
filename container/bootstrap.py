@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, subprocess, time, fcntl
+import os, subprocess, time
 
 
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
@@ -31,7 +31,7 @@ SaveConfig = true
 # 2) UDP relay for BoringTun
 subprocess.Popen(
     ['socat',
-     'UDP4-LISTEN:51820,bind=127.0.0.1,reuseaddr,fork',
+     'UDP4-LISTEN:51820,bind=0.0.0.0,reuseaddr,fork',
      'UDP4:127.0.0.1:51820'],
     close_fds=False
 )
@@ -48,7 +48,7 @@ time.sleep(0.2)
 subprocess.Popen([
     '/venv/bin/gunicorn',
     '--preload',
-    '--bind', '127.0.0.1:51819',
+    '--bind', '0.0.0.0:51819',
     '--workers', '4',
     '--timeout', '30',
     '--graceful-timeout', '20',
