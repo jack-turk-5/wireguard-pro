@@ -51,12 +51,22 @@ subprocess.Popen(
 )  # keep FD 4 open
 
 time.sleep(0.2)
+# ─── hide the UDP FD from Gunicorn ──────────────────────────────────────────
+# Parse how many sockets we received
+listen_fds = int(os.environ.get('LISTEN_FDS', '0'))
+# If there were 2 (TCP + UDP), close the UDP one on FD 4
+if listen_fds > 1:
+        try:
+            os.close(4)
+        except OSError:
+            pass
 
 os.execv(
     '/venv/bin/gunicorn',
     [
             '/venv/bin/gunicorn',
             '--preload',
+            '--bind', 'fd://3',
             '--workers', '4',
             '--timeout', '30',
             '--graceful-timeout', '20',
