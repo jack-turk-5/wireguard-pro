@@ -6,7 +6,7 @@ After=wireguard-pro.socket
 [Container]
 Image=localhost/wireguard/wireguard-pro:latest
 ContainerName=wireguard-pro
-Network=wireguard-internal.network
+Network=none
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=dashboard-data:/data:Z,U
 Secret=wg-pro-privatekey
@@ -23,6 +23,7 @@ Environment=global_dns=1.1.1.1
 
 [Service]
 Type=notify
+NotifyAccess=main
 PassFds=3 4
 
 [Install]

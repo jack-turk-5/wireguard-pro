@@ -4,6 +4,16 @@ SECRETS_NAME=wg-pro-privatekey
 
 .PHONY: build optimize reload start stop secrets clean upgrade deploy status logs
 
+upgrade-optimal: optimize reload status
+
+## Upgrade container (build + reload)
+upgrade: build reload status
+
+deploy-optimal: secrets optimize start status
+
+## Deploy: secrets + build + start
+deploy: secrets build start
+
 ## Build the container and reload systemd
 build:
 	podman build -t $(IMAGE_NAME):latest -f Containerfile
@@ -40,12 +50,6 @@ clean:
 	-podman container rm -f $(CONTAINER_NAME)
 	-podman rmi $(IMAGE_NAME):latest
 	systemctl --user daemon-reload
-
-## Upgrade container (build + reload)
-upgrade: build reload
-
-## Deploy: secrets + build + start
-deploy: secrets build start
 
 ## Check container status
 status:

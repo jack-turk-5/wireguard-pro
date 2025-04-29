@@ -2,6 +2,7 @@
 import os, subprocess, time
 
 
+os.environ.setdefault('LISTEN_FDS', os.environ.get('LISTEN_FDS', '2'))
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg_privatekey'
 if not os.path.isfile(WG_CONF):
     os.makedirs(os.path.dirname(WG_CONF), exist_ok=True)
@@ -18,36 +19,40 @@ Address    = 10.8.0.1/24, fd86:ea04:1111::1/64
 ListenPort = 51820
 SaveConfig = true
 """)
-'''
-subprocess.Popen([
-    'socat',
-    'TCP4-LISTEN:51819,bind=0.0.0.0,reuseaddr,fork',
-    'TCP4:127.0.0.1:51819'
-], env=os.environ)
-'''
-subprocess.Popen([
-    'socat',
-    'UDP4-LISTEN:51820,bind=0.0.0.0,reuseaddr,fork',
-    'UDP4:127.0.0.1:51820'
-], env=os.environ)
 
+# UDP relay for BoringTun
 subprocess.Popen(
-    ['boringtun-cli', '--foreground', 'wg0'],
-    env=os.environ
+    [
+        'socat',
+        'UDP4-LISTEN:51820,bind=127.0.0.1,reuseaddr,fork',
+        'UDP4:127.0.0.1:51820'
+    ],
+    env=os.environ,
+    close_fds=False
 )
+
+# Start BoringTun in-foreground on wg0, inherit fds
+os.environ.setdefault('WG_SUDO', '1')
+subprocess.Popen(
+    [
+        '/usr/local/bin/boringtun-cli', '--foreground', 'wg0'
+    ],
+    env=os.environ,
+    close_fds=False
+)  # keep FD 4 open
 
 time.sleep(0.2)
 
 os.execv(
     '/venv/bin/gunicorn',
     [
-        '--preload',
-        '--daemon', False,
-        '--bind', 'fd://3',
-        '--workers', '4',
-        '--timeout', '30',
-        '--graceful-timeout', '20',
-        '--reuse-port',
-        'app:app'
-    ]
+            '/venv/bin/gunicorn',
+            '--preload',
+            '--bind', 'fd://3',
+            '--workers', '4',
+            '--timeout', '30',
+            '--graceful-timeout', '20',
+            '--reuse-port',
+            'app:app'
+        ]
 )
