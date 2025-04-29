@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 import os
-import sys
 import subprocess
 import time
+import sys
 
-# ── 1. Close stray FDs (>=5) to avoid leakage ─────────────
+# ── 1. Close stray FDs (>=5) ──────────────────────────────────
 try:
     max_fd = os.sysconf('SC_OPEN_MAX')
 except (AttributeError, ValueError):
     max_fd = 256
-
 for fd in range(5, max_fd):
     try:
         os.close(fd)
     except OSError:
         pass
 
-# ── 2. Generate WireGuard config if it doesn’t exist ──────
-WG_CONF = '/etc/wireguard/wg0.conf'
+# ── 2. Generate WireGuard config if missing ────────────────
+WG_CONF     = '/etc/wireguard/wg0.conf'
 SECRET_PATH = '/run/secrets/wg_privatekey'
 
 if not os.path.isfile(WG_CONF):
@@ -30,12 +29,11 @@ if not os.path.isfile(WG_CONF):
     else:
         private_key = subprocess.check_output(['wg', 'genkey']).decode().strip()
 
-    # Write private & public keys
+    # Write keys
     with open('/etc/wireguard/privatekey', 'w') as f:
         f.write(private_key)
     pubkey = subprocess.check_output(
-        ['wg', 'pubkey'],
-        input=private_key.encode()
+        ['wg', 'pubkey'], input=private_key.encode()
     ).decode().strip()
     with open('/etc/wireguard/publickey', 'w') as f:
         f.write(pubkey)
@@ -49,52 +47,42 @@ ListenPort = 51820
 SaveConfig = true
 """)
 
-# ── 3. Check for socket‐activation FDs ───────────────────
-listen_fds = int(os.environ.get('LISTEN_FDS', '0'))
-if listen_fds < 2:
-    sys.stderr.write(
-        f"Error: expected 2 activated sockets, got {listen_fds}\n"
-    )
-    sys.exit(1)
-
-# systemd passes:
-#   FD 3 → TCP socket for Gunicorn
-#   FD 4 → UDP socket for WireGuard
-
-HTTP_FD = 3
-UDP_FD  = 4
-
-# ── 4. Proxy FD 4 → UDP port 51820 via socat ─────────────
-#    This lets boringtun-cli bind port 51820 itself (from wg0.conf).
-socat_cmd = [
+# ── 3. Proxy HTTP (10086 → 0.0.0.0:8000) via socat ─────────
+http_socat = subprocess.Popen([
     'socat',
-    f'FD:{UDP_FD}',
-    'UDP4-LISTEN:51820,reuseaddr,fork'
-]
-subprocess.Popen(socat_cmd, env=os.environ)
+    'TCP4-LISTEN:10086,reuseaddr,fork',    # listen publicly
+    'TCP4:0.0.0.0:10086'                   # forward to Gunicorn
+], env=os.environ)
 
-# ── 5. Launch boringtun-cli (it reads wg0.conf → port 51820) ─
+# ── 4. Proxy UDP (51820 → 0.0.0.0:51820) via socat ────────
+udp_socat = subprocess.Popen([
+    'socat',
+    'UDP4-LISTEN:51820,reuseaddr,fork',     # listen publicly
+    'UDP4:0.0.0.0:51820'                  # forward to BoringTun
+], env=os.environ)
+
+# ── 5. Start BoringTun (binds to 0.0.0.0:51820) ───────────
 boringtun_proc = subprocess.Popen(
     ['boringtun-cli', '--foreground', 'wg0'],
     env=os.environ
 )
 
-# Short pause to let BoringTun initialize
+# Short pause for BoringTun to initialize
 time.sleep(0.2)
 
-# ── 6. Exec Gunicorn on the HTTP FD ────────────────────────
+# ── 6. Exec Gunicorn on 0.0.0.0:10068 ─────────────────────
 os.execv(
-    '/venv/bin/gunicorn',
+    '/src/venv/bin/gunicorn',
     [
-        '/venv/bin/gunicorn',
+        '/src/venv/bin/gunicorn',
         '--preload',
-        '--bind', 
-        f'fd://{HTTP_FD}',
-        '--workers',   
+        '--bind',            
+        '0.0.0.0:10068',
+        '--workers',         
         '4',
-        '--timeout',   
+        '--timeout',         
         '30',
-        '--graceful-timeout', 
+        '--graceful-timeout',
         '20',
         '--reuse-port',
         'app:app'
