@@ -1,16 +1,16 @@
 # === Stage 1: Build Python venv & BoringTun on Debian-slim ===
 FROM python:3.13-slim AS builder
 
-# Install build tools
+# 1. Install build tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       gcc build-essential pkg-config libssl-dev cargo \
     && rm -rf /var/lib/apt/lists/*
 
-# Compile BoringTun CLI
+# 2. Compile BoringTun CLI
 RUN cargo install boringtun-cli --locked --root /usr/local
 
-# Create and populate Python venv
+# 3. Create and populate Python venv
 WORKDIR /app
 COPY requirements.txt .
 RUN python3 -m venv /venv && \
@@ -57,7 +57,7 @@ ENV PATH="/venv/bin:$PATH"
 RUN chmod +x /bootstrap.py
 
 # 7. Copy Caddy config
-COPY Caddyfile /etc/caddy/Caddyfile
+COPY container/Caddyfile /etc/caddy/Caddyfile
 
 # 8. Entrypoint: run bootstrap (WireGuard + Gunicorn), then caddy as PID 1
 ENTRYPOINT ["/bootstrap.py"]
