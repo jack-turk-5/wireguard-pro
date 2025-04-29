@@ -41,7 +41,6 @@ time.sleep(0.2)
 os.execv(
     '/venv/bin/gunicorn',
     [
-        '/venv/bin/gunicorn',
         '--preload',
         '--daemon', False,
         '--bind', 'fd://3',
