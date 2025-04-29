@@ -32,7 +32,7 @@ subprocess.Popen([
 ], env=os.environ)
 
 subprocess.Popen(
-    ['boringtun-cli', '--foreground', 'wg0', '&'],
+    ['boringtun-cli', '--foreground', 'wg0'],
     env=os.environ
 )
 
