@@ -21,5 +21,8 @@ Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
 Environment=public_ip=127.0.0.1
 Environment=global_dns=1.1.1.1
 
+[Service]
+PassFds=3 4
+
 [Install]
 WantedBy=default.target
