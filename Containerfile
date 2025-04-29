@@ -40,4 +40,4 @@ RUN chmod +x /bootstrap.py
 
 # Entrypoint: run bootstrap (sets up WG, socat, boringtun, Gunicorn)
 #           then exec Caddy in foreground to handle HTTP on FD 3
-ENTRYPOINT ["/bin/sh","-c", "/bootstrap.py"]
+ENTRYPOINT ["/bootstrap.py"]
