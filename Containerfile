@@ -8,7 +8,8 @@ ENV PATH=$CARGO_HOME/bin:$PATH
 
 WORKDIR /build
 
-RUN cargo install boringtun-cli
+RUN cargo install boringtun-cli --locked --root /usr/local \
+    --features static,default
 
 COPY requirements.txt .
 COPY src /build/src
