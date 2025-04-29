@@ -17,7 +17,7 @@ for fd in range(5, max_fd):
         pass
 
 # ── 2. Generate WireGuard config if it doesn’t exist ──────
-WG_CONF     = '/etc/wireguard/wg0.conf'
+WG_CONF = '/etc/wireguard/wg0.conf'
 SECRET_PATH = '/run/secrets/wg_privatekey'
 
 if not os.path.isfile(WG_CONF):
@@ -84,14 +84,18 @@ time.sleep(0.2)
 
 # ── 6. Exec Gunicorn on the HTTP FD ────────────────────────
 os.execv(
-    '/src/venv/bin/gunicorn',
+    '/venv/bin/gunicorn',
     [
-        '/src/venv/bin/gunicorn',
+        '/venv/bin/gunicorn',
         '--preload',
-        '--bind',      f'fd://{HTTP_FD}',
-        '--workers',   '4',
-        '--timeout',   '30',
-        '--graceful-timeout', '20',
+        '--bind', 
+        f'fd://{HTTP_FD}',
+        '--workers',   
+        '4',
+        '--timeout',   
+        '30',
+        '--graceful-timeout', 
+        '20',
         '--reuse-port',
         'app:app'
     ]
