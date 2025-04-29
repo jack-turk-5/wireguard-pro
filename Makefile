@@ -35,7 +35,7 @@ reload:
 secrets:
 	@echo "Checking/creating Podman secret..."
 	podman secret exists $(SECRETS_NAME) || \
-	wg genkey | tee secrets/$(SECRETS_NAME) | wg pubkey > secrets/$(SECRETS_NAME_PUB) \\
+	wg genkey | tee secrets/$(SECRETS_NAME) | wg pubkey > secrets/$(SECRETS_NAME_PUB)
 	podman secret create $(SECRETS_NAME) ./secrets/$(SECRETS_NAME)
 
 ## Start container and socket
