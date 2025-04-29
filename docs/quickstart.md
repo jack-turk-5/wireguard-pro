@@ -11,28 +11,22 @@
 
 ---
 
-# 📦 1. Clone the Project
+# 1. Install WireGuard Tools from your Distro's Package Manager
+```bash
+sudo apt install wireguard-tools
+sudo dnf install wireguard-tools
+sudo pacman -Syu wireguard-tools
+sudo apk add wireguard-tools
+# etc...
+```
+
+---
+
+# 📦 2. Clone the Project and Deploy
 
 ```bash
 git clone https://github.com/yourusername/wireguard-pro.git
 cd wireguard-pro
-```
-
----
-
-# 🔒 2. Set up your WireGuard Private Key Secret
-
-```bash
-mkdir -p secrets
-wg genkey | tee secrets/wg-privatekey | wg pubkey > secrets/wg-publickey
-podman secret create wg-privatekey ./secrets/wg-privatekey
-```
-
----
-
-# 🏗️ 3. Build and Deploy
-
-```bash
 make deploy
 ```
 
@@ -40,14 +34,14 @@ That's it! 🎯
 
 ---
 
-# 🌐 4. Access the Dashboard
+# 🌐 3. Access the Dashboard
 
 - Visit `http://your-server-ip:10086/`
 - Manage peers, view live stats, toggle dark mode, and more!
 
 ---
 
-# 📈 5. Extra Commands
+# 📈 3. Extra Commands
 
 | Command | Purpose |
 |:---|:---|
@@ -60,11 +54,13 @@ That's it! 🎯
 | `make status` | View systemd status |
 | `make logs` | Stream logs live |
 
+Check out the [Makefile](../Makefile) for more details 📖
+
 ---
 
 # 📜 API Docs (Swagger UI)
 
-- Visit: `http://your-server-ip:10086/apidocs/`
+- Visit: `http://your-server-ip:51819/apidocs/`
 - Full auto-generated API explorer (add/delete/list peers live!)
 
 ---
@@ -112,21 +108,4 @@ make deploy
 
 # 🏆 Congratulations!
 
-You now have one of the **best WireGuard dashboards** available — open source, rootless, live stats, QR-ready, dark-mode powered, and production-grade. 🚀
-
----
-
-# 🎁 Bonus Ideas
-
-✅ Deploy buttons for DigitalOcean/Vultr  
-✅ Kubernetes Helm Chart  
-✅ OAuth2 API Protection  
-✅ SaaS Peer Subscription Model
-
----
-
-# 📣 Let's Launch!
-
-Push your repo live and **become a legend** 🌟.
-
-(If you need help with final launch steps, just ask!) 🚀
+You now have one of the **best** WireGuard dashboards available — open source, rootless, live stats, QR-ready, dark-mode powered, and production-grade. 🚀

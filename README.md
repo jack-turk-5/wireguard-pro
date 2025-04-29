@@ -35,9 +35,9 @@ cd wireguard-pro
 make deploy
 ```
 
-Visit `http://your-server-ip:10086/` to open the dashboard!
+Visit `http://your-server-ip:51819/` to open the dashboard!
 
-For full setup instructions: see [QUICKSTART.md](./QUICKSTART.md)
+For setup instructions: see [quickstart.md](docs/quickstart.md)
 
 ---
 
@@ -89,7 +89,7 @@ make deploy
 
 ## 📜 License
 
-MIT License. See [LICENSE](LICENSE) for details.
+3-Clause BSD License. See [LICENSE](LICENSE) for details.
 
 ---
 
@@ -100,6 +100,11 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-> Made with 🔥 by **you**.
+# 🎁 Future Additions
+
+✅ Kubernetes Helm Chart  
+✅ OAuth2.0 Integration
+
+---
 
 **Let's go Pro! 🚀**
