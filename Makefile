@@ -17,8 +17,8 @@ optimize:
 ## Reload the container and socket (zero downtime)
 reload:
 	-systemctl --user stop $(CONTAINER_NAME).service $(CONTAINER_NAME).socket
-	systemctl --user restart $(CONTAINER_NAME).service
 	systemctl --user restart $(CONTAINER_NAME).socket
+	systemctl --user restart $(CONTAINER_NAME).service
 
 ## Create secrets if missing
 secrets:

@@ -52,9 +52,9 @@ time.sleep(0.2)  # allow BoringTun to initialize
 
 # 6. Exec Gunicorn on local port 10068
 os.execv(
-    '/src/venv/bin/gunicorn',
+    '/venv/bin/gunicorn',
     [
-        '/src/venv/bin/gunicorn',
+        '/venv/bin/gunicorn',
         '--preload',
         '--bind','127.0.0.1:10068',  # local bind for socat proxy
         '--workers','4',
