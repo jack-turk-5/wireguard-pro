@@ -54,9 +54,9 @@ time.sleep(0.2)  # let BoringTun settle
 
 # 6. Exec Gunicorn on internal HTTP bind
 os.execv(
-    '/src/venv/bin/gunicorn',
+    '/venv/bin/gunicorn',
     [
-        '/src/venv/bin/gunicorn',
+        '/venv/bin/gunicorn',
         '--preload',
         '--bind', '127.0.0.1:10086',
         '--workers', '4',
