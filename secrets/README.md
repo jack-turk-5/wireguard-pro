@@ -7,3 +7,6 @@ podman secret create wg-pro-privatekey ./secrets/wg_privatekey
 ```
 
 This key will be injected securely into the container at runtime.
+
+## Hint
+Run `make secrets` to generate WireGuard keypair if it doesn't exist yet
