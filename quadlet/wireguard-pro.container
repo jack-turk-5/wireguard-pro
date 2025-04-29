@@ -10,7 +10,7 @@ Network=wireguard-internal.network
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=dashboard-data:/data:Z,U
 Secret=wg-pro-privatekey
-PodmanArgs=--preserve-fd=3,4
+PodmanArgs=--preserve-fds=2
 
 AddCapability=NET_ADMIN NET_RAW
 AddDevice=/dev/net/tun:/dev/net/tun:rwm
