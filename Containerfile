@@ -1,43 +1,54 @@
-# === Stage 1: Build Python venv & BoringTun ===
-FROM docker.io/python:3.13-slim AS builder
+# === Stage 1: Build Python venv & BoringTun on Debian-slim ===
+FROM python:3.13-slim AS builder
 
-# Install build dependencies
+# Install build tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       gcc build-essential pkg-config libssl-dev cargo \
     && rm -rf /var/lib/apt/lists/*
 
-# Compile boringtun-cli
+# Compile BoringTun CLI
 RUN cargo install boringtun-cli --locked --root /usr/local
 
-# Create venv and install Python deps
+# Create and populate Python venv
 WORKDIR /app
 COPY requirements.txt .
 RUN python3 -m venv /venv && \
     /venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# === Stage 2: Runtime using official Caddy image ===
-FROM docker.io/caddy:2-alpine AS runtime
+# === Stage 2: Runtime on Debian-slim with Caddy ===
+FROM python:3.13-slim AS runtime
 
-# Install runtime tools (WireGuard, socat, iproute2, bash)
-RUN apk add --no-cache \
-      wireguard-tools socat iproute2 bash
+# 1. Add Caddy official repo & install Caddy
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      debian-keyring debian-archive-keyring apt-transport-https curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/* && \
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+      | tee /usr/share/keyrings/caddy-stable-archive-keyring.gpg && \
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
+      | tee /etc/apt/sources.list.d/caddy-stable.list && \
+    apt-get update && apt-get install -y caddy \
+    && rm -rf /var/lib/apt/lists/* :contentReference[oaicite:6]{index=6}
 
-# Copy BoringTun and Python venv from builder
+# 2. Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      bash wireguard-tools socat iproute2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# 3. Copy BoringTun, Python venv, app code & bootstrap
 COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
 COPY --from=builder /venv /venv
-
-# Copy application code & bootstrap
 WORKDIR /app
 COPY src/ .
 COPY container/bootstrap.py /bootstrap.py
 
-# Copy Caddy configuration
-COPY container/Caddyfile /etc/caddy/Caddyfile
-
 ENV PATH="/venv/bin:$PATH"
 RUN chmod +x /bootstrap.py
 
-# Entrypoint: run bootstrap (sets up WG, socat, boringtun, Gunicorn)
-#           then exec Caddy in foreground to handle HTTP on FD 3
+# 4. Copy Caddy config
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# 5. Entrypoint: run bootstrap (WireGuard + Gunicorn), then caddy as PID 1
 ENTRYPOINT ["/bootstrap.py"]
