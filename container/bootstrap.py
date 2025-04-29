@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-import sys
 import time
+import sys
 
 # Only close stray FDs (>=5) to preserve systemd-passed sockets on fd 3 & 4
 try:
@@ -38,23 +38,34 @@ ListenPort = 51820
 SaveConfig = true
 """)
 
-# Start Boringtun in background using FD 4 for UDP
+
+# Detect socket-activation FDs via env var:
+listen_fds = int(os.environ.get('LISTEN_FDS', '0'))
+if listen_fds < 2:
+    sys.stderr.write(f"Error: expected 2 activated sockets, got {listen_fds}\n")
+    sys.exit(1)
+
+# systemd sockets start at FD 3
+HTTP_FD = 3
+UDP_FD  = 4
+
+# Start BoringTun on the UDP FD
 boringtun_cmd = [
     'boringtun-cli',
     '--foreground',
     'wg0',
-    '--userspace-socket-fd', '4'
+    '--userspace-socket-fd', str(UDP_FD)
 ]
 boringtun_proc = subprocess.Popen(boringtun_cmd, env=os.environ)
 
-# Give Boringtun a moment to set up
+# Give BoringTun a moment
 time.sleep(0.2)
 
-# Exec Gunicorn binding to FD 3 for HTTP API
+# Exec Gunicorn on the HTTP FD
 os.execv('/src/venv/bin/gunicorn', [
     '/src/venv/bin/gunicorn',
     '--preload',
-    '--bind', 'fd://3',
+    '--bind', f'fd://{HTTP_FD}',
     '--workers', '4',
     '--timeout', '30',
     '--graceful-timeout', '20',
