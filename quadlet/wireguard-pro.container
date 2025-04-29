@@ -12,7 +12,7 @@ Volume=dashboard-data:/data:Z,U
 Secret=wg-pro-privatekey
 PodmanArgs=--preserve-fds=2
 
-AddCapability=NET_ADMIN NET_RAW CAP_SETUID CAP_SETGID
+AddCapability=CAP_NET_ADMIN CAP_NET_RAW CAP_SETUID CAP_SETGID
 AddDevice=/dev/net/tun:/dev/net/tun:rwm
 Sysctl=net.ipv4.ip_forward=1
 Sysctl=net.ipv6.conf.all.forwarding=1
