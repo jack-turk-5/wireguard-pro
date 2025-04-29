@@ -1,5 +1,5 @@
 # === Stage 1: Build Python venv & BoringTun ===
-FROM python:3.13-slim AS builder
+FROM docker.io/python:3.13-slim AS builder
 
 # Install build dependencies
 RUN apt-get update && \
@@ -17,7 +17,7 @@ RUN python3 -m venv /venv && \
     /venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # === Stage 2: Runtime using official Caddy image ===
-FROM caddy:2-alpine AS runtime
+FROM docker.io/caddy:2-alpine AS runtime
 
 # Install runtime tools (WireGuard, socat, iproute2, bash)
 RUN apk add --no-cache \
