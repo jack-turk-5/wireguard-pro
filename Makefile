@@ -27,9 +27,9 @@ optimize:
 
 ## Reload the container and socket (zero downtime)
 reload:
-	-systemctl --user stop $(CONTAINER_NAME).service $(CONTAINER_NAME).socket
-	systemctl --user restart $(CONTAINER_NAME).socket
-	systemctl --user restart $(CONTAINER_NAME).service
+	-systemctl --user stop $(CONTAINER_NAME).socket $(CONTAINER_NAME).service
+	systemctl --user daemon-reload
+	systemctl --user restart $(CONTAINER_NAME).socket $(CONTAINER_NAME).service
 
 ## Create secrets if missing
 secrets:
@@ -40,13 +40,13 @@ secrets:
 
 ## Start container and socket
 start:
-	systemctl --user start $(CONTAINER_NAME).service
-	systemctl --user start $(CONTAINER_NAME).socket
+	systemctl --user enable --now $(CONTAINER_NAME).socket
+	systemctl --user start $(CONTAINER_NAME).socket $(CONTAINER_NAME).service
 
 ## Stop container and socket
 stop:
-	systemctl --user stop $(CONTAINER_NAME).socket
-	-systemctl --user stop $(CONTAINER_NAME).service
+	-systemctl --user disable --now $(CONTAINER_NAME).socket
+	systemctl --user stop $(CONTAINER_NAME).socket $(CONTAINER_NAME).service
 
 ## Clean container and image
 clean:
@@ -56,8 +56,7 @@ clean:
 
 ## Check container status
 status:
-	systemctl --user status $(CONTAINER_NAME).service
-	systemctl --user status $(CONTAINER_NAME).socket
+	systemctl --user status $(CONTAINER_NAME).socket $(CONTAINER_NAME).service
 
 ## Follow logs
 logs:

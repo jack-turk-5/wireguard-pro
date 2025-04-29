@@ -2,7 +2,6 @@
 import os, subprocess, time, fcntl
 
 
-os.environ.setdefault('LISTEN_FDS', os.environ.get('LISTEN_FDS', '2'))
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
 if not os.path.isfile(WG_CONF):
     os.makedirs(os.path.dirname(WG_CONF), exist_ok=True)
