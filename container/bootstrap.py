@@ -72,9 +72,9 @@ time.sleep(0.2)
 
 # ── 6. Exec Gunicorn on 0.0.0.0:10068 ─────────────────────
 os.execv(
-    '/src/venv/bin/gunicorn',
+    '/venv/bin/gunicorn',
     [
-        '/src/venv/bin/gunicorn',
+        '/venv/bin/gunicorn',
         '--preload',
         '--bind',            
         '0.0.0.0:10068',
