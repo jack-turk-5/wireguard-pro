@@ -6,19 +6,16 @@ After=wireguard-pro.socket
 [Container]
 Image=localhost/wireguard/wireguard-pro:latest
 ContainerName=wireguard-pro
+Network=wireguard-internal.network
+Volume=boringtun-data:/etc/wireguard:Z,U
+Volume=dashboard-data:/data:Z,U
+Secret=wg-pro-privatekey
+PodmanArgs=--preserve-fd=3,4
 
 AddCapability=NET_ADMIN NET_RAW
 AddDevice=/dev/net/tun:/dev/net/tun:rwm
-
 Sysctl=net.ipv4.ip_forward=1
 Sysctl=net.ipv6.conf.all.forwarding=1
-
-Volume=boringtun-data:/etc/wireguard:Z,U
-Volume=dashboard-data:/data:Z,U
-
-Secret=wg-pro-privatekey
-
-Network=wireguard-internal.network
 
 Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
 Environment=public_ip=127.0.0.1
