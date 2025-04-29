@@ -11,7 +11,16 @@ if not os.path.isfile(WG_CONF):
     else:
         priv = subprocess.check_output(['wg','genkey']).decode().strip()
     open('/etc/wireguard/privatekey','w').write(priv)
-    pub = subprocess.check_output(f'wg pubkey {priv.encode()}').decode().strip()
+    proc = subprocess.Popen(
+        ['wg', 'pubkey'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    pub_bytes, err_bytes = proc.communicate(priv.encode())
+    if proc.returncode != 0:
+        raise RuntimeError(f"wg pubkey failed: {err_bytes.decode()}")
+    pub = pub_bytes.decode().strip()
     open('/etc/wireguard/publickey','w').write(pub)
     open(WG_CONF,'w').write(f"""[Interface]
 PrivateKey = {priv}

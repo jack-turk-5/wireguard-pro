@@ -42,8 +42,8 @@ start:
 
 ## Stop container and socket
 stop:
-	systemctl --user stop $(CONTAINER_NAME).service
 	systemctl --user stop $(CONTAINER_NAME).socket
+	-systemctl --user stop $(CONTAINER_NAME).service
 
 ## Clean container and image
 clean:
