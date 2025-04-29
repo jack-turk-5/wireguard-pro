@@ -48,7 +48,7 @@ time.sleep(0.2)
 subprocess.Popen([
     '/venv/bin/gunicorn',
     '--preload',
-    '--bind', '0.0.0.0:51819',
+    '--bind', '0.0.0.0:8000',
     '--workers', '4',
     '--timeout', '30',
     '--graceful-timeout', '20',
