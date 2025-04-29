@@ -1,42 +1,43 @@
-# === Stage 1: Build venv & BoringTun ===
+# === Stage 1: Build Python venv & BoringTun ===
 FROM python:3.13-slim AS builder
 
-# 1. Install build deps
+# Install build dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       gcc build-essential pkg-config libssl-dev cargo \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Install BoringTun into /usr/local/bin
+# Compile boringtun-cli
 RUN cargo install boringtun-cli --locked --root /usr/local
 
-# 3. Prepare Python dependencies
+# Create venv and install Python deps
 WORKDIR /app
 COPY requirements.txt .
 RUN python3 -m venv /venv && \
-    /venv/bin/pip install --no-cache-dir \
-      -r requirements.txt
+    /venv/bin/pip install --no-cache-dir -r requirements.txt
 
+# === Stage 2: Runtime using official Caddy image ===
+FROM caddy:2-alpine AS runtime
 
-# === Stage 2: Runtime ===
-FROM python:3.13-slim AS runtime
+# Install runtime tools (WireGuard, socat, iproute2, bash)
+RUN apk add --no-cache \
+      wireguard-tools socat iproute2 bash
 
-# 1. Install runtime tools only
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      bash wireguard-tools socat iproute2 \
-    && rm -rf /var/lib/apt/lists/*
-
-# 2. Copy BoringTun and venv
+# Copy BoringTun and Python venv from builder
 COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
 COPY --from=builder /venv /venv
 
-# 3. Copy application code & entrypoint
+# Copy application code & bootstrap
 WORKDIR /app
-COPY src/ .  
+COPY src/ .
 COPY container/bootstrap.py /bootstrap.py
+
+# Copy Caddy configuration
+COPY container/Caddyfile /etc/caddy/Caddyfile
 
 ENV PATH="/venv/bin:$PATH"
 RUN chmod +x /bootstrap.py
 
-ENTRYPOINT ["/bootstrap.py"]
+# Entrypoint: run bootstrap (sets up WG, socat, boringtun, Gunicorn)
+#           then exec Caddy in foreground to handle HTTP on FD 3
+ENTRYPOINT ["/bin/sh","-c", "/bootstrap.py"]

@@ -28,58 +28,36 @@ ListenPort = 51820
 SaveConfig = true
 """)
 
-# UDP relay for BoringTun
+# 2) UDP relay for BoringTun
 subprocess.Popen(
-    [
-        'socat',
-        'UDP4-LISTEN:51820,bind=127.0.0.1,reuseaddr,fork',
-        'UDP4:127.0.0.1:51820'
-    ],
-    env=os.environ,
+    ['socat',
+     'UDP4-LISTEN:51820,bind=127.0.0.1,reuseaddr,fork',
+     'UDP4:127.0.0.1:51820'],
     close_fds=False
 )
-
-# Start BoringTun in-foreground on wg0, inherit fds
+# 3) Start BoringTun CLI in foreground (inherits FD 4)
 os.environ.setdefault('WG_SUDO', '1')
 subprocess.Popen(
-    [
-        '/usr/local/bin/boringtun-cli', '--foreground', 'wg0'
-    ],
-    env=os.environ,
+    ['/usr/local/bin/boringtun-cli', '--foreground', 'wg0'],
     close_fds=False
-)  # keep FD 4 open
-
+)
 time.sleep(0.2)
-# ─── hide the UDP FD from Gunicorn ──────────────────────────────────────────
-# Parse how many sockets we received
-listen_fds = int(os.environ.get('LISTEN_FDS', '0'))
-# If there were 2 (TCP + UDP), close the UDP one on FD 4
-if listen_fds > 1:
-    try:
-        os.close(4)
-    except OSError:
-        pass
 
-# ─── un-set close-on-exec on the remaining socket FDs ─────────────────────────
-import fcntl
-for fd in range(3, 3 + listen_fds):
-    try:
-        flags = fcntl.fcntl(fd, fcntl.F_GETFD)
-        # clear the FD_CLOEXEC bit so execv() won’t close it
-        fcntl.fcntl(fd, fcntl.F_SETFD, flags & ~fcntl.FD_CLOEXEC)
-    except OSError:
-        pass
 
-os.execv(
+# 4) Launch Gunicorn in background, binding to localhost:51819
+subprocess.Popen([
     '/venv/bin/gunicorn',
-    [
-            '/venv/bin/gunicorn',
-            '--preload',
-            '--bind', 'fd://3',
-            '--workers', '4',
-            '--timeout', '30',
-            '--graceful-timeout', '20',
-            '--reuse-port',
-            'app:app'
-    ]
+    '--preload',
+    '--bind', '127.0.0.1:51819',
+    '--workers', '4',
+    '--timeout', '30',
+    '--graceful-timeout', '20',
+    '--reuse-port',
+    'app:app'
+])
+
+# 5) Hand off to Caddy as PID 1 (exec replaces this process)
+os.execv(
+    '/usr/bin/caddy',
+    ['caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile']
 )
