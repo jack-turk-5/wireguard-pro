@@ -10,7 +10,6 @@ Network=none
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=dashboard-data:/data:Z,U
 Secret=wg-pro-privatekey
-PodmanArgs=--preserve-fds=2
 
 AddCapability=CAP_NET_ADMIN CAP_NET_RAW CAP_SETUID CAP_SETGID
 AddDevice=/dev/net/tun:/dev/net/tun:rwm
