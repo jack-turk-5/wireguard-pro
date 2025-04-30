@@ -1,6 +1,5 @@
 {
     debug
-    # Disable all HTTPS automation (certs + redirects)
     auto_https off
 }
 http://vpn.jackturk.dev:51819 {
@@ -8,11 +7,6 @@ http://vpn.jackturk.dev:51819 {
     bind fd/3 {
         protocols h1
     }
-    # Remove any previously set HSTS header so browsers won’t force HTTPS
-    header {
-        -Strict-Transport-Security
-    }
     encode gzip
-    # Proxy HTTP requests to your backend on localhost:8000
     reverse_proxy host.containers.internal:51819
 }
