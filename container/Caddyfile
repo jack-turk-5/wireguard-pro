@@ -2,7 +2,7 @@
     debug
     auto_https off
 }
-http://vpn.jackturk.dev:51819 {
+:51819 {
     # Use the inherited systemd socket on FD 3, serve only HTTP/1.1
     bind fd/3 {
         protocols h1
