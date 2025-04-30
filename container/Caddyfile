@@ -14,5 +14,5 @@ http://vpn.jackturk.dev:51819 {
     }
     encode gzip
     # Proxy HTTP requests to your backend on localhost:8000
-    reverse_proxy 127.0.0.1:51819
+    reverse_proxy host.containers.internal:51819
 }
