@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os, subprocess, time
-
+import shutil
 
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
 if not os.path.isfile(WG_CONF):
@@ -57,7 +57,14 @@ subprocess.Popen([
 ])
 
 # Step 5: Hand off to Caddy as PID 1
-os.execv(
-    '/usr/local/bin/caddy',
-    ['caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile']
+caddy_path = shutil.which('caddy')  # should resolve to /usr/bin/caddy
+os.execv(caddy_path,
+         [
+             'caddy',
+             'run',
+             '--config',
+             '/etc/caddy/Caddyfile',
+             '--adapter',
+             'caddyfile'
+         ]
 )
