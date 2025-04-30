@@ -32,6 +32,11 @@ body {
   button:hover {
     background-color: #145c32;
   }
+
+  .banner {
+    text-align: center:
+    margin: 10px;
+  }
   
   /* Dark mode toggle */
   .toggle-darkmode {
