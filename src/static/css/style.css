@@ -33,9 +33,14 @@ body {
     background-color: #145c32;
   }
 
+  /* Server info */
   .server-metrics {
-    text-align: center;
+    margin-top: 50px;
     margin: 10px;
+    text-align: center;
+    h2 {
+      margin-bottom: 10px;
+    }
   }
   
   /* Dark mode toggle */
@@ -61,12 +66,12 @@ body {
     background-color: #0d6efd;
     color: white;
   }
-  
+
   /* Live stats */
   .stats-container {
     margin-top: 50px;
   }
-  
+
   .stats-container h2 {
     margin-bottom: 10px;
   }
@@ -114,15 +119,6 @@ body {
     background-color: #fff;
     padding: 10px;
     border-radius: 10px;
-  }
-  
-  /* Server info */
-  .server-metrics {
-    margin-top: 50px;
-  }
-  
-  .server-metrics h2 {
-    margin-bottom: 10px;
   }
   
   /* Dark mode styling */
