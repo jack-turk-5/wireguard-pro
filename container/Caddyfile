@@ -1,15 +1,18 @@
 {
     debug
-    auto_https disable_redirects
+    # Disable all HTTPS automation (certs + redirects)
+    auto_https off
 }
-
-# Serve plain HTTP only on port 51819, using the inherited socket (FD 3)
 http://vpn.jackturk.dev:51819 {
+    # Use the inherited systemd socket on FD 3, serve only HTTP/1.1
     bind fd/3 {
         protocols h1
     }
+    # Remove any previously set HSTS header so browsers won’t force HTTPS
+    header {
+        -Strict-Transport-Security
+    }
     encode gzip
-
-    # Forward requests to your Gunicorn app on localhost:8000
+    # Proxy HTTP requests to your backend on localhost:8000
     reverse_proxy 127.0.0.1:51819
 }
