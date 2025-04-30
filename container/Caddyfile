@@ -1,13 +1,13 @@
 {
     debug
 }
-http://vpn.jackturk.dev {
+
+vpn.jackturk.dev:51819 {
     bind fd/3 {
         protocols h1
     }
     encode gzip
-    @vpn host vpn.jackturk.dev
-    handle @vpn {
-        reverse_proxy host.containers.internal:51819
-    }
+
+    # Proxy HTTP to Gunicorn on localhost:8000
+    reverse_proxy 127.0.0.1:51819
 }

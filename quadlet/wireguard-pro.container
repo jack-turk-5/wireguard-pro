@@ -20,6 +20,10 @@ Sysctl=net.ipv6.conf.all.forwarding=1
 Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
 Environment=public_ip=127.0.0.1
 Environment=global_dns=1.1.1.1
+PodmanArgs=--preserve-fds=2
+PassFds=3 4
+Environment=LISTEN_FDS=2
+Environment=LISTEN_PID=1
 
 [Install]
 WantedBy=default.target
