@@ -48,7 +48,7 @@ time.sleep(0.2)
 subprocess.Popen([
     '/venv/bin/gunicorn',
     '--preload',
-    '--bind', '0.0.0.0:8000',
+    '--bind', '0.0.0.0:51819',
     '--workers', '4',
     '--timeout', '30',
     '--graceful-timeout', '20',
@@ -56,8 +56,8 @@ subprocess.Popen([
     'app:app'
 ])
 
-# 5) Hand off to Caddy as PID 1 (exec replaces this process)
+# Step 5: Hand off to Caddy as PID 1
 os.execv(
-    '/usr/bin/caddy',
+    '/usr/local/bin/caddy',
     ['caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile']
 )

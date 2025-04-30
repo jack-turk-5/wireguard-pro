@@ -1,4 +1,7 @@
 :51819 {
+    bind fd/3 {
+        protocols h1
+    }
     encode gzip
-    reverse_proxy host.containers.internal:8000
+    reverse_proxy host.containers.internal:51819
 }

@@ -24,9 +24,7 @@ Environment=global_dns=1.1.1.1
 [Service]
 Type=notify
 NotifyAccess=main
-Environment=LISTEN_FDS=2
-Environment=LISTEN_PID=1
-PassFds=3 4
+Environment=NOTIFY_SOCKET=%t/notify.sock
 
 [Install]
 WantedBy=default.target
