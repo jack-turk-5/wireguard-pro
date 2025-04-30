@@ -1,5 +1,6 @@
 {
     debug
+    auto_https disable_redirects
 }
 
 # Serve plain HTTP only on port 51819, using the inherited socket (FD 3)
