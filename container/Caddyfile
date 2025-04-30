@@ -1,4 +1,4 @@
 :51819 {
     encode gzip
-    reverse_proxy 127.0.0.1:51819
+    reverse_proxy host.containers.internal:51819
 }
