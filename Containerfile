@@ -38,8 +38,7 @@ RUN printf 'deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg]
 # 4. Install Caddy
 RUN apt-get update && \
     apt-get install -y --no-install-recommends caddy \
-    && rm -rf /var/lib/apt/lists/* && xcaddy build --with \
-    github.com/WeidiDeng/caddy-socket-activation
+    && rm -rf /var/lib/apt/lists/*
 
 # 5. Install runtime dependencies
 RUN apt-get update && \
