@@ -1,7 +1,13 @@
-host http://vpn.jackturk.dev:51819 {
+{
+    debug
+}
+http://vpn.jackturk.dev {
     bind fd/3 {
         protocols h1
     }
     encode gzip
-    reverse_proxy host.containers.internal:51819
+    @vpn host vpn.jackturk.dev
+    handle @vpn {
+        reverse_proxy host.containers.internal:51819
+    }
 }
