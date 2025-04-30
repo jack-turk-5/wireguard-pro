@@ -11,5 +11,5 @@ http://vpn.jackturk.dev:51819 {
     encode gzip
 
     # Forward requests to your Gunicorn app on localhost:8000
-    reverse_proxy 127.0.0.1:8000
+    reverse_proxy 127.0.0.1:51819
 }
