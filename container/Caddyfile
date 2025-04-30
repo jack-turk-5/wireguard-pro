@@ -2,12 +2,13 @@
     debug
 }
 
-vpn.jackturk.dev:51819 {
+# Serve plain HTTP only on port 51819, using the inherited socket (FD 3)
+http://vpn.jackturk.dev:51819 {
     bind fd/3 {
         protocols h1
     }
     encode gzip
 
-    # Proxy HTTP to Gunicorn on localhost:8000
-    reverse_proxy 127.0.0.1:51819
+    # Forward requests to your Gunicorn app on localhost:8000
+    reverse_proxy 127.0.0.1:8000
 }
