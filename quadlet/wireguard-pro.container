@@ -21,10 +21,5 @@ Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
 Environment=public_ip=127.0.0.1
 Environment=global_dns=1.1.1.1
 
-[Service]
-Type=notify
-NotifyAccess=main
-Environment=NOTIFY_SOCKET=%t/notify.sock
-
 [Install]
 WantedBy=default.target
