@@ -3,7 +3,7 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f9f9f9;
     margin: 0;
-    padding: 0;
+    padding: 0 20px;
     transition: background-color 0.3s, color 0.3s;
   }
   
@@ -40,17 +40,19 @@ body {
     margin-top: 50px;
     margin: 10px;
     text-align: center;
-    h2 {
-      margin-bottom: 10px;
-    }
+  }
+
+  .server-metrics h2 {
+    margin-bottom: 10px;
   }
 
   .container {
     margin-top: 50px;
-    h2 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
+  }
+
+  .container h2 {
+    text-align: center;
+    margin-bottom: 10px;
   }
   
   /* Tables */
@@ -74,19 +76,31 @@ body {
   /* Live stats */
   .stats-container {
     margin-top: 50px;
-    h2 {
-        text-align: center;
-        margin-bottom: 10px;
-    }
+  }
+
+  .stats-container h2 {
+    text-align: center;
+    margin-bottom: 10px;
   }
   
-  #refreshStatsBtn {
+  .refreshStatsBtn {
     margin-bottom: 10px;
     background-color: #ffc107;
     color: black;
   }
-  #refreshStatsBtn:hover {
-    background-color: #d39e00;
+
+  .refreshStatsBtn hover {
+      background-color: #d39e00;
+  }
+
+  .button-group {
+    display: flex;
+    justify-content: center;
+    margin: 1em 0;
+  }
+
+  .button-group button {
+    margin: 0 0.5em;
   }
   
   /* Health coloring */
@@ -117,11 +131,15 @@ body {
     display: flex;
     justify-content: space-around;
     margin-top: 30px;
-    canvas {
-        background-color: #fff;
-        padding: 10px;
-        border-radius: 10px;
-    }
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .charts canvas {
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 10px;
   }
   
   /* Dark mode styling */

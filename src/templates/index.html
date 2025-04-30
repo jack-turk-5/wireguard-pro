@@ -24,8 +24,10 @@
 </div>
 
 <div class="container">
-  <h1>Peers</h1>
-  <button id="addPeerBtn">Add Peer</button>
+  <h2>Peers</h2>
+  <div class="button-group">
+    <button id="addPeerBtn">Add Peer</button>
+  </div>
   <table id="peersTable">
     <thead>
       <tr>
@@ -43,21 +45,24 @@
   </table>
 
   <hr>
-
   <div class="stats-container">
     <h2>Live VPN Peer Stats</h2>
-    <button id="refreshStatsBtn">Refresh Stats Now</button>
+
+    <div class="button-group">
+      <button id="refreshStatsButton">Refresh Stats Now</button>
+    </div>
+
     <table id="statsTable">
       <thead>
-        <tr>
-          <th>Public Key</th>
-          <th>Last Handshake (seconds ago)</th>
-          <th>Received (MB)</th>
-          <th>Sent (MB)</th>
-        </tr>
+      <tr>
+        <th>Public Key</th>
+        <th>Last Handshake (seconds ago)</th>
+        <th>Received (MB)</th>
+        <th>Sent (MB)</th>
+      </tr>
       </thead>
       <tbody>
-        <!-- Stats populate here -->
+      <!-- Stats populate here -->
       </tbody>
     </table>
 
@@ -66,9 +71,7 @@
       <canvas id="txChart"></canvas>
     </div>
   </div>
-
   <hr>
-
 </div>
 
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
