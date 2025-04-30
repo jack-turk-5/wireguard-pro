@@ -1,8 +1,4 @@
-{
-	admin off
-}
-
-http://vpn.jackturk.dev:51819 {
+host http://vpn.jackturk.dev:51819 {
     bind fd/3 {
         protocols h1
     }

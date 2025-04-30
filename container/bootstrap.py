@@ -59,5 +59,5 @@ subprocess.Popen([
 # Step 5: Hand off to Caddy as PID 1
 os.execv(
     '/usr/local/bin/caddy',
-    ['caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'Caddyfile']
+    ['caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile']
 )
