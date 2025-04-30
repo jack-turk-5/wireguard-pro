@@ -1,8 +1,15 @@
-import subprocess
+from subprocess import check_output, run
 
 def generate_keypair():
-    private_key = subprocess.check_output(["wg", "genkey"]).decode().strip()
-    public_key = subprocess.check_output(["wg", "pubkey"], input=private_key.encode()).decode().strip()
+    private_key = check_output(["wg", "genkey"]).decode().strip()
+    res = run(
+        args=["wg", "pubkey"],
+        input=private_key,
+        capture_output=True,
+        check=True,
+        text=True
+    )
+    public_key = res.stdout.strip()
     return private_key, public_key
 
 def next_available_ip():
@@ -19,4 +26,4 @@ AllowedIPs = {ipv4}/32, {ipv6}/128
 """)
 
 def reload_wireguard():
-    subprocess.run(["wg", "syncconf", "wg0", "/etc/wireguard/wg0.conf"])
+    run(["wg", "syncconf", "wg0", "/etc/wireguard/wg0.conf"])

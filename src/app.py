@@ -1,5 +1,5 @@
-from datetime import time
-import os
+from time import strftime, gmtime
+from os import getloadavg
 from flask import Flask, jsonify, request, render_template
 from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
@@ -77,10 +77,11 @@ def api_peer_stats():
 def server_info():
     try:
         with open('/proc/uptime', 'r') as f:
-            uptime_seconds = float(f.readline().split()[0])
-            uptime_str = time.strftime("%H:%M:%S", time.gmtime(uptime_seconds))
+            first_field, *_ = f.readline().split()
+            uptime_seconds = float(first_field)
+            uptime_str = strftime("%H:%M:%S", gmtime(uptime_seconds))
 
-        load_avg = os.getloadavg()  # (1m, 5m, 15m)
+        load_avg = getloadavg()  # (1m, 5m, 15m)
         load_str = "{:.2f} {:.2f} {:.2f}".format(*load_avg)
 
         return jsonify({

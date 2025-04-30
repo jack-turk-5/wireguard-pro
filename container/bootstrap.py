@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-import os, subprocess, time
-import shutil
+from os import path, makedirs, environ, execv
+from subprocess import check_output, Popen, PIPE
+from time import sleep
+from shutil import which
 
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
-if not os.path.isfile(WG_CONF):
-    os.makedirs(os.path.dirname(WG_CONF), exist_ok=True)
-    if os.path.exists(SECRET):
+if not path.isfile(WG_CONF):
+    makedirs(path.dirname(WG_CONF), exist_ok=True)
+    if path.exists(SECRET):
         priv = open(SECRET).read().strip()
     else:
-        priv = subprocess.check_output(['wg','genkey']).decode().strip()
+        priv = check_output(['wg','genkey']).decode().strip()
     open('/etc/wireguard/privatekey','w').write(priv)
-    proc = subprocess.Popen(
+    proc = Popen(
         ['wg', 'pubkey'],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdin=PIPE,
+        stdout=PIPE,
+        stderr=PIPE,
     )
     pub_bytes, err_bytes = proc.communicate(priv.encode())
     if proc.returncode != 0:
@@ -29,23 +31,23 @@ SaveConfig = true
 """)
 
 # 2) UDP relay for BoringTun
-subprocess.Popen(
+Popen(
     ['socat',
      'UDP4-LISTEN:51820,bind=0.0.0.0,reuseaddr,fork',
      'UDP4:0.0.0.0:51820'],
     close_fds=False
 )
 # 3) Start BoringTun CLI in foreground (inherits FD 4)
-os.environ.setdefault('WG_SUDO', '1')
-subprocess.Popen(
+environ.setdefault('WG_SUDO', '1')
+Popen(
     ['/usr/local/bin/boringtun-cli', '--foreground', 'wg0'],
     close_fds=False
 )
-time.sleep(0.2)
+sleep(0.2)
 
 
-# 4) Launch Gunicorn in background, binding to localhost:51819
-subprocess.Popen([
+# 4) Launch Gunicorn in background
+Popen([
     '/venv/bin/gunicorn',
     '--preload',
     '--bind', '0.0.0.0:51819',
@@ -57,8 +59,8 @@ subprocess.Popen([
 ])
 
 # Step 5: Hand off to Caddy as PID 1
-caddy_path = shutil.which('caddy')  # should resolve to /usr/bin/caddy
-os.execv(caddy_path,
+caddy_path = which('caddy')  # should resolve to /usr/bin/caddy
+execv(caddy_path,
          [
              'caddy',
              'run',

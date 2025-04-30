@@ -1,9 +1,9 @@
-import sqlite3
+from sqlite3 import connect
 
 DB_FILE = "/data/peers.db"
 
 def db_conn():
-    return sqlite3.connect(DB_FILE)
+    return connect(DB_FILE)
 
 def init_db():
     with db_conn() as conn:
