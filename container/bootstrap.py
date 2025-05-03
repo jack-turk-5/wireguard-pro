@@ -2,7 +2,6 @@
 from os import path, makedirs, environ, execv
 from subprocess import check_output, Popen, PIPE
 from time import sleep
-from textwrap import dedent
 from shutil import which
 
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
@@ -24,13 +23,16 @@ if not path.isfile(WG_CONF):
         raise RuntimeError(f"wg pubkey failed: {err_bytes.decode()}")
     pub = pub_bytes.decode().strip()
     # write a WG_CONF that BoringTun will actually parse
-    conf = dedent(f"""\
-[Interface]
-PrivateKey {priv}
-Address 10.8.0.1/24
-Address fd86:ea04:1111::1/64
-ListenPort 51820
-""")
+    # assemble exactly the lines you want
+    config_lines = [
+        "[Interface]",
+        f"PrivateKey {priv}",             # <- exactly one space here
+        "Address 10.8.0.1/24",
+        "Address fd86:ea04:1111::1/64",
+        "ListenPort 51820",
+        ""                                 # final blank line
+    ]
+    conf = "\n".join(config_lines)
     with open(WG_CONF, 'w') as f:
             f.write(conf)
     print("Wrote wg0.conf:\n" + conf)
