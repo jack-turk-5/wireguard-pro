@@ -13,7 +13,7 @@ def generate_keypair():
     return private_key, public_key
 
 def next_available_ip():
-    ipv4 = "10.8.0.2"  # Simple static IP now, can be dynamic later
+    ipv4 = "10.8.0.2"
     ipv6 = "fd86:ea04:1111::100"
     return ipv4, ipv6
 

@@ -11,7 +11,7 @@ def _ensure_dir():
 
 def db_conn():
     _ensure_dir()
-    conn = sqlite3.connect(DB_FILE, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -29,7 +29,7 @@ def init_db():
         private_key  TEXT,
         ipv4_address TEXT,
         ipv6_address TEXT,
-        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at   TEXT    DEFAULT (datetime('now')),
         expires_at   TIMESTAMP
       );
     """)

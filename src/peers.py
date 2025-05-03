@@ -7,6 +7,8 @@ def create_peer(days_valid=7):
     private_key, public_key = generate_keypair()
     ipv4, ipv6 = next_available_ip()
     expires = datetime.now(timezone.utc) + timedelta(days=days_valid)
+    expires_str = expires.strftime("%Y-%m-%d %H:%M:%S")  # space, no T
+    add_peer_db(public_key, private_key, ipv4, ipv6, expires_str)
 
     add_peer_db(public_key, private_key, ipv4, ipv6, expires.isoformat())
     append_peer_to_wgconf(public_key, ipv4, ipv6)
