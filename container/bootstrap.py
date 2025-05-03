@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from os import path, makedirs, environ, execv
 from subprocess import check_output, Popen, PIPE, run
-from time import sleep
 from shutil import which
 
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
@@ -52,9 +51,16 @@ Popen([
 if post_up := environ.get('WG_POST_UP'):
     Popen(post_up, shell=True)
 
-
+# 1) Best‑effort down (may skip deletion if not a kernel WG iface)
 run(['wg-quick', 'down', 'wg0'], check=False)
-sleep(0.5)
+
+# 2) Force‑delete any wg0 link (works for both TUN and wireguard types)
+run(['ip', 'link', 'delete', 'wg0'], check=False)          # <– deletes the device :contentReference[oaicite:3]{index=3}
+
+# 3) Flush leftover IP addresses
+run(['ip', 'addr', 'flush', 'dev', 'wg0'], check=False)
+
+# 4) Now bring up clean
 run(['wg-quick', 'up', 'wg0'], check=True)
 
 # 4) Launch Gunicorn in background
