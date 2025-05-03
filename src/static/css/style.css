@@ -130,6 +130,22 @@ body {
     width: 100% !important;
     height: 100% !important;
   }
+
+  /* flex‑container for actions */
+  td.actions {
+    display: flex;
+    justify-content: center;  /* center group in cell */
+    gap: 0.5rem;              /* spacing between buttons */
+  }
+
+  /* equal‑sized buttons */
+  td.actions .action-btn {
+    flex: 1;                  /* fill available space equally */
+    max-width: 120px;         /* optional cap */
+    min-width: 100px;         /* ensure a reasonable minimum */
+    padding: 0.5em 1em;       /* a little breathing room */
+    box-sizing: border-box;   /* include padding in width */
+  }
   
   /* Charts */
   .charts {

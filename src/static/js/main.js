@@ -47,11 +47,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <td>${peer.ipv6_address}</td>
             <td>${peer.expires_at?.split('T')[0] || 'N/A'}</td>
             <td><div id="qrcode-${peer.public_key}" class="qrcode"></div></td>
-            <td>
-              <button onclick="downloadConfig('${peer.public_key}')">Download</button>
-              <button onclick="deletePeer('${peer.public_key}')">Delete</button>
-            </td>
-          `;
+            <td class="actions">
+               <button class="action-btn" onclick="downloadConfig('${peer.public_key}')">Download</button>
+               <button class="action-btn" onclick="deletePeer('${peer.public_key}')">Delete</button>
+            </td>`;
           peersTable.appendChild(tr);
           generateQRCode(peer);
         });
@@ -112,7 +111,7 @@ PersistentKeepalive = ${WG_KEEPALIVE}
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href       = url;
-    a.download   = `wg-peer-${pubKey}.conf`;
+    a.download   = `wg-peer-${peer.ipv4_address}.conf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
