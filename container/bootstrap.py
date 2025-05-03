@@ -42,10 +42,6 @@ Popen(
     close_fds=False
 )
 
-# 3) Apply WG config _before_ starting userspace daemon
-run(['wg', 'set', 'wg0', 'private-key', '/etc/wireguard/privatekey'], check=True)
-run(['wg', 'setconf', 'wg0', WG_CONF], check=True)
-
 # 4) Post‑up NAT rules (env var)
 if post_up := environ.get('WG_POST_UP'):
     Popen(post_up, shell=True)
@@ -55,8 +51,9 @@ environ.setdefault('WG_SUDO', '1')
 Popen(['/usr/local/bin/boringtun-cli', '--foreground', 'wg0'],
       close_fds=False)
 
-sleep(0.2)
-
+sleep(0.5)
+run(['wg', 'set', 'wg0', 'private-key', '/etc/wireguard/privatekey'], check=True)
+run(['wg', 'setconf', 'wg0', WG_CONF], check=True)
 
 # 4) Launch Gunicorn in background
 Popen([
