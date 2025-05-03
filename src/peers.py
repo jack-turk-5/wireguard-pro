@@ -1,32 +1,37 @@
-# peers.py
-
 from subprocess import check_output, run
 from datetime import datetime, timezone, timedelta
 
 from db import add_peer_db, remove_peer_db, get_all_peers
-from utils import generate_keypair, next_available_ip, append_peer_to_wgconf, reload_wireguard
+from utils import generate_keypair, next_available_ip, append_peer_to_wgconf
 
 WG_PATH = "/etc/wireguard/wg0.conf"
 
+
 def create_peer(days_valid=7):
-    # 1) gen keys
+    # 1) Generate keypair
     priv, pub = generate_keypair()
 
-    # 2) grab the next free IPs
+    # 2) Allocate next free IPs
     ipv4, ipv6 = next_available_ip()
 
-    # 3) compute expiration (space‑separated format)
+    # 3) Compute expiration timestamp
     expires = datetime.now(timezone.utc) + timedelta(days=days_valid)
     expires_str = expires.strftime("%Y-%m-%d %H:%M:%S")
 
-    # 4) **only one** DB insert
+    # 4) Store in database
     add_peer_db(pub, priv, ipv4, ipv6, expires_str)
 
-    # 5) wireguard config + reload
+    # 5) Append to on-disk config
     append_peer_to_wgconf(pub, ipv4, ipv6)
-    reload_wireguard()
 
-    # 6) return what the front‑end needs for QR + display
+    # 6) Inject into live interface (no full reload)
+    run([
+        "wg", "set", "wg0",
+        "peer", pub,
+        "allowed-ips", f"{ipv4}/32,{ipv6}/128"
+    ], check=True)
+
+    # 7) Return for UI
     return {
         "private_key": priv,
         "public_key": pub,
@@ -35,38 +40,38 @@ def create_peer(days_valid=7):
         "expires_at": expires_str
     }
 
+
 def delete_peer(public_key):
     success = remove_peer_db(public_key)
     if not success:
         return False
 
-    # Read the file
+    # 1) Remove from on-disk config file
     lines = open(WG_PATH).read().splitlines()
     new_lines = []
     skip = False
     for line in lines:
-        if public_key in line and line.startswith("PublicKey"):
-            skip = True       # start skipping at [Peer] block
-            continue
         if skip:
-            # after dropping the PublicKey line, skip until blank line
+            # stop skipping at blank line
             if line.strip() == "":
                 skip = False
             continue
+        if line.startswith("PublicKey") and public_key in line:
+            skip = True
+            continue
         new_lines.append(line)
 
-    # Write back
     with open(WG_PATH, "w") as f:
         f.write("\n".join(new_lines) + "\n")
 
-    # Now remove from live interface + reload
+    # 2) Remove peer from running interface
     run(["wg", "set", "wg0", "peer", public_key, "remove"], check=True)
-    run(["wg", "setconf", "wg0", WG_PATH], check=True)
-
     return True
+
 
 def list_peers():
     return get_all_peers()
+
 
 def peer_stats():
     output = check_output(["wg", "show", "wg0", "dump"]).decode()
@@ -74,7 +79,8 @@ def peer_stats():
     stats = []
     for line in lines:
         f = line.split('\t')
-        if len(f) < 8: continue
+        if len(f) < 8:
+            continue
         pub, _, _, _, last_hs, rx, tx, keepalive, *_ = f
         stats.append({
             "public_key": pub,
