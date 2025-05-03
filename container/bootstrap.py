@@ -59,7 +59,7 @@ boringtun = Popen([
 
 # 5) Configure interface in kernel
 # 5a) load private key into interface
-run(['wg', 'set', 'wg0', 'private-key', open(SECRET).read().strip()], check=True)
+run(['wg', 'set', 'wg0', 'private-key', PRIVATE_KEY_FILE], check=True)
 # 5b) apply entire WG_CONF (addresses, port)
 run(['wg', 'setconf', 'wg0', WG_CONF], check=True)
 
