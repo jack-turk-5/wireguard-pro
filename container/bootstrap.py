@@ -61,7 +61,7 @@ Popen([
 Popen([
     'socat',
     'UDP-LISTEN:51820,reuseaddr,fork',
-    'FD:4'
+    'UDP4-SENDTO:127.0.0.1:51820'
 ], close_fds=False)
 
 # 4) Launch Gunicorn in background
