@@ -26,7 +26,7 @@ if not path.isfile(WG_CONF):
     # assemble exactly the lines you want
     config_lines = [
         '[Interface]',
-        f'PrivateKey    {priv}'
+        'PrivateKey ' + priv,
         'Address 10.8.0.1/24',
         'Address fd86:ea04:1111::1/64',
         'ListenPort 51820'
