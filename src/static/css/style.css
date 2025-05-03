@@ -135,6 +135,7 @@ body {
   td.actions {
     display: flex;
     flex-direction: column;
+    align-items: center;
     justify-content: center;  /* center group in cell */
     gap: 0.5rem;              /* spacing between buttons */
   }
