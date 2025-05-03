@@ -7,96 +7,103 @@ from flasgger import Swagger
 
 from db import init_db
 
-app = Flask(__name__)
-Swagger(app)
+def create_app():
+    flask_app = Flask(__name__, instance_relative_config=True)
+    Swagger(flask_app)
+    app.config['JSON_SORT_KEYS'] = False
 
-app.config['JSON_SORT_KEYS'] = False
+    # set up your scheduler
+    scheduler.init_app(flask_app)
+    scheduler.start()
 
-scheduler.init_app(app)
-scheduler.start()
+    # **guaranteed** to be in an app context
+    with flask_app.app_context():
+        init_db()
 
-@app.route('/api/peers/new', methods=['POST'])
-def api_create_peer():
-    """
-    Create a new WireGuard peer
-    ---
-    parameters:
-      - name: days_valid
-        in: json
-        type: integer
-        required: false
-        description: Days before expiration
-    responses:
-      200:
-        description: Peer created successfully
-    """
-    data = request.get_json()
-    peer = create_peer(data.get('days_valid', 7))
-    return jsonify(peer)
+    @app.route('/api/peers/new', methods=['POST'])
+    def api_create_peer():
+        """
+        Create a new WireGuard peer
+        ---
+        parameters:
+          - name: days_valid
+            in: json
+            type: integer
+            required: false
+            description: Days before expiration
+        responses:
+          200:
+            description: Peer created successfully
+        """
+        data = request.get_json()
+        peer = create_peer(data.get('days_valid', 7))
+        return jsonify(peer)
 
-@app.route('/api/peers/delete', methods=['POST'])
-def api_delete_peer():
-    """
-    Delete a WireGuard peer by PublicKey
-    ---
-    parameters:
-      - name: public_key
-        in: json
-        type: string
-        required: true
-        description: Public key to remove
-    responses:
-      200:
-        description: Peer deleted
-    """
-    data = request.get_json()
-    success = delete_peer(data['public_key'])
-    return jsonify({"deleted": success})
+    @app.route('/api/peers/delete', methods=['POST'])
+    def api_delete_peer():
+        """
+        Delete a WireGuard peer by PublicKey
+        ---
+        parameters:
+          - name: public_key
+            in: json
+            type: string
+            required: true
+            description: Public key to remove
+        responses:
+          200:
+            description: Peer deleted
+        """
+        data = request.get_json()
+        success = delete_peer(data['public_key'])
+        return jsonify({"deleted": success})
 
-@app.route('/api/peers/list', methods=['GET'])
-def api_list_peers():
-    """
-    List all WireGuard peers
-    ---
-    responses:
-      200:
-        description: List of peers
-    """
-    return jsonify(list_peers())
+    @app.route('/api/peers/list', methods=['GET'])
+    def api_list_peers():
+        """
+        List all WireGuard peers
+        ---
+        responses:
+          200:
+            description: List of peers
+        """
+        return jsonify(list_peers())
 
-@app.route('/api/peers/stats', methods=['GET'])
-def api_peer_stats():
-    """
-    Live WireGuard peer stats
-    ---
-    responses:
-      200:
-        description: List of active peers with traffic stats
-    """
-    return jsonify(peer_stats())
+    @app.route('/api/peers/stats', methods=['GET'])
+    def api_peer_stats():
+        """
+        Live WireGuard peer stats
+        ---
+        responses:
+          200:
+            description: List of active peers with traffic stats
+        """
+        return jsonify(peer_stats())
 
-@app.route('/serverinfo', methods=['GET'])
-def server_info():
-    try:
-        with open('/proc/uptime', 'r') as f:
-            first_field, *_ = f.readline().split()
-            uptime_seconds = float(first_field)
-            uptime_str = strftime("%H:%M:%S", gmtime(uptime_seconds))
+    @app.route('/serverinfo', methods=['GET'])
+    def server_info():
+        try:
+            with open('/proc/uptime', 'r') as f:
+                first_field, *_ = f.readline().split()
+                uptime_seconds = float(first_field)
+                uptime_str = strftime("%H:%M:%S", gmtime(uptime_seconds))
 
-        load_avg = getloadavg()  # (1m, 5m, 15m)
-        load_str = "{:.2f} {:.2f} {:.2f}".format(*load_avg)
+            load_avg = getloadavg()  # (1m, 5m, 15m)
+            load_str = "{:.2f} {:.2f} {:.2f}".format(*load_avg)
 
-        return jsonify({
-            "uptime": uptime_str,
-            "load": load_str
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+            return jsonify({
+                "uptime": uptime_str,
+                "load": load_str
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
 
-@app.route('/')
-def serve_ui():
-    return render_template('index.html')
+    @app.route('/')
+    def serve_ui():
+        return render_template('index.html')
 
+    return flask_app
+
+app = create_app()
 if __name__ == "__main__":
-    init_db()
     app.run()
