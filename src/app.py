@@ -4,7 +4,7 @@ from flask import Flask, jsonify, request, render_template
 from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
-
+from utils import get_server_pubkey
 from db import init_db
 
 def create_app():
@@ -12,7 +12,7 @@ def create_app():
     Swagger(flask_app)
     flask_app.config['JSON_SORT_KEYS'] = False
     # somewhere in create_app(), before your route definitions:
-    flask_app.config['WG_SERVER_PUBKEY'] = open('/etc/wireguard/publickey').read().strip()
+    flask_app.config['WG_SERVER_PUBKEY'] = get_server_pubkey()
     # and set your endpoint however you prefer, e.g.:
     flask_app.config['WG_ENDPOINT'] = environ.get('WG_ENDPOINT')
 

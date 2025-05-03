@@ -17,6 +17,16 @@ def generate_keypair():
     public_key = res.stdout.strip()
     return private_key, public_key
 
+def get_server_pubkey():
+    priv = open('/etc/wireguard/privatekey').read().strip()
+    proc = run(
+        ['wg', 'pubkey'],
+        input=priv.encode(),
+        stdout=PIPE,
+        check=True
+    )
+    return proc.stdout.decode().strip()
+
 # 2. dynamic IP allocation
 def next_available_ip():
     """
