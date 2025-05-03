@@ -73,14 +73,15 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(() => loadPeers());
   }
 
-  // QR code generation
+  // Generate QR Code for Public Key
   function generateQRCode(publicKey) {
     const qrDiv = document.getElementById(`qrcode-${publicKey}`);
     qrDiv.innerHTML = '';
     new QRCode(qrDiv, {
       text: `PublicKey: ${publicKey}`,
-      width: 64,
-      height: 64
+      width: 160,
+      height: 160,
+      correctLevel: QRCode.CorrectLevel.H  // optional—higher error‑correction
     });
   }
 

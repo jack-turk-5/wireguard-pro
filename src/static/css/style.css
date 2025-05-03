@@ -121,9 +121,14 @@ body {
   
   /* QR Codes */
   .qrcode {
-    width: 64px;
-    height: 64px;
+    width: 160px;
+    height: 160px;
     margin: auto;
+  }
+  /* force the <canvas> inside to fill the container */
+  .qrcode canvas {
+    width: 100% !important;
+    height: 100% !important;
   }
   
   /* Charts */
