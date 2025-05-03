@@ -54,7 +54,7 @@ Popen([
     'socat',
     '-d', '-d',
     'UDP-LISTEN:51820,reuseaddr,fork',
-    'UDP:0.0.0.0:51820'
+    'UDP:127.0.0.1:51820'
 ], close_fds=False)
 
 # 4) Launch Gunicorn in background
