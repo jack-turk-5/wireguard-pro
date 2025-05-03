@@ -43,8 +43,13 @@ RUN apt-get update && \
 # 5. Install runtime dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      bash wireguard-tools socat iproute2 \
+      bash wireguard-tools socat iproute2 iptables \
     && rm -rf /var/lib/apt/lists/*
+
+ENV WG_POST_UP="iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE && \
+                iptables -I FORWARD -i wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT"
+ENV WG_POST_DOWN="iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE && \
+                  iptables -D FORWARD -i wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT"
 
 # 6. Copy BoringTun, Python venv, app code & bootstrap
 COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
