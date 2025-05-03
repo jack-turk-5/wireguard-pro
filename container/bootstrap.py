@@ -34,19 +34,6 @@ if not path.isfile(WG_CONF):
         f.write("\n".join(config_lines) + "\n")
 
 
-# 1) Relay incoming datagrams (FD 3) → local BoringTun port
-Popen([
-    'socat',
-    'FD:3',
-    'UDP:127.0.0.1:51820,reuseaddr'
-], close_fds=False)
-
-# 2) Relay outgoing packets from BoringTun → FD 3
-Popen([
-    'socat',
-    'UDP-LISTEN:51820,reuseaddr,fork',
-    'FD:3'
-], close_fds=False)
 # 4) Post‑up NAT rules (env var)
 if post_up := environ.get('WG_POST_UP'):
     Popen(post_up, shell=True)
@@ -62,6 +49,20 @@ run(['ip', 'addr', 'flush', 'dev', 'wg0'], check=False)
 
 # 4) Now bring up clean
 run(['wg-quick', 'up', 'wg0'], check=True)
+
+# 1) Relay incoming datagrams (FD 3) → local BoringTun port
+Popen([
+    'socat',
+    'FD:3',
+    'UDP:127.0.0.1:51820,reuseaddr'
+], close_fds=False)
+
+# 2) Relay outgoing packets from BoringTun → FD 3
+Popen([
+    'socat',
+    'UDP-LISTEN:51820,reuseaddr,fork',
+    'FD:3'
+], close_fds=False)
 
 # 4) Launch Gunicorn in background
 Popen([
