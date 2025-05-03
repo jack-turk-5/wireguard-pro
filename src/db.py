@@ -1,13 +1,12 @@
 # db.py
+
 import os
 import sqlite3
 
-# single source of truth for your SQLite file
 DB_FILE = "/data/peers.db"
 
 def _ensure_dir():
-    d = os.path.dirname(DB_FILE)
-    os.makedirs(d, exist_ok=True)
+    os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
 
 def db_conn():
     _ensure_dir()
@@ -16,11 +15,6 @@ def db_conn():
     return conn
 
 def init_db():
-    """
-    Must be run once at startup (after /data is mounted):
-    creates the peers table (with private_key) if it doesn't exist.
-    """
-    print(f"[init_db] opening {DB_FILE}")
     conn = db_conn()
     c = conn.cursor()
     c.execute("""
@@ -30,15 +24,10 @@ def init_db():
         ipv4_address TEXT,
         ipv6_address TEXT,
         created_at   TEXT    DEFAULT (datetime('now')),
-        expires_at   TIMESTAMP
-      );
+        expires_at   TEXT
+      )
     """)
     conn.commit()
-    # sanity check
-    c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='peers';")
-    if not c.fetchone():
-        raise RuntimeError("init_db failed to create peers table")
-    print("[init_db] peers table is ready")
     c.close()
     conn.close()
 
