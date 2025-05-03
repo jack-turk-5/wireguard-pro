@@ -54,7 +54,7 @@ Popen([
     'socat',
     '-u', '-d', '-d',
     'FD:4',
-    'UDP4:127.0.0.1:51820'
+    'UDP:127.0.0.1:51820'
 ], close_fds=False)
 
 Popen([
