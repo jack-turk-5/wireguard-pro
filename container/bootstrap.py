@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-from signal import signal, SIGINT, SIGTERM
-from os import path, makedirs, environ
-from sys import exit
+from os import path, makedirs, environ, execv
 from subprocess import check_output, Popen, PIPE
 from time import sleep
 from shutil import which
@@ -69,33 +67,15 @@ Popen([
     'app:app'
 ])
 
-caddy_path = which('caddy')
-# 1) Spawn Caddy (instead of execv)
-caddy = Popen(
-    [caddy_path, 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile']
+# Step 5: Hand off to Caddy as PID 1
+caddy_path = which('caddy')  # should resolve to /usr/bin/caddy
+execv(caddy_path,
+         [
+             'caddy',
+             'run',
+             '--config',
+             '/etc/caddy/Caddyfile',
+             '--adapter',
+             'caddyfile'
+         ]
 )
-
-# 2) Define cleanup
-def cleanup_and_exit(signum=None, frame=None):
-    post_down = environ.get("WG_POST_DOWN")
-    if post_down:
-        # run the post‑down rules in a shell
-        Popen(post_down, shell=True).wait()
-    # terminate Caddy if it’s still running
-    if caddy.poll() is None:
-        caddy.terminate()
-        caddy.wait()
-    exit(0)
-
-# 3) Hook signals
-signal(SIGTERM, cleanup_and_exit)
-signal(SIGINT,  cleanup_and_exit)
-
-# 4) Optionally also on normal exit
-import atexit
-atexit.register(cleanup_and_exit)
-
-# 5) Wait for Caddy to exit (so Python stays alive to catch signals)
-caddy.wait()
-# if Caddy exits on its own, run cleanup too
-cleanup_and_exit()
