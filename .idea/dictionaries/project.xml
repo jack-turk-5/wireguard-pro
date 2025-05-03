@@ -2,10 +2,13 @@
   <dictionary name="project">
     <words>
       <w>boringtun</w>
+      <w>caddyfile</w>
       <w>priv</w>
       <w>privatekey</w>
+      <w>reuseaddr</w>
       <w>setgid</w>
       <w>setuid</w>
+      <w>syncconf</w>
     </words>
   </dictionary>
 </component>

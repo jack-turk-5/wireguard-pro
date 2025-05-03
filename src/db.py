@@ -2,8 +2,10 @@ from sqlite3 import connect
 
 DB_FILE = "/data/peers.db"
 
+
 def db_conn():
     return connect(DB_FILE)
+
 
 def init_db():
     with db_conn() as conn:
@@ -18,6 +20,7 @@ def init_db():
             )
         """)
 
+
 def add_peer_db(pub, priv, ipv4, ipv6, expires):
     with db_conn() as conn:
         conn.execute("""
@@ -25,10 +28,12 @@ def add_peer_db(pub, priv, ipv4, ipv6, expires):
             VALUES (?, ?, ?, ?, ?)
         """, (pub, priv, ipv4, ipv6, expires))
 
+
 def remove_peer_db(pub):
     with db_conn() as conn:
         cur = conn.execute("DELETE FROM peers WHERE public_key = ?", (pub,))
         return cur.rowcount > 0
+
 
 def get_all_peers():
     with db_conn() as conn:

@@ -5,6 +5,8 @@ from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
 
+from src.db import init_db
+
 app = Flask(__name__)
 Swagger(app)
 
@@ -96,4 +98,5 @@ def serve_ui():
     return render_template('index.html')
 
 if __name__ == "__main__":
+    init_db()
     app.run()
