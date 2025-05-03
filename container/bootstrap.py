@@ -46,14 +46,9 @@ Popen(
 if post_up := environ.get('WG_POST_UP'):
     Popen(post_up, shell=True)
 
-# 5) Launch BoringTun CLI as userspace daemon
-environ.setdefault('WG_SUDO', '1')
-Popen(['/usr/local/bin/boringtun-cli', '--foreground', 'wg0'],
-      close_fds=False)
-
-sleep(1)
-run(['wg', 'set', 'wg0', 'private-key', '/etc/wireguard/privatekey'], check=True)
-run(['wg', 'setconf', 'wg0', WG_CONF], check=True)
+sleep(0.5)
+run(['wg-quick', 'down', 'wg0'], check=False)
+run(['wg-quick', 'up', 'wg0'], check=True)
 
 # 4) Launch Gunicorn in background
 Popen([
