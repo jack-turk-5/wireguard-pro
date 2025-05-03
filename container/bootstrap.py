@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from os import path, makedirs, environ, execv
 from subprocess import check_output, Popen, PIPE
+from textwrap import dedent
 from time import sleep
 from shutil import which
 
@@ -24,14 +25,13 @@ if not path.isfile(WG_CONF):
     pub = pub_bytes.decode().strip()
     # write a WG_CONF that BoringTun will actually parse
     # assemble exactly the lines you want
-    conf = \
-f"""
-[Interface]
-PrivateKey = {priv}
-Address = 10.8.0.1/24
-Address = fd86:ea04:1111::1/64
-ListenPort = 51820
-"""
+    conf = dedent(f"""\
+    [Interface]
+    PrivateKey = {priv}
+    Address    = 10.8.0.1/24
+    Address    = fd86:ea04:1111::1/64
+    ListenPort = 51820
+    """).strip()
     with open(WG_CONF, 'w') as f:
             f.write(conf)
     print("Wrote wg0.conf:\n" + conf)
