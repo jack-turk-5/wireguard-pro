@@ -131,27 +131,27 @@ body {
     height: 100% !important;
   }
 
-  #peersTable td.actions {
-    vertical-align: middle;   /* vertical centering */
-    text-align: center;       /* horizontal centering fallback */
+  /* make sure the cell is still a table‐cell and centers its contents */
+  td.actions {
+    vertical-align: middle;   /* vertical center */
+    text-align: center;       /* horizontal center fallback */
+    /* remove any display:flex here! */
   }
 
-  /* flex‑container for actions */
-  td.actions {
+  /* flex‐stack only the inner container */
+  .action-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;  /* center group in cell */
-    gap: 0.5rem;              /* spacing between buttons */
+    align-items: center;   /* horizontal centering of buttons */
+    justify-content: center;/* vertical centering *within* that div */
+    gap: 0.5rem;
   }
 
   /* equal‑sized buttons */
-  td.actions .action-btn {
-    flex: 1;                  /* fill available space equally */
-    max-width: 120px;         /* optional cap */
-    min-width: 100px;         /* ensure a reasonable minimum */
-    padding: 0.5em 1em;       /* a little breathing room */
-    box-sizing: border-box;   /* include padding in width */
+  .action-container .action-btn {
+    width: 120px;           /* fixed width */
+    padding: 0.5em 1em;
+    box-sizing: border-box;
   }
   
   /* Charts */

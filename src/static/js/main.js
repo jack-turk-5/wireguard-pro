@@ -48,9 +48,11 @@ document.addEventListener('DOMContentLoaded', function() {
             <td>${peer.expires_at?.split('T')[0] || 'N/A'}</td>
             <td><div id="qrcode-${peer.public_key}" class="qrcode"></div></td>
             <td class="actions">
-               <button class="action-btn" onclick="downloadConfig('${peer.public_key}')">Download</button>
-               <button class="action-btn" onclick="deletePeer('${peer.public_key}')">Delete</button>
-            </td>`;
+               <div class="action-container">
+                 <button class="action-btn" onclick="downloadConfig('${peer.public_key}')">Download</button>
+                 <button class="action-btn" onclick="deletePeer('${peer.public_key}')">Delete</button>
+               </div>
+             </td>`;
           peersTable.appendChild(tr);
           generateQRCode(peer);
         });
