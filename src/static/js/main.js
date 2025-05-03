@@ -40,27 +40,31 @@ document.addEventListener('DOMContentLoaded', function() {
   let txData = [];
   let labels = [];
 
-  // Load peer list
   function loadPeers() {
-    fetch('/api/peers/list')
-      .then(res => res.json())
-      .then(peers => {
-        peersTable.innerHTML = '';
-        peers.forEach(peer => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${peer.public_key}</td>
-            <td>${peer.ipv4_address}</td>
-            <td>${peer.ipv6_address}</td>
-            <td>${peer.expires_at ? peer.expires_at.split('T')[0] : 'N/A'}</td>
-            <td><div id="qrcode-${peer.public_key}" class="qrcode"></div></td>
-            <td><button onclick="deletePeer('${peer.public_key}')">Delete</button></td>
-          `;
-          peersTable.appendChild(row);
-          generateQRCode(peer.public_key);
-        });
-      });
+     fetch('/api/peers/list')
+       .then(r => r.json())
+       .then(peers => {
+         const tbody = document.querySelector('#peersTable tbody');
+         tbody.innerHTML = '';
+         peers.forEach(peer => {
+           const row = document.createElement('tr');
+           row.innerHTML = `
+             <td>${peer.public_key}</td>
+             <td>${peer.ipv4_address}</td>
+             <td>${peer.ipv6_address}</td>
+             <td>${peer.expires_at?.split('T')[0] || 'N/A'}</td>
+             <td><div id="qrcode-${peer.public_key}" class="qrcode"></div></td>
+             <td>
+               <button onclick="deletePeer('${peer.public_key}')">
+                 Delete
+               </button>
+             </td>`;
+           tbody.appendChild(row);
+           generateQRCode(peer);  // ← now pass the full peer object
+         });
+       });
   }
+
 
   // Delete a peer
   function deletePeer(publicKey) {
@@ -73,16 +77,30 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(() => loadPeers());
   }
 
-  // Generate QR Code for Public Key
-  function generateQRCode(publicKey) {
-    const qrDiv = document.getElementById(`qrcode-${publicKey}`);
-    qrDiv.innerHTML = '';
-    new QRCode(qrDiv, {
-      text: `PublicKey: ${publicKey}`,
-      width: 160,
-      height: 160,
-      correctLevel: QRCode.CorrectLevel.H  // optional—higher error‑correction
-    });
+  function generateQRCode(peer) {
+      const qrDiv = document.getElementById(`qrcode-${peer.public_key}`);
+      qrDiv.innerHTML = '';
+
+      // assemble a full WireGuard config
+      const conf = `
+  [Interface]
+  PrivateKey = ${peer.private_key}
+  Address     = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
+  DNS         = ${WG_DNS}
+
+  [Peer]
+  PublicKey           = ${WG_SERVER_PUBKEY}
+  Endpoint            = ${WG_ENDPOINT}
+  AllowedIPs          = 0.0.0.0/0, ::/0
+  PersistentKeepalive = ${WG_KEEPALIVE}
+  `.trim();
+
+      new QRCode(qrDiv, {
+        text: conf,
+        width: 160,
+        height: 160,
+        correctLevel: QRCode.CorrectLevel.H
+      });
   }
 
   // Load stats
