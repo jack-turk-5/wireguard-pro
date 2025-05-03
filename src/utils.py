@@ -52,7 +52,6 @@ def append_peer_to_wgconf(public_key, ipv4, ipv6):
 [Peer]
 PublicKey = {public_key}
 AllowedIPs = {ipv4}/32, {ipv6}/128
-
 """)
 
 def reload_wireguard():
