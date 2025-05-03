@@ -52,9 +52,16 @@ run(['wg-quick', 'up', 'wg0'], check=True)
 
 Popen([
     'socat',
-    '-d', '-d',
-    'UDP-LISTEN:51820,reuseaddr,fork',
-    'UDP:127.0.0.1:51820'
+    '-u', '-d', '-d',
+    'FD:4',
+    'UDP4:127.0.0.1:51820'
+], close_fds=False)
+
+Popen([
+    'socat',
+    '-u', '-d', '-d',
+    'UDP-CONNECT:127.0.0.1:51820',
+    'FD:4'
 ], close_fds=False)
 
 # 4) Launch Gunicorn in background
