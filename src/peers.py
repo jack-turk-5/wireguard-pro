@@ -6,6 +6,8 @@ from datetime import datetime, timezone, timedelta
 from db import add_peer_db, remove_peer_db, get_all_peers
 from utils import generate_keypair, next_available_ip, append_peer_to_wgconf, reload_wireguard
 
+WG_PATH = "/etc/wireguard/wg0.conf"
+
 def create_peer(days_valid=7):
     # 1) gen keys
     priv, pub = generate_keypair()
@@ -35,14 +37,33 @@ def create_peer(days_valid=7):
 
 def delete_peer(public_key):
     success = remove_peer_db(public_key)
-    if success:
-        # 1) Remove stanza from disk
-        run(["sed", "-i", f"/{public_key}/,+2d", "/etc/wireguard/wg0.conf"], check=True)
-        # 2) Tell kernel/userspace to drop that peer
-        run(["wg", "set", "wg0", "peer", public_key, "remove"], check=True)
-        # 3) Reload entire config (to ensure consistency)
-        run(["wg", "setconf", "wg0", "/etc/wireguard/wg0.conf"], check=True)
-    return success
+    if not success:
+        return False
+
+    # Read the file
+    lines = open(WG_PATH).read().splitlines()
+    new_lines = []
+    skip = False
+    for line in lines:
+        if public_key in line and line.startswith("PublicKey"):
+            skip = True       # start skipping at [Peer] block
+            continue
+        if skip:
+            # after dropping the PublicKey line, skip until blank line
+            if line.strip() == "":
+                skip = False
+            continue
+        new_lines.append(line)
+
+    # Write back
+    with open(WG_PATH, "w") as f:
+        f.write("\n".join(new_lines) + "\n")
+
+    # Now remove from live interface + reload
+    run(["wg", "set", "wg0", "peer", public_key, "remove"], check=True)
+    run(["wg", "setconf", "wg0", WG_PATH], check=True)
+
+    return True
 
 def list_peers():
     return get_all_peers()
