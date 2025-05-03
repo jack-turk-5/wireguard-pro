@@ -53,15 +53,17 @@ run(['wg-quick', 'up', 'wg0'], check=True)
 # 1) Relay incoming datagrams (FD 3) → local BoringTun port
 Popen([
     'socat',
+    '-u',
     'FD:4',
-    'UDP:127.0.0.1:51820,reuseaddr'
+    'UDP:127.0.0.1:51820'
 ], close_fds=False)
 
 # 2) Relay outgoing packets from BoringTun → FD 3
 Popen([
     'socat',
-    'UDP-LISTEN:51820,reuseaddr,fork',
-    'UDP-SENDTO:127.0.0.1:51820'
+    '-u',
+    'UDP-RECVFROM:127.0.0.1:51820,reuseaddr,reuseport,fork',
+    'FD:4'
 ], close_fds=False)
 
 # 4) Launch Gunicorn in background
