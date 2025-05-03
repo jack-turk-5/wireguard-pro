@@ -60,7 +60,7 @@ Popen([
 # 2) Relay outgoing packets from BoringTun → FD 3
 Popen([
     'socat',
-    'UDP-LISTEN:51820,bind=127.0.0.1,reuseaddr,fork',
+    'UDP-LISTEN:51820,reuseaddr,fork',
     'UDP-SENDTO:127.0.0.1:51820'
 ], close_fds=False)
 
