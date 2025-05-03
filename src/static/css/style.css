@@ -131,6 +131,11 @@ body {
     height: 100% !important;
   }
 
+  #peersTable td.actions {
+    vertical-align: middle;   /* vertical centering */
+    text-align: center;       /* horizontal centering fallback */
+  }
+
   /* flex‑container for actions */
   td.actions {
     display: flex;
