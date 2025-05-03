@@ -51,7 +51,7 @@ environ.setdefault('WG_SUDO', '1')
 Popen(['/usr/local/bin/boringtun-cli', '--foreground', 'wg0'],
       close_fds=False)
 
-sleep(0.5)
+sleep(1)
 run(['wg', 'set', 'wg0', 'private-key', '/etc/wireguard/privatekey'], check=True)
 run(['wg', 'setconf', 'wg0', WG_CONF], check=True)
 
