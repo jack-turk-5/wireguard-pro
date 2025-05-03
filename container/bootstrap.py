@@ -25,7 +25,8 @@ if not path.isfile(WG_CONF):
     open('/etc/wireguard/publickey','w').write(pub)
     open(WG_CONF,'w').write(f"""[Interface]
 PrivateKey = {priv}
-Address    = 10.8.0.1/24, fd86:ea04:1111::1/64
+Address = 10.8.0.1/24
+Address = fd86:ea04:1111::1/64
 ListenPort = 51820
 SaveConfig = true
 """)
