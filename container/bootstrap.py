@@ -34,20 +34,25 @@ if not path.isfile(WG_CONF):
     with open(WG_CONF, 'w', newline='\n') as f:
         f.write("\n".join(config_lines) + "\n")
 
-# 2) UDP relay for BoringTun
-Popen(
-    ['socat',
-     'UDP4-LISTEN:51820,bind=0.0.0.0,reuseaddr,fork',
-     'UDP4:0.0.0.0:51820'],
-    close_fds=False
-)
 
+# 1) Relay incoming datagrams (FD 3) → local BoringTun port
+Popen([
+    'socat',
+    'FD:3',
+    'UDP:127.0.0.1:51820,reuseaddr'
+], close_fds=False)
+
+# 2) Relay outgoing packets from BoringTun → FD 3
+Popen([
+    'socat',
+    'UDP-LISTEN:51820,reuseaddr,fork',
+    'FD:3'
+], close_fds=False)
 # 4) Post‑up NAT rules (env var)
 if post_up := environ.get('WG_POST_UP'):
     Popen(post_up, shell=True)
 
-environ['WG_QUICK_USERSPACE_IMPLEMENTATION'] = 'boringtun-cli'
-environ['WG_SUDO'] = '1'
+
 run(['wg-quick', 'down', 'wg0'], check=False)
 sleep(0.5)
 run(['wg-quick', 'up', 'wg0'], check=True)
