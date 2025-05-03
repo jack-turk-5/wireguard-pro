@@ -46,8 +46,10 @@ Popen(
 if post_up := environ.get('WG_POST_UP'):
     Popen(post_up, shell=True)
 
-sleep(0.5)
+environ['WG_QUICK_USERSPACE_IMPLEMENTATION'] = 'boringtun-cli'
+environ['WG_SUDO'] = '1'
 run(['wg-quick', 'down', 'wg0'], check=False)
+sleep(0.5)
 run(['wg-quick', 'up', 'wg0'], check=True)
 
 # 4) Launch Gunicorn in background
