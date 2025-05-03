@@ -81,19 +81,18 @@ document.addEventListener('DOMContentLoaded', function() {
       const qrDiv = document.getElementById(`qrcode-${peer.public_key}`);
       qrDiv.innerHTML = '';
 
-      // assemble a full WireGuard config
-      const conf = `
-  [Interface]
-  PrivateKey = ${peer.private_key}
-  Address     = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
-  DNS         = ${WG_DNS}
+// assemble a full WireGuard config
+const conf = `[Interface]
+PrivateKey = ${peer.private_key}
+Address    = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
+DNS        = ${WG_DNS}
 
-  [Peer]
-  PublicKey           = ${WG_SERVER_PUBKEY}
-  Endpoint            = ${WG_ENDPOINT}
-  AllowedIPs          = 0.0.0.0/0, ::/0
-  PersistentKeepalive = ${WG_KEEPALIVE}
-  `.trim();
+[Peer]
+PublicKey           = ${WG_SERVER_PUBKEY}
+Endpoint            = ${WG_ENDPOINT}
+AllowedIPs          = 0.0.0.0/0, ::/0
+PersistentKeepalive = ${WG_KEEPALIVE}
+`;
 
       new QRCode(qrDiv, {
         text: conf,

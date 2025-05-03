@@ -1,5 +1,5 @@
 from time import strftime, gmtime
-from os import getloadavg
+from os import getloadavg, environ
 from flask import Flask, jsonify, request, render_template
 from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
@@ -11,6 +11,10 @@ def create_app():
     flask_app = Flask(__name__, instance_relative_config=True)
     Swagger(flask_app)
     flask_app.config['JSON_SORT_KEYS'] = False
+    # somewhere in create_app(), before your route definitions:
+    flask_app.config['WG_SERVER_PUBKEY'] = open('/etc/wireguard/publickey').read().strip()
+    # and set your endpoint however you prefer, e.g.:
+    flask_app.config['WG_ENDPOINT'] = environ.get('WG_ENDPOINT')
 
     # set up your scheduler
     scheduler.init_app(flask_app)
@@ -100,7 +104,10 @@ def create_app():
 
     @flask_app.route('/')
     def serve_ui():
-        return render_template('index.html')
+        return render_template(
+            'index.html',
+            server_public_key=flask_app.config['WG_SERVER_PUBKEY'],
+            server_endpoint=flask_app.config['WG_ENDPOINT'])
 
     return flask_app
 
