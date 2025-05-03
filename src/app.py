@@ -10,7 +10,7 @@ from db import init_db
 def create_app():
     flask_app = Flask(__name__, instance_relative_config=True)
     Swagger(flask_app)
-    app.config['JSON_SORT_KEYS'] = False
+    flask_app.config['JSON_SORT_KEYS'] = False
 
     # set up your scheduler
     scheduler.init_app(flask_app)
