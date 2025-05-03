@@ -1,7 +1,8 @@
 # utils.py
 
 from db import get_all_peers
-from subprocess import check_output, run
+from subprocess import check_output, run, PIPE
+
 
 # 1. keypair gen stays the same
 def generate_keypair():
@@ -55,4 +56,10 @@ def append_peer_to_wgconf(public_key, ipv4, ipv6):
         ]
         f.write("\n".join(lines) + "\n")
 def reload_wireguard():
-    run(["wg", "syncconf", "wg0", "/etc/wireguard/wg0.conf"])
+    # generate stripped peer file
+    strip = run(["wg-quick", "strip", "wg0"], stdout=PIPE, check=True, text=True)
+    with open("/run/wg0.peers.conf", "w") as f:
+        f.write(strip.stdout)
+
+    # apply only the peer sections
+    run(["wg", "syncconf", "wg0", "/run/wg0.peers.conf"], check=True)
