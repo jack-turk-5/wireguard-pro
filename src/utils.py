@@ -48,11 +48,11 @@ def next_available_ip():
 
 def append_peer_to_wgconf(public_key, ipv4, ipv6):
     with open("/etc/wireguard/wg0.conf", "a") as f:
-        f.write(f"""
-[Peer]
-PublicKey = {public_key}
-AllowedIPs = {ipv4}/32, {ipv6}/128
-""")
-
+        lines = [
+            "[Peer]",
+            f"PublicKey = {public_key}",
+            f"AllowedIPs = {ipv4}/32, {ipv6}/128"
+        ]
+        f.write("\n".join(lines) + "\n")
 def reload_wireguard():
     run(["wg", "syncconf", "wg0", "/etc/wireguard/wg0.conf"])
