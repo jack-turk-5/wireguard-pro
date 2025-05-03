@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from os import path, makedirs, environ, execv
-from subprocess import check_output, Popen, PIPE
+from subprocess import check_output, Popen, PIPE, run
 from time import sleep
 from shutil import which
 
@@ -42,16 +42,19 @@ Popen(
     close_fds=False
 )
 
-post_up = environ.get("WG_POST_UP")
-if post_up:
+# 3) Apply WG config _before_ starting userspace daemon
+run(['wg', 'set', 'wg0', 'private-key', '/etc/wireguard/privatekey'], check=True)
+run(['wg', 'setconf', 'wg0', WG_CONF], check=True)
+
+# 4) Post‑up NAT rules (env var)
+if post_up := environ.get('WG_POST_UP'):
     Popen(post_up, shell=True)
 
-# 3) Start BoringTun CLI in foreground (inherits FD 4)
+# 5) Launch BoringTun CLI as userspace daemon
 environ.setdefault('WG_SUDO', '1')
-Popen(
-    ['/usr/local/bin/boringtun-cli', '--foreground', 'wg0'],
-    close_fds=False
-)
+Popen(['/usr/local/bin/boringtun-cli', '--foreground', 'wg0'],
+      close_fds=False)
+
 sleep(0.2)
 
 
