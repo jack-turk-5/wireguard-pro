@@ -20,7 +20,7 @@ def create_app():
     with flask_app.app_context():
         init_db()
 
-    @app.route('/api/peers/new', methods=['POST'])
+    @flask_app.route('/api/peers/new', methods=['POST'])
     def api_create_peer():
         """
         Create a new WireGuard peer
@@ -39,7 +39,7 @@ def create_app():
         peer = create_peer(data.get('days_valid', 7))
         return jsonify(peer)
 
-    @app.route('/api/peers/delete', methods=['POST'])
+    @flask_app.route('/api/peers/delete', methods=['POST'])
     def api_delete_peer():
         """
         Delete a WireGuard peer by PublicKey
@@ -58,7 +58,7 @@ def create_app():
         success = delete_peer(data['public_key'])
         return jsonify({"deleted": success})
 
-    @app.route('/api/peers/list', methods=['GET'])
+    @flask_app.route('/api/peers/list', methods=['GET'])
     def api_list_peers():
         """
         List all WireGuard peers
@@ -69,7 +69,7 @@ def create_app():
         """
         return jsonify(list_peers())
 
-    @app.route('/api/peers/stats', methods=['GET'])
+    @flask_app.route('/api/peers/stats', methods=['GET'])
     def api_peer_stats():
         """
         Live WireGuard peer stats
@@ -80,7 +80,7 @@ def create_app():
         """
         return jsonify(peer_stats())
 
-    @app.route('/serverinfo', methods=['GET'])
+    @flask_app.route('/serverinfo', methods=['GET'])
     def server_info():
         try:
             with open('/proc/uptime', 'r') as f:
@@ -98,7 +98,7 @@ def create_app():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
-    @app.route('/')
+    @flask_app.route('/')
     def serve_ui():
         return render_template('index.html')
 
