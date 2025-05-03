@@ -62,7 +62,7 @@ Popen([
 Popen([
     'socat',
     '-u',
-    'UDP-RECVFROM:51820,reuseaddr,reuseport,fork',
+    'UDP4-RECVFROM:51820,bind=127.0.0.1,reuseaddr,fork',
     'FD:4'
 ], close_fds=False)
 
