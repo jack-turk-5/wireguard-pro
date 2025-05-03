@@ -36,9 +36,12 @@ def create_peer(days_valid=7):
 def delete_peer(public_key):
     success = remove_peer_db(public_key)
     if success:
-        # you can keep using sed or switch to a Python‑based removal
-        run(["sed", "-i", f"/{public_key}/,+2d", "/etc/wireguard/wg0.conf"])
-        reload_wireguard()
+        # 1) Remove stanza from disk
+        run(["sed", "-i", f"/{public_key}/,+2d", "/etc/wireguard/wg0.conf"], check=True)
+        # 2) Tell kernel/userspace to drop that peer
+        run(["wg", "set", "wg0", "peer", public_key, "remove"], check=True)
+        # 3) Reload entire config (to ensure consistency)
+        run(["wg", "setconf", "wg0", "/etc/wireguard/wg0.conf"], check=True)
     return success
 
 def list_peers():
