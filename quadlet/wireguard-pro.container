@@ -6,7 +6,7 @@ After=wireguard-pro.socket
 [Container]
 Image=localhost/wireguard/wireguard-pro:latest
 ContainerName=wireguard-pro
-Network=none
+Network=wireguard-pro.network
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=wg-pro-data:/data:Z,U
 Secret=wg-privatekey
