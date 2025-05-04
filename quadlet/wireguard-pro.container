@@ -10,8 +10,8 @@ Network=wireguard-pro.network
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=wg-pro-data:/data:Z,U
 Secret=wg-privatekey
-
 PodmanArgs=--preserve-fds=2
+
 AddCapability=CAP_NET_ADMIN CAP_NET_RAW CAP_SETUID CAP_SETGID
 AddDevice=/dev/net/tun:/dev/net/tun:rwm
 Sysctl=net.ipv4.ip_forward=1
@@ -19,14 +19,17 @@ Sysctl=net.ipv6.conf.all.forwarding=1
 
 Environment=WG_SUDO=1
 Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
-Environment="WG_POST_UP=iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o tap+ -j MASQUERADE;iptables -I FORWARD -i wg0 -o tap+ -j ACCEPT;iptables -I FORWARD -i tap+ -o wg0 -j ACCEPT;iptables -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT;"
 Environment=WG_ENDPOINT=vpn.jackturk.dev:51820
-PodmanArgs=--preserve-fds=2
 Environment=LISTEN_FDS=2
 Environment=LISTEN_PID=1
 
 [Service]
-ExecStopPre=/usr/bin/podman exec wireguard-pro iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o tap+ -j MASQUERADE;iptables -D FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT;iptables -D FORWARD -i tap+ -o wg0 -j ACCEPT;iptables -D FORWARD -i wg0 -o tap+ -j ACCEPT;
+ExecStartPre=/usr/bin/iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+ExecStartPre=/usr/bin/iptables -A FORWARD -i wg0 -o eth0 -j ACCEPT
+ExecStartPre=/usr/bin/iptables -A FORWARD -i eth0 -o wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+ExecStopPost=/usr/bin/iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+ExecStopPost=/usr/bin/iptables -D FORWARD -i wg0 -o eth0 -j ACCEPT
+ExecStopPost=/usr/bin/iptables -D FORWARD -i eth0 -o wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
 [Install]
 WantedBy=default.target
