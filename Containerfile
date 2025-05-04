@@ -43,7 +43,7 @@ RUN apt-get update && \
 # 5. Install runtime dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      bash wireguard-tools socat iproute2 nftables \
+    wireguard-tools iproute2 nftables \
     && rm -rf /var/lib/apt/lists/*
 
 # 6. Copy BoringTun, Python venv, app code & bootstrap

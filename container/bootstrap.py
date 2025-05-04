@@ -42,20 +42,6 @@ run(['ip', 'addr', 'flush', 'dev', 'wg0'], check=False)
 # 4) Now bring up clean
 run(['wg-quick', 'up', 'wg0'], check=True)
 
-Popen([
-    'socat',
-    '-u', '-d', '-d',
-    'FD:4',
-    'UDP:127.0.0.1:51820'
-], close_fds=False)
-
-Popen([
-    'socat',
-    '-u', '-d', '-d',
-    'UDP-CONNECT:127.0.0.1:51820',
-    'FD:4'
-], close_fds=False)
-
 # 4) Launch Gunicorn in background
 Popen([
     '/venv/bin/gunicorn',
