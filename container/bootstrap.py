@@ -69,7 +69,11 @@ Popen([
 ])
 
 run(
-    ["/add-iptables.sh"],
+    [
+        "nft",
+        "-f",
+        "/etc/nftables.conf"
+    ],
     check=True
 )
 

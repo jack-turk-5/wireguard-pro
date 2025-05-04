@@ -43,7 +43,7 @@ RUN apt-get update && \
 # 5. Install runtime dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      bash wireguard-tools socat iproute2 iptables \
+      bash wireguard-tools socat iproute2 nftables \
     && rm -rf /var/lib/apt/lists/*
 
 # 6. Copy BoringTun, Python venv, app code & bootstrap
@@ -51,10 +51,11 @@ COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
 COPY --from=builder /venv /venv
 WORKDIR /app
 COPY src/ .
-COPY container/bootstrap.py container/add-iptables.sh container/remove-iptables.sh /
+COPY container/bootstrap.py /
+COPY container/nftables.conf /etc/nftables.conf
 
 ENV PATH="/venv/bin:$PATH"
-RUN chmod +x /bootstrap.py /add-iptables.sh /remove-iptables.sh
+RUN chmod +x /bootstrap.py
 
 # 7. Copy Caddy config
 COPY container/Caddyfile /etc/caddy/Caddyfile
