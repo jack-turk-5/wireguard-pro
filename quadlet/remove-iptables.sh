@@ -1,4 +1,4 @@
-#!/user/bin/env sh
+#!/usr/bin/env sh
 
 /usr/bin/podman exec wireguard-pro \
 /usr/sbin/iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE &&
