@@ -24,12 +24,18 @@ Environment=LISTEN_FDS=2
 Environment=LISTEN_PID=1
 
 [Service]
-ExecStartPre=/usr/sbin/iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
-ExecStartPre=/usr/sbin/iptables -A FORWARD -i wg0 -o eth0 -j ACCEPT
-ExecStartPre=/usr/sbin/iptables -A FORWARD -i eth0 -o wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-ExecStopPost=/usr/sbin/iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
-ExecStopPost=/usr/sbin/iptables -D FORWARD -i wg0 -o eth0 -j ACCEPT
-ExecStopPost=/usr/sbin/iptables -D FORWARD -i eth0 -o wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+ExecStartPost=/usr/bin/podman exec wireguard-pro \
+   /usr/sbin/iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE :contentReference[oaicite:3]{index=3}
+ ExecStartPost=/usr/bin/podman exec wireguard-pro \
+   /usr/sbin/iptables -A FORWARD -i wg0 -o eth0 -j ACCEPT
+ ExecStartPost=/usr/bin/podman exec wireguard-pro \
+   /usr/sbin/iptables -A FORWARD -i eth0 -o wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+ExecStopPre=/usr/bin/podman exec wireguard-pro \
+  /usr/sbin/iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+ExecStopPre=/usr/bin/podman exec wireguard-pro \
+  /usr/sbin/iptables -D FORWARD -i wg0 -o eth0 -j ACCEPT
+ExecStopPre=/usr/bin/podman exec wireguard-pro \
+  /usr/sbin/iptables -D FORWARD -i eth0 -o wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
 [Install]
 WantedBy=default.target
