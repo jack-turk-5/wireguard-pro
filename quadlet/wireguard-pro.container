@@ -22,18 +22,8 @@ Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
 Environment=WG_ENDPOINT=vpn.jackturk.dev:51820
 
 [Service]
-ExecStartPost=/usr/bin/podman exec wireguard-pro \
-   /usr/sbin/iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
- ExecStartPost=/usr/bin/podman exec wireguard-pro \
-   /usr/sbin/iptables -A FORWARD -i wg0 -o eth0 -j ACCEPT
- ExecStartPost=/usr/bin/podman exec wireguard-pro \
-   /usr/sbin/iptables -A FORWARD -i eth0 -o wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-ExecStopPre=/usr/bin/podman exec wireguard-pro \
-  /usr/sbin/iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
-ExecStopPre=/usr/bin/podman exec wireguard-pro \
-  /usr/sbin/iptables -D FORWARD -i wg0 -o eth0 -j ACCEPT
-ExecStopPre=/usr/bin/podman exec wireguard-pro \
-  /usr/sbin/iptables -D FORWARD -i eth0 -o wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+ExecStartPost=/home/podman/wireguard-pro/quadlet/add-iptables.sh
+ExecStopPre=/home/podman/wireguard-pro/quadlet/remove-iptables.sh
 
 [Install]
 WantedBy=default.target
