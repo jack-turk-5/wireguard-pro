@@ -68,6 +68,13 @@ Popen([
     'app:app'
 ])
 
+run(
+    ["/add-iptables.sh"],
+    check=True
+)
+
+
+
 # Step 5: Hand off to Caddy as PID 1
 caddy_path = which('caddy')  # should resolve to /usr/bin/caddy
 execv(caddy_path,

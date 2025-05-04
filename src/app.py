@@ -1,4 +1,7 @@
+from signal import signal, SIGINT, SIGTERM
 from time import strftime, gmtime
+from sys import exit
+from subprocess import run
 from os import getloadavg, environ
 from flask import Flask, jsonify, request, render_template
 from scheduler import scheduler
@@ -111,6 +114,16 @@ def create_app():
 
     return flask_app
 
+def handle_shutdown(signum, frame):
+    run(
+        ["/remove-iptables.sh"],
+        check=True
+    )
+    exit(0)
+
 app = create_app()
+signal(SIGTERM, handle_shutdown)
+signal(SIGINT, handle_shutdown)
+
 if __name__ == "__main__":
     app.run()

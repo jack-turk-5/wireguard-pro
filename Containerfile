@@ -46,20 +46,15 @@ RUN apt-get update && \
       bash wireguard-tools socat iproute2 iptables \
     && rm -rf /var/lib/apt/lists/*
 
-ENV WG_POST_UP="iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE && \
-                iptables -I FORWARD -i wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT"
-ENV WG_POST_DOWN="iptables -t nat -D POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE && \
-                  iptables -D FORWARD -i wg0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT"
-
 # 6. Copy BoringTun, Python venv, app code & bootstrap
 COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
 COPY --from=builder /venv /venv
 WORKDIR /app
 COPY src/ .
-COPY container/bootstrap.py /bootstrap.py
+COPY container/bootstrap.py container/add-iptables.sh container/remove-iptables.sh /
 
 ENV PATH="/venv/bin:$PATH"
-RUN chmod +x /bootstrap.py
+RUN chmod +x /bootstrap.py /add-iptables.sh /remove-iptables.sh
 
 # 7. Copy Caddy config
 COPY container/Caddyfile /etc/caddy/Caddyfile
