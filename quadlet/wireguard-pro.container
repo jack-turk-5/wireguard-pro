@@ -25,7 +25,7 @@ Environment=LISTEN_PID=1
 
 [Service]
 ExecStartPost=/usr/bin/podman exec wireguard-pro \
-   /usr/sbin/iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE :contentReference[oaicite:3]{index=3}
+   /usr/sbin/iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
  ExecStartPost=/usr/bin/podman exec wireguard-pro \
    /usr/sbin/iptables -A FORWARD -i wg0 -o eth0 -j ACCEPT
  ExecStartPost=/usr/bin/podman exec wireguard-pro \
