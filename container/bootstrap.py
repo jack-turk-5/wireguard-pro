@@ -63,6 +63,16 @@ run(
     check=True
 )
 
+run([
+        "ethtool",
+        "-K",
+        "tap0",
+        "gro", "off",
+        "gso", "off",
+        "tso", "off"
+     ],
+    check=True)
+
 
 
 # Step 5: Hand off to Caddy as PID 1
