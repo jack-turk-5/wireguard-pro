@@ -3,6 +3,8 @@ from os import path, makedirs, execv
 from subprocess import check_output, Popen, PIPE, run
 from shutil import which
 
+
+# Load or create public and private keys for server
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
 if not path.isfile(WG_CONF):
     makedirs(path.dirname(WG_CONF), exist_ok=True)
@@ -21,8 +23,7 @@ if not path.isfile(WG_CONF):
     if proc.returncode != 0:
         raise RuntimeError(f"wg pubkey failed: {err_bytes.decode()}")
     pub = pub_bytes.decode().strip()
-    # write a WG_CONF that BoringTun will actually parse
-    # assemble exactly the lines you want
+    # This is super sensitive
     config_lines = [
         "[Interface]",
         f"PrivateKey = {priv}",
@@ -33,16 +34,16 @@ if not path.isfile(WG_CONF):
     with open(WG_CONF, 'w', newline='\n') as f:
         f.write("\n".join(config_lines) + "\n")
 
-# 1) Best‑effort down (may skip deletion if not a kernel WG iface)
+# Best‑effort down (may skip deletion if not a kernel WG iface)
 run(['wg-quick', 'down', 'wg0'], check=False)
-# 2) Force‑delete any wg0 link (works for both TUN and wireguard types)
+# Force‑delete any old wg0 link (works for both TUN and wireguard types)
 run(['ip', 'link', 'delete', 'wg0'], check=False)
-# 3) Flush leftover IP addresses
+# Flush leftover IP addresses
 run(['ip', 'addr', 'flush', 'dev', 'wg0'], check=False)
-# 4) Now bring up clean
+# Now bring up clean wg0
 run(['wg-quick', 'up', 'wg0'], check=True)
 
-# 4) Launch Gunicorn in background
+# Launch Gunicorn in background
 Popen([
     '/venv/bin/gunicorn',
     '--preload',
@@ -54,6 +55,7 @@ Popen([
     'app:app'
 ])
 
+# Add nftables
 run(
     [
         "nft",
@@ -63,6 +65,7 @@ run(
     check=True
 )
 
+# Optimize tap0 (slirp4netns interface)
 run([
         "ethtool",
         "-K",
@@ -75,8 +78,8 @@ run([
 
 
 
-# Step 5: Hand off to Caddy as PID 1
-caddy_path = which('caddy')  # should resolve to /usr/bin/caddy
+# Hand off to Caddy as PID 1
+caddy_path = which('caddy')
 execv(caddy_path,
          [
              'caddy',

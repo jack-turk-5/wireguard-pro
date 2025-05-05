@@ -3,6 +3,7 @@
     <words>
       <w>boringtun</w>
       <w>caddyfile</w>
+      <w>cflags</w>
       <w>priv</w>
       <w>privatekey</w>
       <w>reuseaddr</w>
