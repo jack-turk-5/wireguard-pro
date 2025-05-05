@@ -14,22 +14,21 @@ document.addEventListener('DOMContentLoaded', function() {
   // 1) Single‑sign‑in wrapper
   // -------------------------
   async function doLogin() {
-    const user = prompt("Username:");
-    const pass = prompt("Password:");
-    const creds = btoa(`${user}:${pass}`);
-
-    const resp = await fetch('/login', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Basic ' + creds,
-        'Content-Type': 'application/json'
+    while (true) {
+      const user = prompt("Username:");
+      const pass = prompt("Password:");
+      const resp = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Authorization':'Basic '+btoa(user+':'+pass) }
+      });
+      if (resp.ok) {
+        const { token } = await resp.json();
+        apiToken = token;
+        break;    // success → exit loop
       }
-    });
-
-    if (!resp.ok) {
-      alert("Login failed");
-      throw new Error("Authentication failed");
+      alert("Login failed, please try again.");  // failure → repeat
     }
+  }
     const { token } = await resp.json();
     apiToken = token;
   }
