@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-lcrypto -pthread
+CFLAGS=-lcrypto -lssl -pthread
 
 all: benchmark-copy benchmark-crypto benchmark-ctxswitch benchmark-malloc benchmark-syscall
 
