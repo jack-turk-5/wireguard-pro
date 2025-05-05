@@ -6,7 +6,7 @@ from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
 from utils import get_server_pubkey
-from db import init_db, add_user_db, db_conn
+from db import init_db, add_user_db, db_conn, verify_user_db
 
 
 def create_app():
@@ -23,10 +23,7 @@ def create_app():
     scheduler.init_app(flask_app)
     scheduler.start()
 
-    # Initiate and inject Db into application context
-    with flask_app.app_context():
-        init_db()
-        # create tables if not present
+    # create tables if not present
     with flask_app.app_context():
         init_db()
 
@@ -45,9 +42,10 @@ def create_app():
                 print("⚠️Could not bootstrap default user (already exists).")
 
     auth = HTTPBasicAuth()
-    for rule in flask_app.url_map.iter_rules():
-        view = flask_app.view_functions[rule.endpoint]
-        flask_app.view_functions[rule.endpoint] = auth.login_required(view)
+    @auth.verify_password
+    def verify(username, password):
+        # return True if verify_user_db says OK
+        return verify_user_db(username, password)
 
     @flask_app.route('/api/peers/new', methods=['POST'])
     def api_create_peer():
@@ -133,6 +131,11 @@ def create_app():
             'index.html',
             server_public_key=flask_app.config['WG_SERVER_PUBKEY'],
             server_endpoint=flask_app.config['WG_ENDPOINT'])
+
+    # Guard endpoints
+    for rule in flask_app.url_map.iter_rules():
+        view = flask_app.view_functions[rule.endpoint]
+        flask_app.view_functions[rule.endpoint] = auth.login_required(view)
 
     return flask_app
 
