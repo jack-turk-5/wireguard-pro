@@ -51,6 +51,8 @@ def create_app():
         init_db()
         admin_user = environ.get('ADMIN_USER').strip()
         admin_pass = environ.get('ADMIN_PASS').strip()
+        if not admin_user or not admin_pass:
+            raise RuntimeError("ADMIN_USER and ADMIN_PASS must both be set")
         add_or_update_user_db(admin_user, admin_pass)
         print(f"🛡 Ensured user `{admin_user}` with provided password.")
 
