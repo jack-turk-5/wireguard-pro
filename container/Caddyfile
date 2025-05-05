@@ -8,6 +8,21 @@
         protocols h1
     }
     encode gzip
+    # 1) Match CORS preflight
+    @preflight {
+        method OPTIONS
+        path   /login* /api/* /serverinfo
+    }
+
+    # 2) Attach CORS response headers for OPTIONS
+    header @preflight Access-Control-Allow-Origin "{>Origin}"
+    header @preflight Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    header @preflight Access-Control-Allow-Headers "Authorization, Content-Type"
+    header @preflight Access-Control-Allow-Credentials "true"
+
+    # 3) Finally respond 204 to the preflight
+    respond @preflight 204
+
     reverse_proxy 0.0.0.0:51819 {
        header_up Host {host}
        header_up X-Real-IP {remote}
