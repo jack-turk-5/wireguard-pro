@@ -4,3 +4,4 @@ Flask-APScheduler
 Flask-HttpAuth
 flasgger
 gunicorn
+itsdangerous
