@@ -35,6 +35,7 @@ def create_app():
         return verify_user_db(username, password)
 
     @flask_app.route('/api/peers/new', methods=['POST'])
+    @auth.login_required
     def api_create_peer():
         """
         Create a new WireGuard peer
@@ -54,6 +55,7 @@ def create_app():
         return jsonify(peer)
 
     @flask_app.route('/api/peers/delete', methods=['POST'])
+    @auth.login_required
     def api_delete_peer():
         """
         Delete a WireGuard peer by PublicKey
@@ -73,6 +75,7 @@ def create_app():
         return jsonify({"deleted": success})
 
     @flask_app.route('/api/peers/list', methods=['GET'])
+    @auth.login_required
     def api_list_peers():
         """
         List all WireGuard peers
@@ -84,6 +87,7 @@ def create_app():
         return jsonify(list_peers())
 
     @flask_app.route('/api/peers/stats', methods=['GET'])
+    @auth.login_required
     def api_peer_stats():
         """
         Live WireGuard peer stats
@@ -118,11 +122,6 @@ def create_app():
             'index.html',
             server_public_key=flask_app.config['WG_SERVER_PUBKEY'],
             server_endpoint=flask_app.config['WG_ENDPOINT'])
-
-    # Guard endpoints
-    for rule in flask_app.url_map.iter_rules():
-        view = flask_app.view_functions[rule.endpoint]
-        flask_app.view_functions[rule.endpoint] = auth.login_required(view)
 
     return flask_app
 
