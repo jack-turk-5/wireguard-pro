@@ -1,5 +1,3 @@
---- FILE: QUICKSTART.md ---
-
 # 🚀 WireGuard Pro — Quickstart Guide
 
 ### 🛠 Requirements:
