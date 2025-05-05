@@ -82,6 +82,27 @@ def add_user_db(username: str, password: str) -> bool:
         # username already exists
         return False
 
+def add_or_update_user_db(username: str, password: str) -> None:
+    """
+    Inserts a new user or, if they already exist, updates their password_hash.
+    """
+    pwd_hash = hashpw(password.encode('utf-8'), gensalt())
+    conn = db_conn()
+    try:
+        conn.execute(
+            "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+            (username, pwd_hash)
+        )
+    except IntegrityError:
+        # user exists → update their password
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE username = ?",
+            (pwd_hash, username)
+        )
+    finally:
+        conn.commit()
+        conn.close()
+
 def verify_user_db(username: str, password: str) -> bool:
     """
     Fetches the stored hash for `username` and verifies `password`.
