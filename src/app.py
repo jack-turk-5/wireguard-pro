@@ -6,7 +6,7 @@ from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
 from utils import get_server_pubkey
-from db import init_db, add_user_db, db_conn, verify_user_db, add_or_update_user_db
+from db import init_db, verify_user_db, add_or_update_user_db
 
 
 def create_app():
