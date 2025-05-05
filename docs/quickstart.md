@@ -4,8 +4,8 @@
 - ✅ Podman (rootless)
 - ✅ Systemd user services enabled
 - ✅ WireGuard installed on host (for wg syncconf)
-- ✅ Rootless networking (slirp4netns or pasta)
-- ✅ Linux server (Debian/Ubuntu recommended)
+- ✅ Rootless networking (slirp4netns)
+- ✅ Linux server (Debian/Ubuntu recommended, others untested)
 
 ---
 
@@ -23,8 +23,11 @@ sudo apk add wireguard-tools
 # 📦 2. Clone the Project and Deploy
 
 ```bash
-git clone https://github.com/yourusername/wireguard-pro.git
+git clone https://github.com/jack-turk-5/wireguard-pro.git
 cd wireguard-pro
+# Set at least ADMIN_USER, ADMIN_PASS, and WG_ENDPOINT at
+# ~/.config/wireguard-pro/env for initial startup configuration
+# You can remove ADMIN_USER and ADMIN_PASS after the first run
 make deploy
 ```
 
@@ -34,7 +37,7 @@ That's it! 🎯
 
 # 🌐 3. Access the Dashboard
 
-- Visit `http://your-server-ip:10086/`
+- Visit `http://ip:51819/`
 - Manage peers, view live stats, toggle dark mode, and more!
 
 ---
@@ -58,7 +61,7 @@ Check out the [Makefile](../Makefile) for more details 📖
 
 # 📜 API Docs (Swagger UI)
 
-- Visit: `http://your-server-ip:51819/apidocs/`
+- Visit: `http(s)://ip:51819/apidocs/`
 - Full auto-generated API explorer (add/delete/list peers live!)
 
 ---
@@ -82,7 +85,6 @@ Deployed automatically by `make start`.
 | Chart.js | RX/TX traffic graphs |
 | Dark Mode | User toggle |
 | Server Info | Uptime/load metrics |
-| Socket Activation | Rootless startup |
 
 ---
 
@@ -106,4 +108,4 @@ make deploy
 
 # 🏆 Congratulations!
 
-You now have one of the **best** WireGuard dashboards available — open source, rootless, live stats, QR-ready, dark-mode powered, and production-grade. 🚀
+You now have one of the **best** WireGuard dashboards available — open source, rootless, and production-grade. 🚀

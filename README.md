@@ -1,9 +1,9 @@
 # WireGuard Pro 🛡️
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/wireguard-pro/actions)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/jack-turk-5/wireguard-pro/actions)
+[![License](https://img.shields.io/badge/license-BSD-blue)](LICENSE)
 [![Rootless-Podman](https://img.shields.io/badge/podman-rootless-blueviolet)](https://podman.io/)
-[![API Docs](https://img.shields.io/badge/docs-Swagger-informational)](http://your-server-ip:10086/apidocs/)
+[![API Docs](https://img.shields.io/badge/docs-Swagger-informational)](http(s)://ip:51819/apidocs/)
 
 🚀 **Rootless, Dynamic, API-driven WireGuard VPN Dashboard**  
 🌐 **Socket Activated via Systemd Quadlet**  
@@ -15,27 +15,25 @@
 
 ## 🌟 Features
 
-- Rootless Podman deployment (no root container needed)
+- 100% Rootless Podman deployment
 - Dynamic peer creation & deletion via API
 - Swagger UI API documentation
-- Auto-expiring peers support
+- Auto-expiring peers
 - Live VPN traffic graphs (RX/TX)
 - QR Code generator for mobile VPN setup
-- Dark Mode toggle
 - Server uptime/load metrics display
-- Fully socket-activated (super fast startup)
 
 ---
 
 ## 📦 Quickstart
 
 ```bash
-git clone https://github.com/yourusername/wireguard-pro.git
+git clone https://github.com/jack-turk-5/wireguard-pro.git
 cd wireguard-pro
 make deploy
 ```
 
-Visit `http://your-server-ip:51819/` to open the dashboard!
+Visit `http(s)://ip:51819/` to open the dashboard!
 
 For setup instructions: see [quickstart.md](docs/quickstart.md)
 

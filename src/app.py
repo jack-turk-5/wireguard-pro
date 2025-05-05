@@ -1,28 +1,49 @@
 from time import strftime, gmtime
 from os import getloadavg, environ
 from flask import Flask, jsonify, request, render_template
+from flask_httpauth import HTTPBasicAuth
 from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
 from utils import get_server_pubkey
-from db import init_db
+from db import init_db, add_user_db, db_conn
+
 
 def create_app():
     flask_app = Flask(__name__, instance_relative_config=True)
     Swagger(flask_app)
+
     flask_app.config['JSON_SORT_KEYS'] = False
-    # somewhere in create_app(), before your route definitions:
     flask_app.config['WG_SERVER_PUBKEY'] = get_server_pubkey()
-    # and set your endpoint however you prefer, e.g.:
     flask_app.config['WG_ENDPOINT'] = environ.get('WG_ENDPOINT')
 
-    # set up your scheduler
     scheduler.init_app(flask_app)
     scheduler.start()
 
-    # **guaranteed** to be in an app context
     with flask_app.app_context():
         init_db()
+        # create tables if not present
+    with flask_app.app_context():
+        init_db()
+
+        # --- BOOTSTRAP DEFAULT USER --- only if no users in table
+        conn = db_conn()
+        count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        conn.close()
+
+        if count == 0:
+            user = environ.get('ADMIN_USER', 'admin')
+            pwd = environ.get('ADMIN_PASS', 'changeme')
+            added = add_user_db(user, pwd)
+            if added:
+                print(f"🛡Bootstrapped default user: {user}")
+            else:
+                print("⚠️Could not bootstrap default user (already exists).")
+
+    auth = HTTPBasicAuth()
+    for rule in flask_app.url_map.iter_rules():
+        view = flask_app.view_functions[rule.endpoint]
+        flask_app.view_functions[rule.endpoint] = auth.login_required(view)
 
     @flask_app.route('/api/peers/new', methods=['POST'])
     def api_create_peer():
@@ -110,6 +131,7 @@ def create_app():
             server_endpoint=flask_app.config['WG_ENDPOINT'])
 
     return flask_app
+
 
 app = create_app()
 if __name__ == "__main__":
