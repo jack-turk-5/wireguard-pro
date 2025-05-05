@@ -123,7 +123,6 @@ def create_app():
             return jsonify({"error": str(e)}), 500
 
     @app.route('/')
-    @token_auth.login_required
     def serve_ui():
         return render_template('index.html',
                                server_public_key=app.config['WG_SERVER_PUBKEY'],
