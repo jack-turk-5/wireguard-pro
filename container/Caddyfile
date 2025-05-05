@@ -3,29 +3,29 @@
     auto_https off
 }
 :51819 {
-    # Use the inherited systemd socket on FD 3
     bind fd/3 {
-        protocols h1
+    protocols h1
     }
     encode gzip
-    # 1) Match CORS preflight
+
+    # 1) Match all CORS preflight OPTIONS
     @preflight {
-        method OPTIONS
-        path   /login* /api/* /serverinfo
+    method OPTIONS
+    path   /login* /api/* /serverinfo
     }
 
-    # 2) Attach CORS response headers for OPTIONS
-    header @preflight Access-Control-Allow-Origin "{>Origin}"
-    header @preflight Access-Control-Allow-Methods "GET, POST, OPTIONS"
-    header @preflight Access-Control-Allow-Headers "Authorization, Content-Type"
-    header @preflight Access-Control-Allow-Credentials "true"
+    # 2) Remove inner ETag / disable caching
+    header @preflight -ETag
+    header @preflight Cache-Control "no-store, no-cache"
 
-    # 3) Finally respond 204 to the preflight
+    # 3) Reply always with 204
     respond @preflight 204
 
+    # 4) Your actual proxy to the Flask app
     reverse_proxy 0.0.0.0:51819 {
-       header_up Host {host}
-       header_up X-Real-IP {remote}
-       header_up Authorization {>Authorization}
+    header_up Host          {host}
+    header_up X-Real-IP     {remote}
+    header_up Authorization {>Authorization}
+    header_up Origin        {>Origin}
     }
 }
