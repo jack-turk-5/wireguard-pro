@@ -27,7 +27,6 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
         script: |
-          cd ~/wg-dashboard-ultrapro
+          cd ~/wireguard-pro
           git pull origin main
-          make build
-          make reload
+          make upgrade

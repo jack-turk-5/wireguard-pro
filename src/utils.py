@@ -2,8 +2,10 @@ from db import get_all_peers
 from subprocess import check_output, run, PIPE
 
 
-# 1. Generate a private/public keypair
 def generate_keypair():
+    """
+    Generate a private/public keypair
+    """
     private_key = check_output(["wg", "genkey"]).decode().strip()
     res = run(
         args=["wg", "pubkey"],
@@ -15,9 +17,10 @@ def generate_keypair():
     public_key = res.stdout.strip()
     return private_key, public_key
 
-
-# 2. Derive server public key from stored private key
 def get_server_pubkey():
+    """
+    Derive server public key from stored private key
+    """
     priv = open('/etc/wireguard/privatekey').read().strip()
     proc = run(
         ['wg', 'pubkey'],
@@ -27,9 +30,10 @@ def get_server_pubkey():
     )
     return proc.stdout.decode().strip()
 
-
-# 3. Allocate the next free IPv4/IPv6 addresses
 def next_available_ip():
+    """
+    Allocate the next free IPv4/IPv6 addresses
+    """
     peers = get_all_peers()
     used_v4 = {p['ipv4_address'] for p in peers}
     used_v6 = {p['ipv6_address'] for p in peers}
@@ -53,8 +57,10 @@ def next_available_ip():
     return ipv4, ipv6
 
 
-# 4. Append a peer to the wg0.conf file
 def append_peer_to_wgconf(public_key, ipv4, ipv6):
+    """
+    Append a peer to the wg0.conf file
+    """
     with open("/etc/wireguard/wg0.conf", "a") as f:
         lines = [
             "[Peer]",
@@ -63,9 +69,10 @@ def append_peer_to_wgconf(public_key, ipv4, ipv6):
         ]
         f.write("\n".join(lines) + "\n")
 
-
-# 5. Reload peers dynamically (strip + syncconf)
 def reload_wireguard():
+    """
+    Reload peers dynamically (strip + syncconf)
+    """
     strip = run(["wg-quick", "strip", "wg0"], stdout=PIPE, check=True, text=True)
     with open("/run/wg0.peers.conf", "w") as f:
         f.write(strip.stdout)

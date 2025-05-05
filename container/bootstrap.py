@@ -23,7 +23,7 @@ if not path.isfile(WG_CONF):
     if proc.returncode != 0:
         raise RuntimeError(f"wg pubkey failed: {err_bytes.decode()}")
     pub = pub_bytes.decode().strip()
-    # This is super sensitive
+    # This syntax is mega sensitive, don't touch unless necessary
     config_lines = [
         "[Interface]",
         f"PrivateKey = {priv}",
@@ -55,7 +55,7 @@ Popen([
     'app:app'
 ])
 
-# Add nftables
+# Bring up nftables firewall rules
 run(
     [
         "nft",
@@ -65,7 +65,7 @@ run(
     check=True
 )
 
-# Optimize tap0 (slirp4netns interface)
+# Optimize tap0 (slirp4netns generated interface)
 run([
         "ethtool",
         "-K",
@@ -75,8 +75,6 @@ run([
         "ufo", "on"
      ],
     check=True)
-
-
 
 # Hand off to Caddy as PID 1
 caddy_path = which('caddy')

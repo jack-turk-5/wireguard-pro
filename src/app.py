@@ -8,19 +8,20 @@ from utils import get_server_pubkey
 from db import init_db
 
 def create_app():
+    # Create application and collect environment variables
     flask_app = Flask(__name__, instance_relative_config=True)
-    Swagger(flask_app)
     flask_app.config['JSON_SORT_KEYS'] = False
-    # somewhere in create_app(), before your route definitions:
     flask_app.config['WG_SERVER_PUBKEY'] = get_server_pubkey()
-    # and set your endpoint however you prefer, e.g.:
     flask_app.config['WG_ENDPOINT'] = environ.get('WG_ENDPOINT')
 
-    # set up your scheduler
+    # Start Swagger for API documentation
+    Swagger(flask_app)
+
+    # Start scheduler
     scheduler.init_app(flask_app)
     scheduler.start()
 
-    # **guaranteed** to be in an app context
+    # Initiate and inject Db into application context
     with flask_app.app_context():
         init_db()
 
@@ -46,7 +47,7 @@ def create_app():
     @flask_app.route('/api/peers/delete', methods=['POST'])
     def api_delete_peer():
         """
-        Delete a WireGuard peer by PublicKey
+        Delete a WireGuard peer by Public Key
         ---
         parameters:
           - name: public_key
@@ -111,6 +112,8 @@ def create_app():
 
     return flask_app
 
+# Create application instance at module level
 app = create_app()
 if __name__ == "__main__":
+    # Run app, entrypoint logic in container/entrypoint.py
     app.run()

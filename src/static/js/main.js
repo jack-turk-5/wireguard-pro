@@ -1,5 +1,3 @@
-// static/js/main.js
-
 document.addEventListener('DOMContentLoaded', function() {
   // Element refs & peer storage
   const peersTable       = document.querySelector('#peersTable tbody');
@@ -21,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function applyPreferredMode() {
     if (darkModeMediaQ.matches) document.body.classList.add('darkmode');
-    else                          document.body.classList.remove('darkmode');
+    else document.body.classList.remove('darkmode');
     updateDarkModeUI();
   }
   darkModeMediaQ.addEventListener('change', applyPreferredMode);
@@ -75,13 +73,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const conf = `[Interface]
 PrivateKey = ${peer.private_key}
-Address    = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
-DNS        = ${WG_DNS}
+Address = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
+DNS = ${WG_DNS}
 
 [Peer]
-PublicKey           = ${WG_SERVER_PUBKEY}
-Endpoint            = ${WG_ENDPOINT}
-AllowedIPs          = 0.0.0.0/0, ::/0
+PublicKey = ${WG_SERVER_PUBKEY}
+Endpoint = ${WG_ENDPOINT}
+AllowedIPs  = 0.0.0.0/0, ::/0
 PersistentKeepalive = ${WG_KEEPALIVE}
 `;
     new QRCode(el, {
@@ -99,13 +97,13 @@ PersistentKeepalive = ${WG_KEEPALIVE}
 
     const conf = `[Interface]
 PrivateKey = ${peer.private_key}
-Address    = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
-DNS        = ${WG_DNS}
+Address = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
+DNS = ${WG_DNS}
 
 [Peer]
-PublicKey           = ${WG_SERVER_PUBKEY}
-Endpoint            = ${WG_ENDPOINT}
-AllowedIPs          = 0.0.0.0/0, ::/0
+PublicKey = ${WG_SERVER_PUBKEY}
+Endpoint = ${WG_ENDPOINT}
+AllowedIPs = 0.0.0.0/0, ::/0
 PersistentKeepalive = ${WG_KEEPALIVE}
 `;
 

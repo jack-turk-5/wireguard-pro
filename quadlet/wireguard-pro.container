@@ -10,7 +10,7 @@ Network=slirp4netns:mtu=1440,port_handler=slirp4netns,allow_host_loopback=false,
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=wg-pro-data:/data:Z,U
 Secret=wg-privatekey
-PodmanArgs=--preserve-fds=1 --annotation nerdctl/bypass4netns=true --publish=51820:51820/udp
+PodmanArgs=--preserve-fds=1 --publish=51820:51820/udp
 
 AddCapability=CAP_NET_ADMIN CAP_NET_RAW CAP_SETUID CAP_SETGID
 AddDevice=/dev/net/tun:/dev/net/tun:rwm

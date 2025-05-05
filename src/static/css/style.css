@@ -125,31 +125,30 @@ body {
     height: 160px;
     margin: auto;
   }
-  /* force the canvas inside to fill that box */
+  /* Force the canvas inside to fill that box */
   .qrcode canvas {
     width: 100% !important;
     height: 100% !important;
   }
 
-  /* make sure the cell is still a table‐cell and centers its contents */
+  /* Make sure the cell is still a table‐cell and centers its contents */
   td.actions {
-    vertical-align: middle;   /* vertical center */
-    text-align: center;       /* horizontal center fallback */
-    /* remove any display:flex here! */
+    vertical-align: middle;
+    text-align: center;
   }
 
-  /* flex‐stack only the inner container */
+  /* Fex‐stack only the inner container */
   .action-container {
     display: flex;
     flex-direction: column;
-    align-items: center;   /* horizontal centering of buttons */
-    justify-content: center;/* vertical centering *within* that div */
+    align-items: center;
+    justify-content: center;
     gap: 0.5rem;
   }
 
-  /* equal‑sized buttons */
+  /* Equal‑sized buttons */
   .action-container .action-btn {
-    width: 120px;           /* fixed width */
+    width: 120px;
     padding: 0.5em 1em;
     box-sizing: border-box;
   }

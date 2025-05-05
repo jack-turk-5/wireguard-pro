@@ -5,17 +5,16 @@
 [![Rootless-Podman](https://img.shields.io/badge/podman-rootless-blueviolet)](https://podman.io/)
 [![API Docs](https://img.shields.io/badge/docs-Swagger-informational)](http://your-server-ip:10086/apidocs/)
 
-🚀 **Rootless, Dynamic, API-driven WireGuard VPN Dashboard**  
+🚀 **Rootless, Dynamic, API-Driven WireGuard VPN Dashboard**  
 🌐 **Socket Activated via Systemd Quadlet**  
-⚡ **Live Traffic Stats, QR Codes, Dark Mode**  
-🧹 **Tiny final container (~22MB)**  
+⚡ **Live Traffic Stats, QR Codes, Dark Mode**
 🎯 **Zero Downtime Upgrades**
 
 ---
 
 ## 🌟 Features
 
-- Rootless Podman deployment (no root container needed)
+- 100% rootless Podman deployment
 - Dynamic peer creation & deletion via API
 - Swagger UI API documentation
 - Auto-expiring peers support
@@ -35,7 +34,7 @@ cd wireguard-pro
 make deploy
 ```
 
-Visit `http://your-server-ip:51819/` to open the dashboard!
+Visit `http(s)://ip:51819/` to open your new dashboard!
 
 For setup instructions: see [quickstart.md](docs/quickstart.md)
 
@@ -66,15 +65,16 @@ Example Endpoints:
 Secrets managed via Podman Secrets:
 
 ```bash
-podman secret create wg-pro-privatekey ./secrets/wg_privatekey
+podman secret create wg-privatekey ./secrets/wg_privatekey
 ```
+See [quickstart.md](docs/quickstart.md) for more info on secret generation
 
 ---
 
 ## 🔥 Pro Tips
 
 ```bash
-# Upgrade system safely
+# Upgrade system safely -- minimal (ms) downtime
 make upgrade
 
 # Watch logs
@@ -95,8 +95,7 @@ make deploy
 
 ## 🎯 Credits
 
-- Inspired by [donaldzou/WGDashboard](https://github.com/donaldzou/WGDashboard)
-- Turbocharged for rootless API-driven deployments 🚀
+- Inspired by [donaldzou/WGDashboard](https://github.com/donaldzou/WGDashboard) and [wg-easy/wg-easy](https://github.com/wg-easy/wg-easy)
 
 ---
 
@@ -104,7 +103,12 @@ make deploy
 
 ✅ Kubernetes Helm Chart  
 ✅ OAuth2.0 Integration
+✅ 2-Factor Authentication
 
 ---
 
 **Let's go Pro! 🚀**
+
+---
+
+**For Madelyn❤️**

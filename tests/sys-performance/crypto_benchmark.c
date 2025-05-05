@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 
-// Buffer size in bytes (e.g., 50 MiB)
+// Buffer size in bytes
 #define BUF_SIZE (50 * 1024 * 1024)
 
 static double elapsed_secs(struct timespec start, struct timespec end) {

@@ -2,19 +2,16 @@
 
 ### 🛠 Requirements:
 - ✅ Podman (rootless)
+- ✅ Wireguard Tools
 - ✅ Systemd user services enabled
-- ✅ WireGuard installed on host (for wg syncconf)
-- ✅ Rootless networking (slirp4netns or pasta)
-- ✅ Linux server (Debian/Ubuntu recommended)
+- ✅ Rootless networking (slirp4netns)
+- ✅ Linux server (Debian/Ubuntu recommended, others untested)
 
 ---
 
 # 1. Install WireGuard Tools from your Distro's Package Manager
 ```bash
-sudo apt install wireguard-tools
-sudo dnf install wireguard-tools
-sudo pacman -Syu wireguard-tools
-sudo apk add wireguard-tools
+sudo apt-get install wireguard-tools
 # etc...
 ```
 
@@ -23,7 +20,7 @@ sudo apk add wireguard-tools
 # 📦 2. Clone the Project and Deploy
 
 ```bash
-git clone https://github.com/yourusername/wireguard-pro.git
+git clone https://github.com/jack-turk-5/wireguard-pro.git
 cd wireguard-pro
 make deploy
 ```
@@ -34,7 +31,7 @@ That's it! 🎯
 
 # 🌐 3. Access the Dashboard
 
-- Visit `http://your-server-ip:10086/`
+- Visit `http(s)://ip:51819/`
 - Manage peers, view live stats, toggle dark mode, and more!
 
 ---
@@ -58,7 +55,7 @@ Check out the [Makefile](../Makefile) for more details 📖
 
 # 📜 API Docs (Swagger UI)
 
-- Visit: `http://your-server-ip:51819/apidocs/`
+- Visit: `http(s)://ip:51819/apidocs/`
 - Full auto-generated API explorer (add/delete/list peers live!)
 
 ---
@@ -89,8 +86,8 @@ Deployed automatically by `make start`.
 # 🔥 Pro Tips
 
 ```bash
-# Enable rootless Podman auto-start on boot
-loginctl enable-linger $(whoami)
+# Enable rootless Podman auto-start on boot (may need to be root)
+(sudo) loginctl enable-linger $(whoami)
 
 # Easy upgrade
 git pull
@@ -106,4 +103,4 @@ make deploy
 
 # 🏆 Congratulations!
 
-You now have one of the **best** WireGuard dashboards available — open source, rootless, live stats, QR-ready, dark-mode powered, and production-grade. 🚀
+You now have one of the **best** WireGuard dashboards available — open source, rootless, and production-grade. 🚀
