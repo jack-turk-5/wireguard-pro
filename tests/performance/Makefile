@@ -1,24 +1,24 @@
 CC=gcc
-CFLAGS=-03 -lcrypto -pthread
+CFLAGS=-lcrypto -pthread
 
-all: test-copy test-crypto test-ctxswitch test-malloc test-syscall
+all: benchmark-copy benchmark-crypto benchmark-ctxswitch benchmark-malloc benchmark-syscall
 
-test-copy:
+benchmark-copy:
 	$(CC) $(CFLAGS) copy_benchmark.c -o copy_benchmark
 	./copy_benchmark
 
-test-crypto:
+benchmark-crypto:
 	$(CC) $(CFLAGS) crypto_benchmark.c -o crypto_benchmark
 	./crypto_benchmark
 
-test-ctxswitch:
+benchmark-ctxswitch:
 	$(CC) $(CFLAGS) ctxswitch_benchmark.c -o ctxswitch_benchmark
 	./ctxswitch_benchmark
 
-test-malloc:
+benchmark-malloc:
 	$(CC) $(CFLAGS) malloc_benchmark.c -o malloc_benchmark
 	./malloc_benchmark
 
-test-syscall:
+benchmark-syscall:
 	$(CC) $(CFLAGS) syscall_benchmark.c -o syscall_benchmark
 	./syscall_benchmark
