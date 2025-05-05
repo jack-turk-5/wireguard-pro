@@ -6,7 +6,7 @@ from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
 from utils import get_server_pubkey
-from db import init_db, add_user_db, db_conn, verify_user_db
+from db import init_db, add_user_db, db_conn, verify_user_db, add_or_update_user_db
 
 
 def create_app():
@@ -26,20 +26,10 @@ def create_app():
     # create tables if not present
     with flask_app.app_context():
         init_db()
-
-        # --- BOOTSTRAP DEFAULT USER --- only if no users in table
-        conn = db_conn()
-        count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        conn.close()
-
-        if count == 0:
-            user = environ.get('ADMIN_USER', 'admin')
-            pwd = environ.get('ADMIN_PASS', 'changeme')
-            added = add_user_db(user, pwd)
-            if added:
-                print(f"🛡Bootstrapped default user: {user}")
-            else:
-                print("⚠️Could not bootstrap default user (already exists).")
+        user = environ.get('ADMIN_USER')
+        pwd  = environ.get('ADMIN_PASS')
+        add_or_update_user_db(user, pwd)
+        print(f"🛡Ensured user `{user}` exists with provided password.")
 
     auth = HTTPBasicAuth()
     @auth.verify_password

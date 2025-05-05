@@ -23,8 +23,7 @@ sudo apt-get install wireguard-tools
 git clone https://github.com/jack-turk-5/wireguard-pro.git
 cd wireguard-pro
 # Set at least ADMIN_USER, ADMIN_PASS, and WG_ENDPOINT at
-# ~/.config/wireguard-pro/env for initial startup configuration
-# You can remove ADMIN_USER and ADMIN_PASS after the first run
+# ~/.config/wireguard-pro/env
 make deploy
 ```
 
