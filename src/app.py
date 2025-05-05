@@ -1,14 +1,37 @@
 from time import strftime, gmtime
 from os import getloadavg, environ
 from flask import Flask, jsonify, request, render_template
-from flask_httpauth import HTTPBasicAuth
+from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, BadSignature
 from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
 from utils import get_server_pubkey
-from db import init_db, verify_user_db, add_or_update_user_db
+from db import init_db, add_or_update_user_db, verify_user_db
 
 
+# -------------------------------------------------------------------
+# Helpers for token generation/verification
+# -------------------------------------------------------------------
+def make_token_serializer(app):
+    return Serializer(app.config['SECRET_KEY'], expires_in=1800)
+
+
+def generate_token(s, username):
+    return s.dumps({'user': username}).decode('utf-8')
+
+
+def verify_token(s, token):
+    try:
+        data = s.loads(token)
+        return data.get('user')
+    except (BadSignature):
+        return None
+
+
+# -------------------------------------------------------------------
+# Application factory
+# -------------------------------------------------------------------
 def create_app():
     # Create application and collect environment variables
     flask_app = Flask(__name__, instance_relative_config=True)
@@ -23,113 +46,95 @@ def create_app():
     scheduler.init_app(flask_app)
     scheduler.start()
 
-    # create tables if not present
-    with flask_app.app_context():
+    # Initialize DB + (re)seed default admin user every launch
+    with app.app_context():
         init_db()
-        user = environ.get('ADMIN_USER')
-        pwd  = environ.get('ADMIN_PASS')
-        add_or_update_user_db(user, pwd)
-        print(f"🛡Ensured user `{user}` exists with provided password.")
+        admin_user = environ.get('ADMIN_USER', 'admin')
+        admin_pass = environ.get('ADMIN_PASS', 'changeme')
+        add_or_update_user_db(admin_user, admin_pass)
+        print(f"🛡 Ensured user `{admin_user}` with provided password.")
 
-    auth = HTTPBasicAuth()
-    @auth.verify_password
-    def verify(username, password):
-        # return True if verify_user_db says OK
+    # Auth objects
+    basic_auth = HTTPBasicAuth()
+    token_auth = HTTPTokenAuth(scheme='Bearer')
+    ts = make_token_serializer(app)
+
+    # BasicAuth verify for /login
+    @basic_auth.verify_password
+    def verify_pw(username, password):
         return verify_user_db(username, password)
 
-    @flask_app.route('/api/peers/new', methods=['POST'])
-    @auth.login_required
-    def api_create_peer():
+    # TokenAuth verify for API
+    @token_auth.verify_token
+    def verify_tok(token):
+        user = verify_token(ts, token)
+        return user
+
+    # -------------------------------------------------------------------
+    # Routes
+    # -------------------------------------------------------------------
+    @flask_app.route('/login', methods=['POST'])
+    @basic_auth.login_required
+    def login():
         """
-        Create a new WireGuard peer
         ---
-        parameters:
-          - name: days_valid
-            in: json
-            type: integer
-            required: false
-            description: Days before expiration
-        responses:
-          200:
-            description: Peer created successfully
+        post:
+          summary: Obtain a bearer token
+          security:
+            - basicAuth: []
+          responses:
+            200:
+              description: JSON with token
         """
+        token = generate_token(ts, basic_auth.current_user())
+        return jsonify({'token': token})
+
+    @flask_app.route('/api/peers/new', methods=['POST'])
+    @token_auth.login_required
+    def api_create_peer():
         data = request.get_json()
         peer = create_peer(data.get('days_valid', 7))
         return jsonify(peer)
 
     @flask_app.route('/api/peers/delete', methods=['POST'])
-    @auth.login_required
+    @token_auth.login_required
     def api_delete_peer():
-        """
-        Delete a WireGuard peer by Public Key
-        ---
-        parameters:
-          - name: public_key
-            in: json
-            type: string
-            required: true
-            description: Public key to remove
-        responses:
-          200:
-            description: Peer deleted
-        """
         data = request.get_json()
         success = delete_peer(data['public_key'])
         return jsonify({"deleted": success})
 
     @flask_app.route('/api/peers/list', methods=['GET'])
-    @auth.login_required
+    @token_auth.login_required
     def api_list_peers():
-        """
-        List all WireGuard peers
-        ---
-        responses:
-          200:
-            description: List of peers
-        """
         return jsonify(list_peers())
 
     @flask_app.route('/api/peers/stats', methods=['GET'])
-    @auth.login_required
+    @token_auth.login_required
     def api_peer_stats():
-        """
-        Live WireGuard peer stats
-        ---
-        responses:
-          200:
-            description: List of active peers with traffic stats
-        """
         return jsonify(peer_stats())
 
     @flask_app.route('/serverinfo', methods=['GET'])
+    @token_auth.login_required
     def server_info():
         try:
             with open('/proc/uptime', 'r') as f:
-                first_field, *_ = f.readline().split()
-                uptime_seconds = float(first_field)
-                uptime_str = strftime("%H:%M:%S", gmtime(uptime_seconds))
-
-            load_avg = getloadavg()  # (1m, 5m, 15m)
-            load_str = "{:.2f} {:.2f} {:.2f}".format(*load_avg)
-
-            return jsonify({
-                "uptime": uptime_str,
-                "load": load_str
-            })
+                uptime_seconds = float(f.readline().split()[0])
+            uptime_str = strftime("%H:%M:%S", gmtime(uptime_seconds))
+            load_str = "{:.2f} {:.2f} {:.2f}".format(*getloadavg())
+            return jsonify({"uptime": uptime_str, "load": load_str})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
     @flask_app.route('/')
+    @token_auth.login_required
     def serve_ui():
-        return render_template(
-            'index.html',
-            server_public_key=flask_app.config['WG_SERVER_PUBKEY'],
-            server_endpoint=flask_app.config['WG_ENDPOINT'])
+        return render_template('index.html',
+                               server_public_key=app.config['WG_SERVER_PUBKEY'],
+                               server_endpoint=app.config['WG_ENDPOINT'])
 
     return flask_app
 
 # Create application instance at module level
 app = create_app()
 if __name__ == "__main__":
-    # Run app, entrypoint logic in container/entrypoint.py
     app.run()

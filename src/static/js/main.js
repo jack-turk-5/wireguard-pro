@@ -8,18 +8,62 @@ document.addEventListener('DOMContentLoaded', function() {
   const darkModeMediaQ   = window.matchMedia('(prefers-color-scheme: dark)');
 
   const peersMap = new Map();  // public_key → peer object
+  let apiToken = null;         // once-set bearer token
 
-  // Dark mode
-  function updateDarkModeUI() {
-    if (document.body.classList.contains('darkmode')) {
-      darkModeToggle.textContent = '☀️ Light Mode';
-    } else {
-      darkModeToggle.textContent = '🌙 Dark Mode';
+  // -------------------------
+  // 1) Single‑sign‑in wrapper
+  // -------------------------
+  async function doLogin() {
+    const user = prompt("Username:");
+    const pass = prompt("Password:");
+    const creds = btoa(`${user}:${pass}`);
+
+    const resp = await fetch('/login', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + creds,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!resp.ok) {
+      alert("Login failed");
+      throw new Error("Authentication failed");
     }
+    const { token } = await resp.json();
+    apiToken = token;
+  }
+
+  async function authFetch(url, opts = {}) {
+    if (!apiToken) {
+      await doLogin();
+    }
+    opts.headers = {
+      ...opts.headers,
+      'Authorization': 'Bearer ' + apiToken,
+      'Content-Type': 'application/json'
+    };
+    let res = await fetch(url, opts);
+    if (res.status === 401) {
+      // token expired or invalid → re-login once
+      apiToken = null;
+      await doLogin();
+      opts.headers['Authorization'] = 'Bearer ' + apiToken;
+      res = await fetch(url, opts);
+    }
+    return res;
+  }
+
+  // -------------------------
+  // 2) Dark‑mode logic (unchanged)
+  // -------------------------
+  function updateDarkModeUI() {
+    darkModeToggle.textContent = document.body.classList.contains('darkmode')
+      ? '☀️ Light Mode'
+      : '🌙 Dark Mode';
   }
   function applyPreferredMode() {
-    if (darkModeMediaQ.matches) document.body.classList.add('darkmode');
-    else document.body.classList.remove('darkmode');
+    document.body.classList.toggle('darkmode', darkModeMediaQ.matches);
     updateDarkModeUI();
   }
   darkModeMediaQ.addEventListener('change', applyPreferredMode);
@@ -28,49 +72,48 @@ document.addEventListener('DOMContentLoaded', function() {
     updateDarkModeUI();
   });
 
-  // Fetch & render peers
-  function loadPeers() {
-    fetch('/api/peers/list')
-      .then(r => r.json())
-      .then(peers => {
-        peersMap.clear();
-        peersTable.innerHTML = '';
-        peers.forEach(peer => {
-          peersMap.set(peer.public_key, peer);
-
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${peer.public_key}</td>
-            <td>${peer.ipv4_address}</td>
-            <td>${peer.ipv6_address}</td>
-            <td>${peer.expires_at?.split('T')[0] || 'N/A'}</td>
-            <td><div id="qrcode-${peer.public_key}" class="qrcode"></div></td>
-            <td class="actions">
-               <div class="action-container">
-                 <button class="action-btn" onclick="downloadConfig('${peer.public_key}')">Download</button>
-                 <button class="action-btn" onclick="deletePeer('${peer.public_key}')">Delete</button>
-               </div>
-             </td>`;
-          peersTable.appendChild(tr);
-          generateQRCode(peer);
-        });
-      });
+  // -------------------------
+  // 3) Peers fetching & rendering
+  // -------------------------
+  async function loadPeers() {
+    const resp = await authFetch('/api/peers/list');
+    const peers = await resp.json();
+    peersMap.clear();
+    peersTable.innerHTML = '';
+    peers.forEach(peer => {
+      peersMap.set(peer.public_key, peer);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${peer.public_key}</td>
+        <td>${peer.ipv4_address}</td>
+        <td>${peer.ipv6_address}</td>
+        <td>${peer.expires_at?.split('T')[0] || 'N/A'}</td>
+        <td><div id="qrcode-${peer.public_key}" class="qrcode"></div></td>
+        <td class="actions">
+           <div class="action-container">
+             <button class="action-btn" onclick="downloadConfig('${peer.public_key}')">Download</button>
+             <button class="action-btn" onclick="deletePeer('${peer.public_key}')">Delete</button>
+           </div>
+         </td>`;
+      peersTable.appendChild(tr);
+      generateQRCode(peer);
+    });
   }
 
-  window.deletePeer = function(pubKey) {
-    fetch('/api/peers/delete', {
+  window.deletePeer = async function(pubKey) {
+    await authFetch('/api/peers/delete', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ public_key: pubKey })
-    })
-    .then(() => loadPeers());
+    });
+    loadPeers();
   };
 
-  // QR code builder
+  // -------------------------
+  // 4) QR code builder & download
+  // -------------------------
   function generateQRCode(peer) {
     const el = document.getElementById(`qrcode-${peer.public_key}`);
     el.innerHTML = '';
-
     const conf = `[Interface]
 PrivateKey = ${peer.private_key}
 Address = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
@@ -79,7 +122,7 @@ DNS = ${WG_DNS}
 [Peer]
 PublicKey = ${WG_SERVER_PUBKEY}
 Endpoint = ${WG_ENDPOINT}
-AllowedIPs  = 0.0.0.0/0, ::/0
+AllowedIPs = 0.0.0.0/0, ::/0
 PersistentKeepalive = ${WG_KEEPALIVE}
 `;
     new QRCode(el, {
@@ -90,7 +133,6 @@ PersistentKeepalive = ${WG_KEEPALIVE}
     });
   }
 
-  // Download .conf
   window.downloadConfig = function(pubKey) {
     const peer = peersMap.get(pubKey);
     if (!peer) return alert('Peer data not available yet.');
@@ -106,102 +148,81 @@ Endpoint = ${WG_ENDPOINT}
 AllowedIPs = 0.0.0.0/0, ::/0
 PersistentKeepalive = ${WG_KEEPALIVE}
 `;
-
     const blob = new Blob([conf], { type: 'text/plain' });
-    const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href       = url;
+    a.href       = URL.createObjectURL(blob);
     a.download   = `wg-peer-${peer.ipv4_address}.conf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(a.href);
   };
 
-  // Fetch & render stats
-  function loadStats() {
-    fetch('/api/peers/stats')
-      .then(r => r.json())
-      .then(stats => {
-        statsTable.innerHTML = '';
-        const now = Math.floor(Date.now() / 1000);
-        let totalRX = 0, totalTX = 0;
+  // -------------------------
+  // 5) Stats fetching & rendering
+  // -------------------------
+  async function loadStats() {
+    const resp = await authFetch('/api/peers/stats');
+    const stats = await resp.json();
+    statsTable.innerHTML = '';
+    const now = Math.floor(Date.now() / 1000);
+    let totalRX = 0, totalTX = 0;
 
-        stats.forEach(s => {
-          const ago = s.last_handshake_time ? now - s.last_handshake_time : Infinity;
-          let cls = ago < 60 ? 'good' : ago < 300 ? 'warn' : 'stale';
+    stats.forEach(s => {
+      const ago = s.last_handshake_time ? now - s.last_handshake_time : Infinity;
+      const cls = ago < 60 ? 'good' : ago < 300 ? 'warn' : 'stale';
 
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${s.public_key}</td>
-            <td class="${cls}">${ago}</td>
-            <td>${(s.rx_bytes/1024/1024).toFixed(2)}</td>
-            <td>${(s.tx_bytes/1024/1024).toFixed(2)}</td>
-          `;
-          statsTable.appendChild(tr);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${s.public_key}</td>
+        <td class="${cls}">${ago}</td>
+        <td>${(s.rx_bytes/1024/1024).toFixed(2)}</td>
+        <td>${(s.tx_bytes/1024/1024).toFixed(2)}</td>
+      `;
+      statsTable.appendChild(tr);
+      totalRX += s.rx_bytes;
+      totalTX += s.tx_bytes;
+    });
 
-          totalRX += s.rx_bytes;
-          totalTX += s.tx_bytes;
-        });
-
-        updateCharts(totalRX, totalTX);
-      });
+    updateCharts(totalRX, totalTX);
   }
 
-  // Charts
+  // -------------------------
+  // 6) Charts: init & update
+  // -------------------------
   let rxChart, txChart, labels = [], rxData = [], txData = [];
+
   function initCharts() {
     const ctxRx = document.getElementById('rxChart').getContext('2d');
     const ctxTx = document.getElementById('txChart').getContext('2d');
 
-    // Shared options: responsive + start Y-axis at zero
     const commonOptions = {
       responsive: true,
       scales: {
-        y: {
-          beginAtZero: true    // ensures y-axis always starts at 0 :contentReference[oaicite:4]{index=4}
-        }
+        y: { beginAtZero: true }
       }
     };
 
     rxChart = new Chart(ctxRx, {
       type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'RX (MB)',
-          data: [],              // numeric array
-          fill: false
-        }]
-      },
+      data: { labels: [], datasets:[{ label:'RX (MB)', data:[], fill:false }]},
       options: commonOptions
     });
 
     txChart = new Chart(ctxTx, {
       type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'TX (MB)',
-          data: [],              // numeric array
-          fill: false
-        }]
-      },
+      data: { labels: [], datasets:[{ label:'TX (MB)', data:[], fill:false }]},
       options: commonOptions
     });
   }
 
   function updateCharts(rx, tx) {
-    const now = new Date().toLocaleTimeString();
-    // push numbers, not strings
-    labels.push(now);
-    rxData.push( parseFloat((rx / 1024 / 1024).toFixed(2)) );
-    txData.push( parseFloat((tx / 1024 / 1024).toFixed(2)) );
+    labels.push(new Date().toLocaleTimeString());
+    rxData.push( parseFloat((rx/1024/1024).toFixed(2)) );
+    txData.push( parseFloat((tx/1024/1024).toFixed(2)) );
 
     if (labels.length > 20) {
-      labels.shift();
-      rxData.shift();
-      txData.shift();
+      labels.shift(); rxData.shift(); txData.shift();
     }
 
     rxChart.data.labels = labels;
@@ -213,32 +234,36 @@ PersistentKeepalive = ${WG_KEEPALIVE}
     txChart.update();
   }
 
-  // Server info
-  function loadServerInfo() {
-    fetch('/serverinfo')
-      .then(r => r.json())
-      .then(d => {
-        document.getElementById('uptimeInfo').innerText  = `Uptime: ${d.uptime}`;
-        document.getElementById('loadAvgInfo').innerText = `Load Average: ${d.load}`;
-      })
-      .catch(_ => {
-        document.getElementById('uptimeInfo').innerText = 'Uptime: N/A';
-        document.getElementById('loadAvgInfo').innerText = 'Load Average: N/A';
-      });
+  // -------------------------
+  // 7) Server info
+  // -------------------------
+  async function loadServerInfo() {
+    try {
+      const resp = await authFetch('/serverinfo');
+      const d = await resp.json();
+      document.getElementById('uptimeInfo').innerText  = `Uptime: ${d.uptime}`;
+      document.getElementById('loadAvgInfo').innerText = `Load Average: ${d.load}`;
+    } catch {
+      document.getElementById('uptimeInfo').innerText  = 'Uptime: N/A';
+      document.getElementById('loadAvgInfo').innerText = 'Load Average: N/A';
+    }
   }
 
-  // Event hookups
-  addPeerBtn.addEventListener('click', () => {
-    fetch('/api/peers/new', {
+  // -------------------------
+  // 8) Event hookups
+  // -------------------------
+  addPeerBtn.addEventListener('click', async () => {
+    await authFetch('/api/peers/new', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ days_valid:7 })
-    })
-    .then(() => loadPeers());
+      body: JSON.stringify({ days_valid: 7 })
+    });
+    loadPeers();
   });
   refreshStatsBtn.addEventListener('click', loadStats);
 
+  // -------------------------
   // Init everything
+  // -------------------------
   applyPreferredMode();
   initCharts();
   loadPeers();
