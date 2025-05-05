@@ -8,5 +8,7 @@
         protocols h1
     }
     encode gzip
-    reverse_proxy 0.0.0.0:51819
+    reverse_proxy 0.0.0.0:51819 {
+        header_up Authorization {>Authorization}
+    }
 }
