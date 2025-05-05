@@ -2,7 +2,8 @@ from time import strftime, gmtime
 from os import getloadavg, environ
 from flask import Flask, jsonify, request, render_template
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, BadSignature
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from itsdangerous.exc import BadSignature
 from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
@@ -14,20 +15,19 @@ from db import init_db, add_or_update_user_db, verify_user_db
 # Helpers for token generation/verification
 # -------------------------------------------------------------------
 def make_token_serializer(app):
-    return Serializer(app.config['SECRET_KEY'], expires_in=1800)
-
+    # URLSafeTimedSerializer takes only secret_key and salt (optional)
+    return Serializer(app.config['SECRET_KEY'], salt='auth-token')
 
 def generate_token(s, username):
-    return s.dumps({'user': username}).decode('utf-8')
+    # URLSafeTimedSerializer.dumps returns a string
+    return s.dumps({'user': username})
 
-
-def verify_token(s, token):
+def verify_token(s, token, max_age=1800):
     try:
-        data = s.loads(token)
+        data = s.loads(token, max_age=max_age)
         return data.get('user')
     except (BadSignature):
         return None
-
 
 # -------------------------------------------------------------------
 # Application factory
