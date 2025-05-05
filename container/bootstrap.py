@@ -70,9 +70,9 @@ run([
         "ethtool",
         "-K",
         "tap0",
-        "gro", "off",
-        "gso", "off",
-        "tso", "off"
+        "gro", "on",
+        "gso", "on",
+        "ufo", "on"
      ],
     check=True)
 
