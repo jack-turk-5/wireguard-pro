@@ -154,25 +154,60 @@ PersistentKeepalive = ${WG_KEEPALIVE}
     const ctxRx = document.getElementById('rxChart').getContext('2d');
     const ctxTx = document.getElementById('txChart').getContext('2d');
 
+    // Shared options: responsive + start Y-axis at zero
+    const commonOptions = {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true    // ensures y-axis always starts at 0 :contentReference[oaicite:4]{index=4}
+        }
+      }
+    };
+
     rxChart = new Chart(ctxRx, {
       type: 'line',
-      data: { labels: [], datasets: [{ label:'RX (MB)', data: [], borderColor:'blue', backgroundColor:'lightblue' }]},
-      options: { responsive: true }
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'RX (MB)',
+          data: [],              // numeric array
+          fill: false
+        }]
+      },
+      options: commonOptions
     });
+
     txChart = new Chart(ctxTx, {
       type: 'line',
-      data: { labels: [], datasets: [{ label:'TX (MB)', data: [], borderColor:'green', backgroundColor:'lightgreen' }]},
-      options: { responsive: true }
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'TX (MB)',
+          data: [],              // numeric array
+          fill: false
+        }]
+      },
+      options: commonOptions
     });
   }
 
   function updateCharts(rx, tx) {
     const now = new Date().toLocaleTimeString();
-    labels.push(now); rxData.push((rx/1024/1024).toFixed(2)); txData.push((tx/1024/1024).toFixed(2));
-    if (labels.length > 20) { labels.shift(); rxData.shift(); txData.shift(); }
+    // push numbers, not strings
+    labels.push(now);
+    rxData.push( parseFloat((rx / 1024 / 1024).toFixed(2)) );
+    txData.push( parseFloat((tx / 1024 / 1024).toFixed(2)) );
+
+    if (labels.length > 20) {
+      labels.shift();
+      rxData.shift();
+      txData.shift();
+    }
+
     rxChart.data.labels = labels;
     rxChart.data.datasets[0].data = rxData;
     rxChart.update();
+
     txChart.data.labels = labels;
     txChart.data.datasets[0].data = txData;
     txChart.update();
