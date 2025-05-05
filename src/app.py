@@ -61,9 +61,12 @@ def create_app():
     token_auth = HTTPTokenAuth(scheme='Bearer')
     ts = make_token_serializer(app)
 
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
     # BasicAuth verify for /login
     @basic_auth.verify_password
     def verify_pw(username, password):
+        app.logger.debug(f"verify_pw called, username={username!r}, password={password!r}")
         return verify_user_db(username, password)
 
     # TokenAuth verify for API
