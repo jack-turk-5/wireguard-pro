@@ -20,7 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const pass = prompt("Password:");
       const res  = await fetch('/login', {
         method: 'POST',
-        headers: { 'Authorization': 'Basic ' + btoa(`${user}:${pass}`) }
+        mode: 'cors',
+        credentials: 'include',
+        headers: {
+          'Authorization': 'Basic ' + btoa(`${user}:${pass}`)
+        }
       });
       if (res.ok) {
         const { token } = await res.json();
@@ -40,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let res = await fetch(url, opts);
     if (res.status === 401) {
-      // expired/invalid token → retry login once
       apiToken = null;
       await doLogin();
       opts.headers['Authorization'] = 'Bearer ' + apiToken;
@@ -48,8 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     return res;
   }
-
-  // Fetch API is promise‑based and modern replacement for XMLHttpRequest :contentReference[oaicite:1]{index=1}
 
   // ----------------------------------------
   // 2) Dark Mode
@@ -151,13 +152,13 @@ PersistentKeepalive = ${WG_KEEPALIVE}
     if (!peer) return alert('Peer data not available yet.');
     const blob = new Blob([`[Interface]
 PrivateKey = ${peer.private_key}
-Address    = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
-DNS        = ${WG_DNS}
+Address = ${peer.ipv4_address}/32, ${peer.ipv6_address}/128
+DNS = ${WG_DNS}
 
 [Peer]
-PublicKey           = ${WG_SERVER_PUBKEY}
-Endpoint            = ${WG_ENDPOINT}
-AllowedIPs          = 0.0.0.0/0, ::/0
+PublicKey = ${WG_SERVER_PUBKEY}
+Endpoint = ${WG_ENDPOINT}
+AllowedIPs  = 0.0.0.0/0, ::/0
 PersistentKeepalive = ${WG_KEEPALIVE}
 `], { type:'text/plain' });
     const a = document.createElement('a');
@@ -204,7 +205,7 @@ PersistentKeepalive = ${WG_KEEPALIVE}
     const ctxTx = document.getElementById('txChart').getContext('2d');
     const opts  = {
       responsive: true,
-      scales: { y: { beginAtZero: true } }  // include 0 on y-axis :contentReference[oaicite:2]{index=2}
+      scales: { y: { beginAtZero: true } }
     };
     rxChart = new Chart(ctxRx, { type:'line', data:{labels:[],datasets:[{label:'RX (MB)',data:[],fill:false}]}, options: opts });
     txChart = new Chart(ctxTx, { type:'line', data:{labels:[],datasets:[{label:'TX (MB)',data:[],fill:false}]}, options: opts });
@@ -237,7 +238,13 @@ PersistentKeepalive = ${WG_KEEPALIVE}
   // ----------------------------------------
   // 8) Event hookups
   // ----------------------------------------
-  addPeerBtn.addEventListener('click',    async()=>{ await authFetch('/api/peers/new',{method:'POST',body:JSON.stringify({days_valid:7})}); loadPeers(); });
+  addPeerBtn.addEventListener('click', async () => {
+    await authFetch('/api/peers/new', {
+      method: 'POST',
+      body: JSON.stringify({ days_valid: 7 })
+    });
+    loadPeers();
+  });
   refreshStatsBtn.addEventListener('click', loadStats);
 
   // Initial load
@@ -245,6 +252,6 @@ PersistentKeepalive = ${WG_KEEPALIVE}
   initCharts();
   loadPeers();
   loadStats();
-  setInterval(loadStats,10000);
-  setInterval(loadServerInfo,60000);
+  setInterval(loadStats, 10000);
+  setInterval(loadServerInfo, 60000);
 });
