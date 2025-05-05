@@ -26,7 +26,7 @@ def verify_token(s, token, max_age=1800):
     try:
         data = s.loads(token, max_age=max_age)
         return data.get('user')
-    except (BadSignature):
+    except BadSignature:
         return None
 
 # -------------------------------------------------------------------
