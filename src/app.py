@@ -49,8 +49,8 @@ def create_app():
     # Initialize DB + (re)seed default admin user every launch
     with app.app_context():
         init_db()
-        admin_user = environ.get('ADMIN_USER')
-        admin_pass = environ.get('ADMIN_PASS')
+        admin_user = environ.get('ADMIN_USER').strip()
+        admin_pass = environ.get('ADMIN_PASS').strip()
         add_or_update_user_db(admin_user, admin_pass)
         print(f"🛡 Ensured user `{admin_user}` with provided password.")
 
