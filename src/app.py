@@ -9,9 +9,9 @@ from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
 from utils import get_server_pubkey
 from db import init_db, add_or_update_user_db, verify_user_db
-import logging
+from logging import basicConfig, DEBUG
 
-logging.basicConfig(level=logging.DEBUG)
+basicConfig(level=DEBUG)
 
 def make_token_serializer(flask_app):
     return Serializer(flask_app.config['SECRET_KEY'], salt='auth-token')

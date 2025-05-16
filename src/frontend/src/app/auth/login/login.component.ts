@@ -64,6 +64,7 @@ import { AuthService } from '../../services/auth.service';
       font-size: 0.875rem;
     }
     button {
+      margin-top: 1rem;
       background-color: #198754; color: white;
       border: none; padding: 8px 12px;
       cursor: pointer; border-radius: 4px;
