@@ -9,18 +9,8 @@
     }
     encode gzip
 
-    handle /serverinfo {
-        reverse_proxy :51818 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-        }
-    }
-
-    handle /api* {
-        reverse_proxy :51818 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-        }
+    handle /serverinfo /api* {
+        reverse_proxy :51818
     }
 
     handle {
