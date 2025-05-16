@@ -9,19 +9,18 @@
     }
     encode gzip
 
-    # — First — proxy all API calls to your Flask app
-    @api {
-        path /api/* /serverinfo
+    handle /api* {
+        reverse_proxy 0.0.0.0:51818 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up Authorization {>Authorization}
+            header_up Origin {>Origin}
+        }
     }
-    reverse_proxy @api 0.0.0.0:51818 {
-        header_up Host         {host}
-        header_up X-Real-IP    {remote}
-        header_up Authorization {>Authorization}
-        header_up Origin       {>Origin}
+
+    handle {
+        root * /usr/share/caddy/html
+        try_files {path} /index.html
+        file_server
     }
-    
-    # — Then — serve your Angular UI
-    root * /usr/share/caddy/html
-    try_files {path} /index.html
-    file_server
 }
