@@ -33,7 +33,6 @@ reload:
 
 ## Create secrets if missing
 secrets:
-	secrets:
 	@echo "→ ensuring $(SECRETS_DIR)/ directory exists…"
 	mkdir -p $(SECRETS_DIR)
 	@echo "→ checking if Podman secret '$(SECRETS_NAME)' exists…"
