@@ -1,5 +1,4 @@
-// src/app/app.component.ts
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
@@ -29,7 +28,7 @@ import { RouterOutlet } from '@angular/router';
       padding: 1rem;
     }
 
-    /* reuse your existing global .toggle-darkmode style */
+    /* (you can still call this manually if you add a button later) */
     .toggle-darkmode {
       margin-top: 0.5rem;
       background: transparent;
@@ -46,7 +45,23 @@ import { RouterOutlet } from '@angular/router';
     }
   `]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  ngOnInit() {
+    // Apply system default theme on startup
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (prefersDark) {
+      document.body.classList.add('darkmode');
+    } else {
+      document.body.classList.remove('darkmode');
+    }
+
+    // Optional: react to changes while the app is open
+    window.matchMedia('(prefers-color-scheme: dark)')
+      .addEventListener('change', e => {
+        document.body.classList.toggle('darkmode', e.matches);
+      });
+  }
+
   toggleDarkMode() {
     document.body.classList.toggle('darkmode');
   }
