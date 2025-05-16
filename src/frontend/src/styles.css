@@ -84,9 +84,7 @@ td.stale { color: red; font-weight: bold; }
 .qrcode {
   width: 160px; height: 160px; margin: auto;
 }
-.qrcode canvas {
-  width: 100% !important; height: 100% !important;
-}
+
 td.actions {
   vertical-align: middle; text-align: center;
 }

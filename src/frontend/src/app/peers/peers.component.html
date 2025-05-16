@@ -1,5 +1,3 @@
-<!-- src/app/peers/peers.component.html -->
-
 <table>
   <thead>
     <tr>
@@ -20,9 +18,11 @@
         <td>{{ peer.expires_at?.split('T')[0] || 'N/A' }}</td>
         <td>
           <qrcode
+            class="qr-thumb"
             [qrdata]="makeCfg(peer)"
-            [width]="160"
-            [errorCorrectionLevel]="'M'">
+            [width]="80"
+            [errorCorrectionLevel]="'M'"
+            (click)="openQr(peer)">
           </qrcode>
         </td>
         <td class="actions">
@@ -39,3 +39,17 @@
     }
   </tbody>
 </table>
+
+<div 
+  class="qr-modal" 
+  *ngIf="zoomedPeer()"
+  (click)="closeQr()">
+  <div class="qr-modal-content" (click)="$event.stopPropagation()">
+    <button class="qr-modal-close" (click)="closeQr()">✕</button>
+    <qrcode
+      [qrdata]="makeCfg(zoomedPeer())"
+      [width]="300"
+      [errorCorrectionLevel]="'M'">
+    </qrcode>
+  </div>
+</div>

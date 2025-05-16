@@ -1,4 +1,3 @@
-// src/app/peers/peers.component.ts
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QRCodeComponent } from 'angularx-qrcode';
@@ -13,6 +12,7 @@ import { ApiService } from '../services/api.service';
 })
 export class PeersComponent implements OnInit {
   peers = signal<any[]>([]);
+  zoomedPeer = signal<any | null>(null);
 
   constructor(private api: ApiService) {}
 
@@ -53,4 +53,14 @@ export class PeersComponent implements OnInit {
   remove(key: string) {
     this.api.deletePeer(key).subscribe(() => this.loadPeers());
   }
+
+  openQr(p: any) {
+    this.zoomedPeer.set(p);
+  }
+
+  /** Close the overlay */
+  closeQr() {
+    this.zoomedPeer.set(null);
+  }
+
 }
