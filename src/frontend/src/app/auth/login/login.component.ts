@@ -64,18 +64,14 @@ import { AuthService } from '../auth.service';
       font-size: 0.875rem;
     }
     button {
-      padding: 10px;
-      font-size: 1rem;
-      background-color: #0d6efd;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: opacity 0.2s;
+      background-color: #198754; color: white;
+      border: none; padding: 8px 12px;
+      cursor: pointer; border-radius: 4px;
+      transition: background-color 0.2s;
     }
-    button[disabled] {
-      opacity: 0.6;
-      cursor: not-allowed;
+
+    button:hover {
+      background-color: #145c32;
     }
   `]
 })

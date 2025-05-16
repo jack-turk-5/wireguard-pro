@@ -23,17 +23,6 @@ import { RouterOutlet } from '@angular/router';
       text-align: center;
     }
 
-    button {
-      background-color: #198754; color: white;
-      border: none; padding: 8px 12px;
-      cursor: pointer; border-radius: 4px;
-      transition: background-color 0.2s;
-    }
-
-    button:hover {
-      background-color: #145c32;
-    }
-
     /* ensure main content has the right padding */
     main {
       padding: 1rem;
