@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from secrets import token_urlsafe
 from os import environ, path, makedirs, execv
-from subprocess import check_output, Popen, PIPE, run
+from subprocess import CalledProcessError, check_output, Popen, PIPE, run
 from shutil import which
 
 # ——— Flask SECRET_KEY bootstrapping ———
@@ -44,7 +44,10 @@ if not path.isfile(WG_CONF):
 run(['wg-quick','down','wg0'], check=False)
 run(['ip','link','delete','wg0'], check=False)
 run(['ip','addr','flush','dev','wg0'], check=False)
-run(['wg-quick','up','wg0'], check=True)
+try:
+    run(['wg-quick','up','wg0'], check=True)
+except CalledProcessError as e:
+    raise RuntimeError(f"WireGuard failed: {e.stderr}") from e
 
 # Launch Gunicorn on 51818
 Popen([
@@ -56,7 +59,7 @@ Popen([
     '--graceful-timeout', '20',
     '--reuse-port',
     'app:app'
-])
+], env=environ.copy(),)
 
 # Apply nftables + ethtool tweaks
 run(['nft','-f','/etc/nftables.conf'], check=True)

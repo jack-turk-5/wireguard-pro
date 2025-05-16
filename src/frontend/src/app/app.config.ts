@@ -5,7 +5,6 @@ import { provideClientHydration, withEventReplay } from '@angular/platform-brows
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { JwtInterceptor } from './auth/jwt.interceptor';
-import { isPlatformServer } from '@angular/common';
 
 export const appConfig: ApplicationConfig = {
   providers: [

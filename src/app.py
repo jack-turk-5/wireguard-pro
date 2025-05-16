@@ -2,14 +2,14 @@ from time import strftime, gmtime
 from os import getloadavg, environ
 from flask import Flask, jsonify, request
 from flask_httpauth import HTTPTokenAuth
-from itsdangerous import URLSafeTimedSerializer as Serializer
+from itsdangerous import SignatureExpired, URLSafeTimedSerializer as Serializer
 from itsdangerous.exc import BadSignature
 from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
 from utils import get_server_pubkey
 from db import init_db, add_or_update_user_db, verify_user_db
-from logging import basicConfig, DEBUG
+from logging import basicConfig, DEBUG, error, warning
 
 basicConfig(level=DEBUG)
 
@@ -22,7 +22,11 @@ def generate_token(s, username):
 def verify_token(s, token, max_age=1800):
     try:
         return s.loads(token, max_age=max_age).get('user')
-    except BadSignature:
+    except SignatureExpired as e:
+        warning(f"Token expired at {e.date_signed}")
+        return None
+    except BadSignature as e:
+        error(f"Invalid token signature: {e}")
         return None
 
 def create_app():
