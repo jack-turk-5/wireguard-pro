@@ -20,7 +20,7 @@
           <qrcode
             class="qr-thumb"
             [qrdata]="makeCfg(peer)"
-            [width]="80"
+            [width]="160"
             [errorCorrectionLevel]="'M'"
             (click)="openQr(peer)">
           </qrcode>
@@ -40,16 +40,15 @@
   </tbody>
 </table>
 
-<div 
-  class="qr-modal" 
-  *ngIf="zoomedPeer()"
-  (click)="closeQr()">
-  <div class="qr-modal-content" (click)="$event.stopPropagation()">
-    <button class="qr-modal-close" (click)="closeQr()">✕</button>
-    <qrcode
-      [qrdata]="makeCfg(zoomedPeer())"
-      [width]="300"
-      [errorCorrectionLevel]="'M'">
-    </qrcode>
+@if (zoomedPeer()) {
+  <div class="qr-modal" (click)="closeQr()">
+    <div class="qr-modal-content" (click)="$event.stopPropagation()">
+      <button class="qr-modal-close" (click)="closeQr()">✕</button>
+      <qrcode
+        [qrdata]="makeCfg(zoomedPeer())"
+        [width]="400"
+        [errorCorrectionLevel]="'M'">
+      </qrcode>
+    </div>
   </div>
-</div>
+}

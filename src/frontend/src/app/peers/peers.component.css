@@ -1,32 +1,39 @@
 /* src/app/peers/peers.component.css */
 
-/* make the thumbnail pointer-friendly */
+/* Thumbnail cursor */
 .qr-thumb {
   cursor: zoom-in;
 }
 
-/* full-screen semi-transparent backdrop */
+/* Overlay backdrop with blur + fade-in */
 .qr-modal {
   position: fixed;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  animation: fadeIn 0.3s ease;
 }
 
-/* the white box containing the big QR */
+/* White modal box with pop-in */
 .qr-modal-content {
   position: relative;
   background: white;
   padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+
+  animation: popIn 0.3s ease;
 }
 
-/* close button in the top-right of the modal */
+/* Close button */
 .qr-modal-close {
   position: absolute;
   top: 0.5rem; right: 0.5rem;
@@ -36,7 +43,13 @@
   cursor: pointer;
 }
 
-/* prevent pointer events from leaking through the content box */
-.qr-modal-content qrcode {
-  pointer-events: none;
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
 }

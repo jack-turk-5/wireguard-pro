@@ -56,11 +56,12 @@ export class PeersComponent implements OnInit {
 
   openQr(p: any) {
     this.zoomedPeer.set(p);
+    document.body.classList.add('modal-open');
   }
 
-  /** Close the overlay */
   closeQr() {
     this.zoomedPeer.set(null);
+    document.body.classList.remove('modal-open');
   }
 
 }
