@@ -42,8 +42,8 @@ def create_app():
 
     CORS(
         flask_app,
-        resources={r"/api/*": {"origins": "0.0.0.0:51819"},
-                   r"/serverinfo": {"origins": "0.0.0.0:51819"}}, 
+        resources={r"/api/*": {"origins": "*"},
+                   r"/serverinfo": {"origins": "*"}}, 
         allow_headers=["Authorization", "Content-Type"],
         expose_headers=["Authorization"],
         supports_credentials=True
