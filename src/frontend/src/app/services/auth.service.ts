@@ -18,7 +18,6 @@ export class AuthService {
   login(creds: { username: string; password: string }) {
     return this.httpClient.post<AuthResponse>('/api/login', creds).pipe(
       tap(res => {
-        console.log('[AuthService] storing token →', res);
         localStorage.setItem(this.TOKEN_KEY, res.token);
       })
     );

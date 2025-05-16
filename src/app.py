@@ -66,7 +66,6 @@ def create_app():
 
     @token_auth.verify_token
     def verify_tok(token):
-        flask_app.logger.debug(f"verify_token received: {token!r}")
         return verify_token(ts, token)
 
     # ——— Routes ———
