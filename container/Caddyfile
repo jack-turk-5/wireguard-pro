@@ -10,11 +10,15 @@
     encode gzip
 
     handle /serverinfo {
-        reverse_proxy :51818
+        reverse_proxy :51818 { 
+            header_up Host {host}
+        }
     }
 
     handle /api* {
-        reverse_proxy :51818
+        reverse_proxy :51818 {
+            header_up Host {host}
+        }
     }
 
     handle {
