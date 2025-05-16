@@ -20,7 +20,7 @@ export const JwtInterceptor: HttpInterceptorFn = (req, next) => {
 
   const addHeaders = (request: HttpRequest<any>) => {
     let headers: { [header: string]: string } = {};
-    if (!request.url.endsWith('/auth/login')) {
+    if (!request.url.endsWith('/api/login')) {
       const token = authService.token;
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
