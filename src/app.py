@@ -41,13 +41,16 @@ def create_app():
     scheduler.start()
 
     CORS(
-        flask_app,
-        resources={r"/api/*": {"origins": "*"},
-                   r"/serverinfo": {"origins": "*"}}, 
-        allow_headers=["Authorization", "Content-Type"],
-        expose_headers=["Authorization"],
-        supports_credentials=True
-    )
+    app,
+    resources={
+        r"/api/*": {"origins": "*"},
+        r"/serverinfo": {"origins": "*"}
+    },
+    methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    expose_headers=["Authorization"],
+    supports_credentials=True
+)
 
     # DB + seed admin user
     with flask_app.app_context():
