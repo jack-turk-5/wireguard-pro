@@ -10,7 +10,7 @@ export class AuthService {
 
   login(user: string, pass: string) {
     return this.http.post<{ token: string }>(
-      '/login',
+      '/api/login',
       { username: user, password: pass }
     ).pipe(
       tap(res => this.token$.next(res.token))
