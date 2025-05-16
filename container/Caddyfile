@@ -2,25 +2,26 @@
     debug
     auto_https off
 }
+
 :51819 {
     bind fd/3 {
         protocols h1
     }
     encode gzip
 
-    # 1) Static UI
-    root * /usr/share/caddy/html
-    try_files {path} /index.html
-    file_server
-
-    # 2) Proxy only your API endpoints
+    # — First — proxy all API calls to your Flask app
     @api {
         path /api/* /serverinfo
     }
     reverse_proxy @api 0.0.0.0:51818 {
-        header_up Host {host}
-        header_up X-Real-IP {remote}
+        header_up Host         {host}
+        header_up X-Real-IP    {remote}
         header_up Authorization {>Authorization}
-        header_up Origin {>Origin}
+        header_up Origin       {>Origin}
     }
+    
+    # — Then — serve your Angular UI
+    root * /usr/share/caddy/html
+    try_files {path} /index.html
+    file_server
 }
