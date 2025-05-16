@@ -91,7 +91,7 @@ def create_app():
                 up = float(f.readline().split()[0])
             return jsonify({
                 'uptime': strftime("%H:%M:%S", gmtime(up)),
-                'load':   "{:.2f} {:.2f} {:.2f}".format(*getloadavg())
+                'load': "{:.2f} {:.2f} {:.2f}".format(*getloadavg())
             })
         except Exception as e:
             return jsonify({'error':str(e)}), 500

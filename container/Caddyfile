@@ -12,7 +12,6 @@
     handle /api* {
         reverse_proxy 0.0.0.0:51818 {
             header_up Host {host}
-            header_up X-Real-IP {remote}
         }
     }
 
