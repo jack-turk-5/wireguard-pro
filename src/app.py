@@ -52,7 +52,7 @@ def create_app():
         return verify_token(ts, token)
 
     # ——— Routes ———
-    @flask_app.route('/login', methods=['POST'])
+    @flask_app.route('/api/login', methods=['POST'])
     def login():
         data = request.get_json() or {}
         u = data.get('username','').strip()

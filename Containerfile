@@ -2,7 +2,7 @@
 FROM node:24-alpine AS angular-builder
 WORKDIR /app
 COPY src/frontend/ .
-RUN npm ci && npm run build --production
+RUN npm ci && npm run build --omit=dev
 
 # === Stage 1: Build Python venv & BoringTun on Debian-slim ===
 FROM python:3.13-slim AS builder

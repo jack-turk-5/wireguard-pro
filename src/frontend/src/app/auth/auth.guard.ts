@@ -1,4 +1,3 @@
-// src/app/auth/auth.guard.ts
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { inject } from '@angular/core';
@@ -10,5 +9,5 @@ export const AuthGuard: CanActivateFn = () => {
   if (auth.token) {
     return true;
   }
-  return router.parseUrl('/login');
+  return router.parseUrl('/api/login');
 };
