@@ -1,6 +1,7 @@
 from time import strftime, gmtime
 from os import getloadavg, environ
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from flask_httpauth import HTTPTokenAuth
 from itsdangerous import SignatureExpired, URLSafeTimedSerializer as Serializer
 from itsdangerous.exc import BadSignature
@@ -38,6 +39,15 @@ def create_app():
     Swagger(flask_app)
     scheduler.init_app(flask_app)
     scheduler.start()
+
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": "0.0.0.0:51819"},
+                   r"/serverinfo": {"origins": "0.0.0.0:51819"}}, 
+        allow_headers=["Authorization", "Content-Type"],
+        expose_headers=["Authorization"],
+        supports_credentials=True
+    )
 
     # DB + seed admin user
     with flask_app.app_context():
