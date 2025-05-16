@@ -2,7 +2,7 @@
 FROM node:24-alpine AS angular-builder
 WORKDIR /app
 COPY src/frontend/ .
-RUN npm ci && npm run build --prod
+RUN npm ci && npm run build --production
 
 # === Stage 1: Build Python venv & BoringTun on Debian-slim ===
 FROM python:3.13-slim AS builder
@@ -38,7 +38,7 @@ https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main\n' \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Angular build for Caddy
-COPY --from=angular-builder /app/dist/wireguard-pro /usr/share/caddy/html
+COPY --from=angular-builder /app/dist/frontend/browser /usr/share/caddy/html
 
 # Copy BoringTun, venv, app & bootstrap
 COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
