@@ -9,7 +9,7 @@
     }
     encode gzip
 
-    handle /serverinfo /api* {
+    /serverinfo /api* {
         reverse_proxy :51818
     }
 
