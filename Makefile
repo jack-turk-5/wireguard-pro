@@ -33,16 +33,16 @@ reload:
 
 ## Create secrets if missing
 secrets:
-	@echo "→ ensuring $(SECRETS_DIR)/ directory exists…"
-	mkdir -p $(SECRETS_DIR)
+	@echo "→ ensuring secrets/ directory exists…"
+	mkdir -p secrets
 	@echo "→ checking if Podman secret '$(SECRETS_NAME)' exists…"
 	@if podman secret exists $(SECRETS_NAME) >/dev/null 2>&1; then \
 	  echo "   ✓ secret '$(SECRETS_NAME)' already registered, skipping."; \
 	else \
 	  echo "   ✗ not found, generating WireGuard keypair…"; \
-	  wg genkey | tee $(SECRETS_DIR)/$(SECRETS_NAME) | wg pubkey > $(SECRETS_DIR)/$(SECRETS_NAME_PUB); \
+	  wg genkey | tee secrets/$(SECRETS_NAME) | wg pubkey > secrets/$(SECRETS_NAME_PUB); \
 	  echo "   ✎ creating Podman secret '$(SECRETS_NAME)' from private key…"; \
-	  podman secret create $(SECRETS_NAME) $(SECRETS_DIR)/$(SECRETS_NAME); \
+	  podman secret create $(SECRETS_NAME) secrets/$(SECRETS_NAME); \
 	  echo "   ✓ secret registered."; \
 	fi
 
