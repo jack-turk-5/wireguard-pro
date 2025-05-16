@@ -9,31 +9,20 @@
     }
     encode gzip
 
-    @cors_origin {
-        header Origin :51819
-    }
-    header @cors_origin Access-Control-Allow-Origin {>Origin}
-    header @cors_origin Access-Control-Allow-Methods "GET, POST, OPTIONS"
-    header @cors_origin Access-Control-Allow-Headers "Authorization, Content-Type"
-
-    @preflight method OPTIONS
-    handle @preflight {
-        respond "" 204
-    }
-
-    handle /serverinfo* {
+    handle /serverinfo {
         reverse_proxy :51818 {
             header_up Host {host}
+            header_up X-Real-IP {remote_host}
         }
     }
 
-    handle /api/* {
+    handle /api* {
         reverse_proxy :51818 {
             header_up Host {host}
+            header_up X-Real-IP {remote_host}
         }
     }
 
-    # ─── SPA Fallback ─────────────────────────────────────────────────
     handle {
         root * /usr/share/caddy/html
         try_files {path} /index.html
