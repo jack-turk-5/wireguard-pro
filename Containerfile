@@ -1,54 +1,49 @@
+# === Stage 0: Build Angular UI ===
+FROM node:24-alpine AS angular-builder
+WORKDIR /app
+COPY src/frontend/ .
+RUN npm ci && npm run build --prod
+
 # === Stage 1: Build Python venv & BoringTun on Debian-slim ===
 FROM python:3.13-slim AS builder
-
-# 1. Install build tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       gcc build-essential pkg-config libssl-dev cargo \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* && \
+    cargo install boringtun-cli --locked --root /usr/local
 
-# 2. Compile BoringTun CLI
-RUN cargo install boringtun-cli --locked --root /usr/local
-
-# 3. Create and populate Python venv
 WORKDIR /app
 COPY requirements.txt .
 RUN python3 -m venv /venv && \
     /venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# === Stage 2: Runtime on Debian-slim with Caddy ===
+# === Stage 2: Runtime w/ Caddy & Flask ===
 FROM python:3.13-slim AS runtime
 
-# 1. Install GPG & HTTPS transport
+# Install Caddy and tooling
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      curl gnupg ca-certificates \
+      curl gnupg ca-certificates wireguard-tools iproute2 nftables ethtool \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Add Cloudsmith GPG key
+# Add Caddy’s apt repo & install
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
       | gpg --dearmor \
-        -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-
-# 3. Add Caddy apt source
-RUN printf 'deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] \
-  https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main\n' \
-  > /etc/apt/sources.list.d/caddy-stable.list
-
-# 4. Install Caddy
-RUN apt-get update && \
+        -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg && \
+    printf 'deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] \
+https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main\n' \
+      > /etc/apt/sources.list.d/caddy-stable.list && \
+    apt-get update && \
     apt-get install -y --no-install-recommends caddy \
     && rm -rf /var/lib/apt/lists/*
 
-# 5. Install runtime dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    wireguard-tools iproute2 nftables ethtool \
-    && rm -rf /var/lib/apt/lists/*
+# Copy Angular build for Caddy
+COPY --from=angular-builder /app/dist/wireguard-pro /usr/share/caddy/html
 
-# 6. Copy BoringTun, Python venv, app code & bootstrap
+# Copy BoringTun, venv, app & bootstrap
 COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
 COPY --from=builder /venv /venv
+
 WORKDIR /app
 COPY src/ .
 COPY container/bootstrap.py /
@@ -57,8 +52,7 @@ COPY container/nftables.conf /etc/nftables.conf
 ENV PATH="/venv/bin:$PATH"
 RUN chmod +x /bootstrap.py
 
-# 7. Copy Caddy config
+# Copy your Caddyfile
 COPY container/Caddyfile /etc/caddy/Caddyfile
 
-# 8. Entrypoint: run bootstrap (WireGuard + Gunicorn), then caddy as PID 1
 ENTRYPOINT ["/bootstrap.py"]

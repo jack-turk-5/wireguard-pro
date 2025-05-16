@@ -1,0 +1,39 @@
+<div class="banner">
+  WireGuard Pro 🛡️ Rootless VPN Dashboard
+</div>
+
+<div class="toggle-darkmode">
+  <button (click)="toggleDarkMode()">
+    {{ isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode' }}
+  </button>
+</div>
+
+<div class="server-metrics">
+  <h2>Server Metrics</h2>
+  <p>Uptime: {{ uptime }}</p>
+  <p>Load Average: {{ loadAvg }}</p>
+</div>
+
+<div class="container">
+  <h2>Peers</h2>
+  <div class="button-group">
+    <!-- Call the component method instead of directly using api -->
+    <button (click)="addPeer()">Add Peer</button>
+  </div>
+
+  <!-- Child component renders the peer table -->
+  <app-peers></app-peers>
+
+  <hr />
+
+  <div class="stats-container">
+    <h2>Live VPN Peer Stats</h2>
+    <div class="button-group">
+      <!-- Call the component method to trigger stats refresh -->
+      <button (click)="refreshStats()">Refresh Stats Now</button>
+    </div>
+
+    <!-- Child component renders stats table and charts -->
+    <app-stats></app-stats>
+  </div>
+</div>

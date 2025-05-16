@@ -4,28 +4,23 @@
 }
 :51819 {
     bind fd/3 {
-    protocols h1
+        protocols h1
     }
     encode gzip
 
-    # 1) Match all CORS preflight OPTIONS
-    @preflight {
-    method OPTIONS
-    path   /login* /api/* /serverinfo
+    # 1) Static UI
+    root * /usr/share/caddy/html
+    try_files {path} /index.html
+    file_server
+
+    # 2) Proxy only your API endpoints
+    @api {
+        path /login* /api/* /serverinfo
     }
-
-    # 2) Remove inner ETag / disable caching
-    header @preflight -ETag
-    header @preflight Cache-Control "no-store, no-cache"
-
-    # 3) Reply always with 204
-    respond @preflight 204
-
-    # 4) Your actual proxy to the Flask app
-    reverse_proxy 0.0.0.0:51819 {
-    header_up Host          {host}
-    header_up X-Real-IP     {remote}
-    header_up Authorization {>Authorization}
-    header_up Origin        {>Origin}
+    reverse_proxy @api 0.0.0.0:51818 {
+        header_up Host {host}
+        header_up X-Real-IP {remote}
+        header_up Authorization {>Authorization}
+        header_up Origin {>Origin}
     }
 }

@@ -1,0 +1,35 @@
+<!-- src/app/peers/peers.component.html -->
+
+<table>
+  <thead>
+    <tr>
+      <th>Public Key</th>
+      <th>IPv4</th>
+      <th>IPv6</th>
+      <th>Expires</th>
+      <th>QR Code</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (peer of peers(); track peer.public_key) {
+      <tr>
+        <td>{{ peer.public_key }}</td>
+        <td>{{ peer.ipv4_address }}</td>
+        <td>{{ peer.ipv6_address }}</td>
+        <td>{{ peer.expires_at?.split('T')[0] || 'N/A' }}</td>
+        <td>
+          <qrcode
+            [qrdata]="makeCfg(peer)"
+            [width]="160"
+            [errorCorrectionLevel]="'M'">
+          </qrcode>
+        </td>
+        <td>
+          <button (click)="download(peer)">Download</button>
+          <button (click)="remove(peer.public_key)">Delete</button>
+        </td>
+      </tr>
+    }
+  </tbody>
+</table>

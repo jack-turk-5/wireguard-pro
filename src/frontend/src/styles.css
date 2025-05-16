@@ -1,0 +1,114 @@
+/* You can add global styles to this file, and also import other style files */
+/* styles.scss */
+
+/* General Styling */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  margin: 0; padding: 0 20px;
+  transition: background-color 0.3s, color 0.3s;
+}
+.banner {
+  background-color: #0d6efd; color: white;
+  text-align: center; padding: 10px;
+  font-weight: bold;
+}
+button {
+  background-color: #198754; color: white;
+  border: none; padding: 8px 12px;
+  cursor: pointer; border-radius: 4px;
+  transition: background-color 0.2s;
+}
+button:hover {
+  background-color: #145c32;
+}
+.toggle-darkmode {
+  text-align: center; margin: 10px;
+}
+.server-metrics {
+  margin: 10px; text-align: center;
+}
+.server-metrics h2 {
+  margin-bottom: 10px;
+}
+.container {
+  margin-top: 50px;
+}
+.container h2 {
+  text-align: center; margin-bottom: 10px;
+}
+.table, th, td {
+  width: 100%; border-collapse: collapse;
+  border: 1px solid #ddd; padding: 10px;
+  text-align: left;
+}
+th {
+  background-color: #0d6efd; color: white;
+}
+.stats-container {
+  margin-top: 30px;
+}
+.stats-container h2 {
+  text-align: center; margin-bottom: 10px;
+}
+.refreshStatsBtn {
+  margin-bottom: 10px;
+  background-color: #ffc107; color: black;
+}
+.refreshStatsBtn:hover {
+  background-color: #d39e00;
+}
+.button-group {
+  display: flex; justify-content: center;
+  margin: 1em 0;
+}
+.button-group button {
+  margin: 0 0.5em;
+}
+td.good { color: green; font-weight: bold; }
+td.warn { color: orange; font-weight: bold; }
+td.stale { color: red; font-weight: bold; }
+.qrcode {
+  width: 160px; height: 160px; margin: auto;
+}
+.qrcode canvas {
+  width: 100% !important; height: 100% !important;
+}
+td.actions {
+  vertical-align: middle; text-align: center;
+}
+.action-container {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0.5rem;
+}
+.action-container .action-btn {
+  width: 120px; padding: 0.5em 1em;
+  box-sizing: border-box;
+}
+.charts {
+  display: flex; justify-content: space-around;
+  margin-top: 30px; flex-direction: column;
+  align-items: center; gap: 20px;
+}
+.charts canvas {
+  background-color: #fff; padding: 10px;
+  border-radius: 10px;
+}
+/* Dark mode overrides */
+body.darkmode {
+  background-color: #121212; color: #f9f9f9;
+}
+body.darkmode .banner {
+  background-color: #212121;
+}
+body.darkmode th {
+  background-color: #333;
+}
+body.darkmode td {
+  background-color: #1f1f1f;
+}
+body.darkmode table,
+body.darkmode .charts canvas {
+  background-color: #2b2b2b;
+}
