@@ -1,119 +1,120 @@
 from time import strftime, gmtime
 from os import getloadavg, environ
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from flask_httpauth import HTTPTokenAuth
+from itsdangerous import SignatureExpired, URLSafeTimedSerializer as Serializer
+from itsdangerous.exc import BadSignature
 from scheduler import scheduler
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from flasgger import Swagger
 from utils import get_server_pubkey
-from db import init_db
+from db import init_db, add_or_update_user_db, verify_user_db
+from logging import basicConfig, DEBUG, error, warning
+
+basicConfig(level=DEBUG)
+
+def make_token_serializer(flask_app):
+    return Serializer(flask_app.config['SECRET_KEY'], salt='auth-token')
+
+def generate_token(s, username):
+    return s.dumps({'user': username})
+
+def verify_token(s, token, max_age=1800):
+    try:
+        return s.loads(token, max_age=max_age).get('user')
+    except SignatureExpired as e:
+        warning(f"Token expired at {e.date_signed}")
+        return None
+    except BadSignature as e:
+        error(f"Invalid token signature: {e}")
+        return None
 
 def create_app():
-    # Create application and collect environment variables
     flask_app = Flask(__name__, instance_relative_config=True)
-    flask_app.config['JSON_SORT_KEYS'] = False
+    flask_app.config['SECRET_KEY'] = environ['SECRET_KEY']
     flask_app.config['WG_SERVER_PUBKEY'] = get_server_pubkey()
     flask_app.config['WG_ENDPOINT'] = environ.get('WG_ENDPOINT')
 
-    # Start Swagger for API documentation
     Swagger(flask_app)
-
-    # Start scheduler
     scheduler.init_app(flask_app)
     scheduler.start()
 
-    # Initiate and inject Db into application context
+    CORS(
+        flask_app,
+        resources={
+            r"/api/*": {"origins": "*"},
+            r"/serverinfo": {"origins": "*"}
+        },
+        methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
+        expose_headers=["Authorization"],
+        supports_credentials=True
+    )
+
+    # DB + seed admin user
     with flask_app.app_context():
         init_db()
+        user = environ['ADMIN_USER']
+        pw = environ['ADMIN_PASS']
+        add_or_update_user_db(user, pw)
+        flask_app.logger.info(f"Seeded user `{user}`")
+
+    # Token-only auth
+    token_auth = HTTPTokenAuth(scheme='Bearer')
+    ts = make_token_serializer(flask_app)
+
+    @token_auth.verify_token
+    def verify_tok(token):
+        return verify_token(ts, token)
+
+    # ——— Routes ———
+    @flask_app.route('/api/login', methods=['POST'])
+    def login():
+        data = request.get_json() or {}
+        u = data.get('username','').strip()
+        p = data.get('password','')
+        if not u or not p or not verify_user_db(u, p):
+            return jsonify({'error':'invalid credentials'}), 401
+        return jsonify({'token': generate_token(ts,u)})
 
     @flask_app.route('/api/peers/new', methods=['POST'])
+    @token_auth.login_required
     def api_create_peer():
-        """
-        Create a new WireGuard peer
-        ---
-        parameters:
-          - name: days_valid
-            in: json
-            type: integer
-            required: false
-            description: Days before expiration
-        responses:
-          200:
-            description: Peer created successfully
-        """
-        data = request.get_json()
-        peer = create_peer(data.get('days_valid', 7))
-        return jsonify(peer)
+        days = (request.get_json() or {}).get('days_valid',7)
+        return jsonify(create_peer(days))
 
     @flask_app.route('/api/peers/delete', methods=['POST'])
+    @token_auth.login_required
     def api_delete_peer():
-        """
-        Delete a WireGuard peer by Public Key
-        ---
-        parameters:
-          - name: public_key
-            in: json
-            type: string
-            required: true
-            description: Public key to remove
-        responses:
-          200:
-            description: Peer deleted
-        """
-        data = request.get_json()
-        success = delete_peer(data['public_key'])
-        return jsonify({"deleted": success})
+        key = (request.get_json() or {}).get('public_key','')
+        return jsonify({'deleted': delete_peer(key)})
 
     @flask_app.route('/api/peers/list', methods=['GET'])
+    @token_auth.login_required
     def api_list_peers():
-        """
-        List all WireGuard peers
-        ---
-        responses:
-          200:
-            description: List of peers
-        """
         return jsonify(list_peers())
 
     @flask_app.route('/api/peers/stats', methods=['GET'])
+    @token_auth.login_required
     def api_peer_stats():
-        """
-        Live WireGuard peer stats
-        ---
-        responses:
-          200:
-            description: List of active peers with traffic stats
-        """
         return jsonify(peer_stats())
 
     @flask_app.route('/serverinfo', methods=['GET'])
+    @token_auth.login_required
     def server_info():
         try:
-            with open('/proc/uptime', 'r') as f:
-                first_field, *_ = f.readline().split()
-                uptime_seconds = float(first_field)
-                uptime_str = strftime("%H:%M:%S", gmtime(uptime_seconds))
-
-            load_avg = getloadavg()  # (1m, 5m, 15m)
-            load_str = "{:.2f} {:.2f} {:.2f}".format(*load_avg)
-
+            with open('/proc/uptime') as f:
+                up = float(f.readline().split()[0])
             return jsonify({
-                "uptime": uptime_str,
-                "load": load_str
+                'uptime': strftime("%H:%M:%S", gmtime(up)),
+                'load': "{:.2f} {:.2f} {:.2f}".format(*getloadavg())
             })
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-    @flask_app.route('/')
-    def serve_ui():
-        return render_template(
-            'index.html',
-            server_public_key=flask_app.config['WG_SERVER_PUBKEY'],
-            server_endpoint=flask_app.config['WG_ENDPOINT'])
+            return jsonify({'error':str(e)}), 500
 
     return flask_app
 
-# Create application instance at module level
 app = create_app()
-if __name__ == "__main__":
-    # Run app, entrypoint logic in container/entrypoint.py
+if __name__=="__main__":
     app.run()

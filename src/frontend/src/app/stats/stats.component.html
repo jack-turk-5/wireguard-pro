@@ -1,0 +1,44 @@
+@if (stats.length > 0) {
+  <div class="stats-container">
+    <h2>Live VPN Peer Stats</h2>
+
+    <!-- Stats Table -->
+    <table id="statsTable">
+      <thead>
+        <tr>
+          <th>Public Key</th>
+          <th>Last Handshake (s ago)</th>
+          <th>Received (MB)</th>
+          <th>Sent (MB)</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of stats; track s.public_key) {
+          <tr>
+            <td>{{ s.public_key }}</td>
+            <td
+              [class.good]="s.last_handshake_time < 60"
+              [class.warn]="s.last_handshake_time >= 60 && s.last_handshake_time < 300"
+              [class.stale]="s.last_handshake_time >= 300">
+              {{ s.last_handshake_time }}
+            </td>
+            <td>{{ (s.rx_bytes / 1024 / 1024) | number:'1.2-2' }}</td>
+            <td>{{ (s.tx_bytes / 1024 / 1024) | number:'1.2-2' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <!-- ApexCharts Line Chart -->
+    <apx-chart
+      [series]="chartOptions.series!"
+      [chart]="chartOptions.chart!"  
+      [xaxis]="chartOptions.xaxis!"  
+      [stroke]="chartOptions.stroke!"
+      [dataLabels]="chartOptions.dataLabels!"
+      [title]="chartOptions.title!">
+    </apx-chart>
+  </div>
+} @else {
+  <p>No statistics to display.</p>
+}

@@ -1,4 +1,8 @@
+bcrypt
 Flask
 Flask-APScheduler
+Flask-Cors
+Flask-HttpAuth
 flasgger
 gunicorn
+itsdangerous

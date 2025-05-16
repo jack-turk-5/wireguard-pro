@@ -2,11 +2,30 @@
     debug
     auto_https off
 }
+
 :51819 {
-    # Use the inherited systemd socket on FD 3
     bind fd/3 {
         protocols h1
     }
     encode gzip
-    reverse_proxy 0.0.0.0:51819
+
+    handle /serverinfo {
+        reverse_proxy :51818 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    handle /api* {
+        reverse_proxy :51818 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    handle {
+        root * /usr/share/caddy/html
+        try_files {path} /index.html
+        file_server
+    }
 }

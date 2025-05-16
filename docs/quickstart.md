@@ -22,6 +22,8 @@ sudo apt-get install wireguard-tools
 ```bash
 git clone https://github.com/jack-turk-5/wireguard-pro.git
 cd wireguard-pro
+# Set at least ADMIN_USER, ADMIN_PASS, and WG_ENDPOINT at
+# ~/.config/wireguard-pro/env
 make deploy
 ```
 
@@ -79,7 +81,6 @@ Deployed automatically by `make start`.
 | Chart.js | RX/TX traffic graphs |
 | Dark Mode | User toggle |
 | Server Info | Uptime/load metrics |
-| Socket Activation | Rootless startup |
 
 ---
 

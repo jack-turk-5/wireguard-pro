@@ -8,5 +8,8 @@ podman secret create wg-privatekey ./secrets/wg-privatekey
 
 This key will be injected securely into the container at runtime.
 
-## Hint
+## Efficiency Hint
 Run `make secrets` to generate WireGuard keypair if it doesn't exist yet
+
+## Initial User Setup
+To generate admin credentials for the UI, set `ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables in `~/.config/wireguard-pro/env`
