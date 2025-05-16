@@ -17,7 +17,7 @@ import { RouterModule } from '@angular/router';
       <router-outlet></router-outlet>
     </main>
   `,
-  styles: [`
+  /* styles: [`
     .app-header {
       background: #0d6efd;
       color: white;
@@ -27,6 +27,6 @@ import { RouterModule } from '@angular/router';
     main {
       padding: 1rem;
     }
-  `]
+  `] */
 })
 export class AppComponent {}

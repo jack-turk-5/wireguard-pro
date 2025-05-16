@@ -9,5 +9,5 @@ export const AuthGuard: CanActivateFn = () => {
   if (auth.token) {
     return true;
   }
-  return router.parseUrl('/api/login');
+  return router.parseUrl('/login');
 };
