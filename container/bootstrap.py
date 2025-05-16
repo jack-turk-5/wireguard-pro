@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
-from os import path, makedirs, execv
+from secrets import token_urlsafe
+from os import environ, path, makedirs, execv
 from subprocess import check_output, Popen, PIPE, run
 from shutil import which
+
+# ——— Flask SECRET_KEY bootstrapping ———
+FLASK_SECRET_FILE = '/data/flask_secret'
+makedirs(path.dirname(FLASK_SECRET_FILE), exist_ok=True)
+
+if 'SECRET_KEY' not in environ:
+    if path.exists(FLASK_SECRET_FILE):
+        environ['SECRET_KEY'] = open(FLASK_SECRET_FILE, 'r').read().strip()
+    else:
+        key = token_urlsafe(32)
+        with open(FLASK_SECRET_FILE, 'w') as f:
+            f.write(key)
+        environ['SECRET_KEY'] = key
 
 # ——— WireGuard keygen & wg0.conf bootstrapping ———
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
@@ -36,10 +50,10 @@ run(['wg-quick','up','wg0'], check=True)
 Popen([
     '/venv/bin/gunicorn',
     '--preload',
-    '--bind','0.0.0.0:51818',
-    '--workers','4',
-    '--timeout','30',
-    '--graceful-timeout','20',
+    '--bind',   '0.0.0.0:51818',
+    '--workers', '4',
+    '--timeout', '30',
+    '--graceful-timeout', '20',
     '--reuse-port',
     'app:app'
 ])
