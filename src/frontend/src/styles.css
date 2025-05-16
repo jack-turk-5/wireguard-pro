@@ -110,15 +110,6 @@ td.actions {
   border-radius: 10px;
 }
 
-/* Logout button styling */
-.logout-btn {
-  background: none;
-  border: 1px solid currentColor;
-  padding: 0.25rem 0.75rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-
 /* Dark mode overrides */
 body.darkmode {
   background-color: #121212; color: #f9f9f9;

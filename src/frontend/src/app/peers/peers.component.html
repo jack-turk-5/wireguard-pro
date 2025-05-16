@@ -25,9 +25,15 @@
             [errorCorrectionLevel]="'M'">
           </qrcode>
         </td>
-        <td>
-          <button (click)="download(peer)">Download</button>
-          <button (click)="remove(peer.public_key)">Delete</button>
+        <td class="actions">
+          <div class="action-container">
+            <button class="action-btn" (click)="download(peer)">
+              Download
+            </button>
+            <button class="action-btn" (click)="remove(peer.public_key)">
+              Delete
+            </button>
+          </div>
         </td>
       </tr>
     }
