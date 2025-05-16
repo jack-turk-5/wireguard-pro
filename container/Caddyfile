@@ -15,7 +15,7 @@
 
     # 2) Proxy only your API endpoints
     @api {
-        path /login* /api/* /serverinfo
+        path /api/* /serverinfo
     }
     reverse_proxy @api 0.0.0.0:51818 {
         header_up Host {host}
