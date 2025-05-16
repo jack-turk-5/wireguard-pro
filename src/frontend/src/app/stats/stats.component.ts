@@ -24,7 +24,8 @@ export type ChartOptions = {
   selector: 'app-stats',
   standalone: true,
   imports: [CommonModule, NgApexchartsModule],      
-  templateUrl: './stats.component.html'
+  templateUrl: './stats.component.html',
+  styleUrls: []
 })
 export class StatsComponent implements OnInit {
   stats: Stat[] = [];                             

@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule, PeersComponent, StatsComponent],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css']
+  styleUrls: []
 })
 export class DashboardComponent implements OnInit {
   uptime   = 'Loading...';
