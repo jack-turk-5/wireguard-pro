@@ -41,7 +41,7 @@ def create_app():
     scheduler.start()
 
     CORS(
-        app,
+        flask_app,
         resources={r"/api/*": {"origins": "0.0.0.0:51819"},
                    r"/serverinfo": {"origins": "0.0.0.0:51819"}}, 
         allow_headers=["Authorization", "Content-Type"],
