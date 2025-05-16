@@ -7,7 +7,7 @@ import { RouterOutlet } from '@angular/router';
   imports: [RouterOutlet],
   template: `
     <header class="banner app-header">
-      <h1>WireGuard Pro Dashboard</h1>
+      <h1>WireGuard Pro 🛡️ Rootless VPN Dashboard</h1>
     </header>
 
     <main class="container">
@@ -21,6 +21,17 @@ import { RouterOutlet } from '@angular/router';
       color: white;
       padding: 1rem;
       text-align: center;
+    }
+
+    button {
+      background-color: #198754; color: white;
+      border: none; padding: 8px 12px;
+      cursor: pointer; border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #145c32;
     }
 
     /* ensure main content has the right padding */
@@ -40,6 +51,7 @@ import { RouterOutlet } from '@angular/router';
       font-size: 0.9rem;
       transition: background-color 0.2s;
     }
+    
     .toggle-darkmode:hover {
       background-color: rgba(255, 255, 255, 0.2);
     }
