@@ -1,6 +1,6 @@
 // src/app/dashboard/dashboard.component.ts
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { ApiService, ServerInfo, Peer } from '../services/api.service';
+import { ApiService, ServerInfo } from '../services/api.service';
 import { PeersComponent } from '../peers/peers.component';
 import { StatsComponent } from '../stats/stats.component';
 import { CommonModule } from '@angular/common';
@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule, PeersComponent, StatsComponent],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss']
+  styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
   uptime   = 'Loading...';
