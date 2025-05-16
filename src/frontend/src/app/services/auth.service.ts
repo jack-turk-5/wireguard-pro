@@ -1,27 +1,49 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { LOCAL_STORAGE } from '../storage/storage';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, tap } from 'rxjs';
 
-@Injectable({ providedIn: 'root' })
+export interface AuthResponse {
+  token: string;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
 export class AuthService {
-  private token$ = new BehaviorSubject<string|null>(null);
+  private readonly TOKEN_KEY = 'jwt-token';
+  private readonly loggedInSubject = new BehaviorSubject<boolean>(this.hasToken());
+  private readonly storage = inject(LOCAL_STORAGE);
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly httpClient: HttpClient) {}
 
-  login(user: string, pass: string) {
-    return this.http.post<{ token: string }>(
-      '/api/login',
-      { username: user, password: pass }
-    ).pipe(
-      tap(res => this.token$.next(res.token))
+  login(credentials: { username: string; password: string }): Observable<{ token: string }> {
+    return this.httpClient.post<AuthResponse>('/api/login', credentials).pipe(
+      tap(response => {
+        this.storeToken(response.token);
+        this.loggedInSubject.next(true);
+      })
     );
   }
 
-  get token(): string|null {
-    return this.token$.value;
+  logout(): void {
+    this.storage?.removeItem(this.TOKEN_KEY);
+    this.loggedInSubject.next(false);
   }
 
-  logout() {
-    this.token$.next(null);
+  isLoggedIn(): Observable<boolean> {
+    return this.loggedInSubject.asObservable();
+  }
+
+  getToken(): string | null {
+    return this.storage?.getItem(this.TOKEN_KEY) ?? null;
+  }
+
+  private storeToken(token: string): void {
+    this.storage?.setItem(this.TOKEN_KEY, token);
+  }
+
+  private hasToken(): boolean {
+    return this.storage?.getItem(this.TOKEN_KEY) != null;
   }
 }

@@ -103,7 +103,7 @@ export class LoginComponent {
     // Use getRawValue() so `user` and `pass` are typed as string, not string|undefined
     const { user, pass } = this.loginForm.getRawValue();
 
-    this.auth.login(user, pass).subscribe(() => {
+    this.auth.login({ username: user, password: pass }).subscribe(() => {
       this.router.navigate(['/dashboard']);
     });
   }

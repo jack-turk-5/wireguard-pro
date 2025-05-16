@@ -5,7 +5,7 @@ import { AuthService } from '../services/auth.service';
 export const AuthGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  const token = authService.token
+  const token = authService.getToken();
 
   if (!token) {
     // If no token, redirect to login and deny activation.
