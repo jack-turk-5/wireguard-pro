@@ -1,22 +1,24 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { ApiService, ServerInfo } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { PeersComponent } from '../peers/peers.component';
 import { StatsComponent } from '../stats/stats.component';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { QRCodeComponent } from 'angularx-qrcode';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, PeersComponent, StatsComponent],
+  imports: [CommonModule, PeersComponent, QRCodeComponent, StatsComponent],
   templateUrl: './dashboard.component.html',
-  styleUrls: []
+  styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
   uptime   = 'Loading...';
   loadAvg  = 'Loading...';
   isDarkMode = false;
+  zoomedQr = signal<string|null>(null);
 
   /** Expose ApiService publicly so template can use it */
   constructor(private api: ApiService, private auth: AuthService, private router: Router) {}
@@ -64,5 +66,14 @@ export class DashboardComponent implements OnInit {
       this.uptime  = info.uptime;
       this.loadAvg = info.load;
     });
+  }
+
+  onQrClick(cfg: string) {
+    this.zoomedQr.set(cfg);
+    document.body.classList.add('modal-open');
+  }
+  closeQr() {
+    this.zoomedQr.set(null);
+    document.body.classList.remove('modal-open');
   }
 }

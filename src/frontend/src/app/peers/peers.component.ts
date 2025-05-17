@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { ApiService } from '../services/api.service';
@@ -12,7 +12,7 @@ import { ApiService } from '../services/api.service';
 })
 export class PeersComponent implements OnInit {
   peers = signal<any[]>([]);
-  zoomedPeer = signal<any | null>(null);
+  @Output() qrClick = new EventEmitter<string>();
 
   constructor(private api: ApiService) {}
 
@@ -55,12 +55,7 @@ export class PeersComponent implements OnInit {
   }
 
   openQr(peer: any) {
-    this.zoomedPeer.set(peer);
-    document.body.classList.add('modal-open');
+    this.qrClick.emit(this.makeCfg(peer));
   }
-  closeQr() {
-    this.zoomedPeer.set(null);
-    document.body.classList.remove('modal-open');
-  }
-
+  
 }

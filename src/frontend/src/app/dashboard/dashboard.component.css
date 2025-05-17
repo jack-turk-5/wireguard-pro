@@ -1,28 +1,18 @@
-/* prevent page‐scroll while modal is open */
-body.modal-open {
-  overflow: hidden;
-}
-
-/* small thumbnail */
-.qr-thumb {
-  cursor: zoom-in;
-}
-
-/* full‐screen overlay with blur + fade */
+/* full‐screen blurred backdrop */
 .qr-modal {
   position: fixed;
-  inset: 0;                         /* top:0; right:0; bottom:0; left:0 */
+  inset: 0;                       /* top/right/bottom/left = 0 */
   background: rgba(0,0,0,0.4);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   animation: fadeIn 0.3s ease;
 }
 
-/* white centered box with pop animation */
+/* pop‐in white box */
 .qr-modal-content {
   position: relative;
   background: #fff;
@@ -32,7 +22,6 @@ body.modal-open {
   animation: popIn 0.3s ease;
 }
 
-/* close “×” */
 .qr-modal-close {
   position: absolute;
   top: 0.5rem; right: 0.5rem;
@@ -42,7 +31,6 @@ body.modal-open {
   cursor: pointer;
 }
 
-/* animations */
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }

@@ -25,6 +25,7 @@
 
   <hr />
 
+  <app-peers (qrClick)="onQrClick($event)"></app-peers>
   <div class="stats-container">
     <h2>Live VPN Peer Stats</h2>
     <div class="button-group">
@@ -36,3 +37,16 @@
     <app-stats></app-stats>
   </div>
 </div>
+
+@if (zoomedQr()) {
+  <div class="qr-modal" (click)="closeQr()">
+    <div class="qr-modal-content" (click)="$event.stopPropagation()">
+      <button class="qr-modal-close" (click)="closeQr()">✕</button>
+      <qrcode
+        [qrdata]="zoomedQr()!"
+        [width]="300"
+        [errorCorrectionLevel]="'M'">
+      </qrcode>
+    </div>
+  </div>
+}
