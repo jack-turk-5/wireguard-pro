@@ -1,12 +1,7 @@
 <table>
   <thead>
     <tr>
-      <th>Public Key</th>
-      <th>IPv4</th>
-      <th>IPv6</th>
-      <th>Expires</th>
-      <th>QR Code</th>
-      <th>Actions</th>
+      <th>Public Key</th><th>IPv4</th><th>IPv6</th><th>Expires</th><th>QR Code</th><th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -27,12 +22,8 @@
         </td>
         <td class="actions">
           <div class="action-container">
-            <button class="action-btn" (click)="download(peer)">
-              Download
-            </button>
-            <button class="action-btn" (click)="remove(peer.public_key)">
-              Delete
-            </button>
+            <button class="action-btn" (click)="download(peer)">Download</button>
+            <button class="action-btn" (click)="remove(peer.public_key)">Delete</button>
           </div>
         </td>
       </tr>
@@ -40,10 +31,12 @@
   </tbody>
 </table>
 
-@if (zoomedPeer()) {
+@if (zoomedPeer())
+{
+  <!-- full‐screen, centered overlay -->
   <div class="qr-modal" (click)="closeQr()">
     <div class="qr-modal-content" (click)="$event.stopPropagation()">
-      <button class="qr-modal-close" (click)="closeQr()">✕</button>
+      <button class="qr-modal-close" aria-label="Close" (click)="closeQr()">✕</button>
       <qrcode
         [qrdata]="makeCfg(zoomedPeer())"
         [width]="400"

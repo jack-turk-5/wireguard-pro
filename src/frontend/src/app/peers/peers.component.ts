@@ -54,11 +54,10 @@ export class PeersComponent implements OnInit {
     this.api.deletePeer(key).subscribe(() => this.loadPeers());
   }
 
-  openQr(p: any) {
-    this.zoomedPeer.set(p);
+  openQr(peer: any) {
+    this.zoomedPeer.set(peer);
     document.body.classList.add('modal-open');
   }
-
   closeQr() {
     this.zoomedPeer.set(null);
     document.body.classList.remove('modal-open');
