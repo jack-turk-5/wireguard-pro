@@ -1,7 +1,7 @@
 import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QRCodeComponent } from 'angularx-qrcode';
-import { ApiService } from '../services/api.service';
+import { ApiService, ServerConfig } from '../services/api.service';
 
 @Component({
   selector: 'app-peers',
@@ -12,16 +12,25 @@ import { ApiService } from '../services/api.service';
 })
 export class PeersComponent implements OnInit {
   peers = signal<any[]>([]);
+  config: ServerConfig = {
+    public_key:  '',
+    endpoint:    ''
+  };
   @Output() qrClick = new EventEmitter<string>();
 
   constructor(private api: ApiService) {}
 
   ngOnInit() {
     this.loadPeers();
+    this.loadConfig();
   }
 
   loadPeers() {
     this.api.listPeers().subscribe(list => this.peers.set(list));
+  }
+
+  loadConfig() {
+    this.api.getServerConfig().subscribe((config: ServerConfig) => this.config = config);
   }
 
   trackByKey(_idx: number, peer: any) {
@@ -35,8 +44,8 @@ export class PeersComponent implements OnInit {
       `Address = ${p.ipv4_address}/32`,
       ``,
       `[Peer]`,
-      `PublicKey = YOUR_SERVER_PUBKEY`,
-      `Endpoint = YOUR_ENDPOINT`,
+      `PublicKey = ${this.config.public_key}`,
+      `Endpoint = ${this.config.endpoint}`,
       `AllowedIPs = 0.0.0.0/0, ::/0`,
       `PersistentKeepalive = 25`
     ].join('\n');

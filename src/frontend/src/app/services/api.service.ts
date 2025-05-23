@@ -17,9 +17,14 @@ export interface Stat {
   tx_bytes: number;
 }
 
-export interface ServerInfo {
+export interface ServerHealthcheck {
   uptime: string;
   load: string;
+}
+
+export interface ServerConfig {
+    public_key: string;
+    endpoint: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -49,7 +54,12 @@ export class ApiService {
   }
 
   /** Fetch server uptime & load average */  
-  getServerInfo(): Observable<ServerInfo> {
-    return this.http.get<ServerInfo>('/serverinfo', { withCredentials: true });  
+  getServerConfig(): Observable<ServerConfig> {
+    return this.http.get<ServerConfig>('/api/config', { withCredentials: true });  
+  }
+
+  /** Fetch server uptime & load average */  
+  getServerHealth(): Observable<ServerHealthcheck> {
+    return this.http.get<ServerHealthcheck>('/api/serverinfo', { withCredentials: true });  
   }
 }

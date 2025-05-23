@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, ViewChild } from '@angular/core';
-import { ApiService, ServerInfo } from '../services/api.service';
+import { ApiService, ServerHealthcheck } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { PeersComponent } from '../peers/peers.component';
 import { StatsComponent } from '../stats/stats.component';
@@ -33,8 +33,8 @@ export class DashboardComponent implements OnInit {
     document.body.classList.toggle('darkmode', this.isDarkMode);
 
     // Fetch server info immediately and every minute
-    this.fetchServerInfo();
-    setInterval(() => this.fetchServerInfo(), 60_000);
+    this.fetchServerHealth();
+    setInterval(() => this.fetchServerHealth(), 60_000);
   }
 
   /** Toggle the page’s dark mode */
@@ -61,8 +61,8 @@ export class DashboardComponent implements OnInit {
   }
 
   /** Internal call to fetch server uptime/load */
-  private fetchServerInfo() {
-    this.api.getServerInfo().subscribe((info: ServerInfo) => {
+  private fetchServerHealth() {
+    this.api.getServerHealth().subscribe((info: ServerHealthcheck) => {
       this.uptime  = info.uptime;
       this.loadAvg = info.load;
     });

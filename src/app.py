@@ -77,11 +77,20 @@ def create_app():
         if not u or not p or not verify_user_db(u, p):
             return jsonify({'error':'invalid credentials'}), 401
         return jsonify({'token': generate_token(ts,u)})
+    
+    @flask_app.route('/api/config', methods=['GET'])
+    @token_auth.login_required
+    def api_get_config():
+        return jsonify({
+                'public_key': flask_app.config['WG_SERVER_PUBKEY'], 
+                'endpoint': flask_app.config['WG_ENDPOINT']
+            }
+        )
 
     @flask_app.route('/api/peers/new', methods=['POST'])
     @token_auth.login_required
     def api_create_peer():
-        days = (request.get_json() or {}).get('days_valid',7)
+        days = (request.get_json() or {}).get('days_valid', 7)
         return jsonify(create_peer(days))
 
     @flask_app.route('/api/peers/delete', methods=['POST'])
@@ -100,7 +109,7 @@ def create_app():
     def api_peer_stats():
         return jsonify(peer_stats())
 
-    @flask_app.route('/serverinfo', methods=['GET'])
+    @flask_app.route('/api/serverinfo', methods=['GET'])
     @token_auth.login_required
     def server_info():
         try:

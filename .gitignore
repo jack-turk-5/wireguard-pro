@@ -173,3 +173,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 **/.DS_Store/**
+
+# WireGuard keys
+wg-privatekey
+wg-publickey
+
+# Flask secret
+flask-secret

@@ -1,31 +1,24 @@
 {
-    debug
-    auto_https off
+	debug
+	auto_https off
 }
 
 :51819 {
-    bind fd/3 {
-        protocols h1
-    }
-    encode gzip
+	bind fd/3 {
+		protocols h1
+	}
+	encode gzip
 
-    handle /serverinfo {
-        reverse_proxy :51818 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-        }
-    }
+	handle /api* {
+		reverse_proxy :51818 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+		}
+	}
 
-    handle /api* {
-        reverse_proxy :51818 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-        }
-    }
-
-    handle {
-        root * /usr/share/caddy/html
-        try_files {path} /index.html
-        file_server
-    }
+	handle {
+		root * /usr/share/caddy/html
+		try_files {path} /index.html
+		file_server
+	}
 }

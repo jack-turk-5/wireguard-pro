@@ -4,7 +4,7 @@ from os import environ, path, makedirs, execv
 from subprocess import CalledProcessError, check_output, Popen, PIPE, run
 from shutil import which
 
-# ——— Flask SECRET_KEY bootstrapping ———
+# Flask SECRET_KEY bootstrapping
 FLASK_SECRET_FILE = '/data/flask_secret'
 makedirs(path.dirname(FLASK_SECRET_FILE), exist_ok=True)
 
@@ -17,7 +17,7 @@ if 'SECRET_KEY' not in environ:
             f.write(key)
         environ['SECRET_KEY'] = key
 
-# ——— WireGuard keygen & wg0.conf bootstrapping ———
+# WireGuard keygen & wg0.conf bootstrapping
 WG_CONF, SECRET = '/etc/wireguard/wg0.conf', '/run/secrets/wg-privatekey'
 if not path.isfile(WG_CONF):
     makedirs(path.dirname(WG_CONF), exist_ok=True)
@@ -59,7 +59,7 @@ Popen([
     '--graceful-timeout', '20',
     '--reuse-port',
     'app:app'
-], env=environ.copy(),)
+], env=environ.copy())
 
 # Apply nftables + ethtool tweaks
 run(['nft','-f','/etc/nftables.conf'], check=True)
