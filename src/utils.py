@@ -99,4 +99,4 @@ def remake_peers_file():
         append_peer_to_wgconf(p["public_key"], p["ipv4_address"], p["ipv6_address"])
 
     # 4) push into the running interface
-    run(["wg", "syncconf", "wg0", WG_PATH], check=True)
+    reload_wireguard()
