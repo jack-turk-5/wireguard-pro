@@ -40,6 +40,7 @@
       <button class="qr-modal-close" (click)="closeQr()">✕</button>
       <qrcode
         [qrdata]="zoomedQr()!"
+        [width]="300"
         [errorCorrectionLevel]="'M'">
       </qrcode>
     </div>

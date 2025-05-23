@@ -14,6 +14,7 @@
         <td>
           <qrcode
             [qrdata]="makeCfg(peer)"
+            [width]="120"
             [errorCorrectionLevel]="'M'"
             (click)="openQr(peer)">
           </qrcode>
