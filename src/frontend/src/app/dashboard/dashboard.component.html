@@ -23,7 +23,7 @@
   <!-- Child component renders the peer table -->
   <app-peers (qrClick)="onQrClick($event)" (peerDeleted)="onPeerChange()"></app-peers>
   <div class="stats-container">
-    <h2>Live VPN Peer Stats</h2>
+    <h2>Live Peer Stats</h2>
     <div class="button-group">
       <!-- Call the component method to trigger stats refresh -->
       <button (click)="refreshStats()">Refresh Stats Now</button>
