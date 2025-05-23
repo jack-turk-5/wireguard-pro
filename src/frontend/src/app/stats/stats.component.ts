@@ -52,7 +52,7 @@ export class StatsComponent implements OnInit {
     return s.public_key;
   }
 
-  private fetchAndUpdate(): void {
+  fetchAndUpdate(): void {
     this.api.getStats().subscribe(data => {
       const now = Math.floor(Date.now() / 1000);
       const updated = data.map(s => ({
