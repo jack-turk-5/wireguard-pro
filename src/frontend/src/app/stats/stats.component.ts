@@ -71,7 +71,7 @@ export class StatsComponent implements OnInit {
     return s.public_key;
   }
 
-  private fetchAndUpdate(): void {
+  fetchAndUpdate(): void {
     this.api.getStats().subscribe(data => {
       const now = Math.floor(Date.now() / 1000);
       const updated = data.map(s => ({
@@ -91,11 +91,11 @@ export class StatsComponent implements OnInit {
 
       const rxData = [...prevRx, +totalRx.toFixed(2)].slice(-20);
       const txData = [...prevTx, +totalTx.toFixed(2)].slice(-20);
-      const cats   = [...prevCat,    label      ].slice(-20);
+      const cats   = [...prevCat, label].slice(-20);
 
-      (this.chartOptions.series[0].data as number[])    = rxData;
-      (this.chartOptions.series[1].data as number[])    = txData;
-      (this.chartOptions.xaxis.categories as string[])  = cats;
+      (this.chartOptions.series[0].data as number[]) = rxData;
+      (this.chartOptions.series[1].data as number[]) = txData;
+      (this.chartOptions.xaxis.categories as string[]) = cats;
     });
   }
 }
