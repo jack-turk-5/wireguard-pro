@@ -1,3 +1,4 @@
+<!-- stats.component.html -->
 @if (stats.length > 0) {
   <div class="stats-container">
     <table id="statsTable">
@@ -33,7 +34,8 @@
       [xaxis]="chartOptions.xaxis"
       [stroke]="chartOptions.stroke"
       [dataLabels]="chartOptions.dataLabels"
-      [title]="chartOptions.title">
+      [title]="chartOptions.title"
+      [tooltip]="chartOptions.tooltip">
     </apx-chart>
   </div>
 } @else {
