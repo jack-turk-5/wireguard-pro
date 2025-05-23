@@ -44,6 +44,7 @@ export class PeersComponent implements OnInit {
       `[Interface]`,
       `PrivateKey = ${p.private_key}`,
       `Address = ${p.ipv4_address}/32`,
+      `DNS = 1.1.1.1`,
       ``,
       `[Peer]`,
       `PublicKey = ${this.config.public_key}`,
