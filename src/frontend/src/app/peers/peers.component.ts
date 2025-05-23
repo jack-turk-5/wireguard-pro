@@ -8,7 +8,9 @@ import { ApiService, ServerConfig } from '../services/api.service';
   standalone: true,
   imports: [CommonModule, QRCodeComponent],
   templateUrl: './peers.component.html',
-  styleUrls: []
+  styles: `.qrcode {
+  width: 160px; height: 160px; margin: auto;
+}`
 })
 export class PeersComponent implements OnInit {
   peers = signal<any[]>([]);

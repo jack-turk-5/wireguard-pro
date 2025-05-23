@@ -13,9 +13,7 @@
         <td>{{ peer.expires_at?.split('T')[0] || 'N/A' }}</td>
         <td>
           <qrcode
-            class="qr-thumb"
             [qrdata]="makeCfg(peer)"
-            [width]="160"
             [errorCorrectionLevel]="'M'"
             (click)="openQr(peer)">
           </qrcode>

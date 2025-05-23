@@ -83,10 +83,6 @@ td.good { color: green; font-weight: bold; }
 td.warn { color: orange; font-weight: bold; }
 td.stale { color: red; font-weight: bold; }
 
-.qrcode {
-  width: 160px; height: 160px; margin: auto;
-}
-
 td.actions {
   vertical-align: middle; text-align: center;
 }
