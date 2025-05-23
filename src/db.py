@@ -2,8 +2,8 @@ from os import makedirs, path
 from sqlite3 import connect, Row, IntegrityError
 from bcrypt import checkpw, hashpw, gensalt
 
-DB_FILE = "/data/peers.db"
 
+DB_FILE = "/data/peers.db"
 
 def _ensure_dir():
     makedirs(path.dirname(DB_FILE), exist_ok=True)

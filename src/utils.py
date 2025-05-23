@@ -2,6 +2,8 @@ from db import get_all_peers
 from subprocess import check_output, run, PIPE
 
 
+WG_PATH = "/etc/wireguard/wg0.conf"
+
 def generate_keypair():
     """
     Generate a private/public keypair
@@ -56,12 +58,11 @@ def next_available_ip():
 
     return ipv4, ipv6
 
-
 def append_peer_to_wgconf(public_key, ipv4, ipv6):
     """
     Append a peer to the wg0.conf file
     """
-    with open("/etc/wireguard/wg0.conf", "a") as f:
+    with open(WG_PATH, "a") as f:
         lines = [
             "[Peer]",
             f"PublicKey = {public_key}",
@@ -78,3 +79,24 @@ def reload_wireguard():
         f.write(strip.stdout)
 
     run(["wg", "syncconf", "wg0", "/run/wg0.peers.conf"], check=True)
+
+def remake_peers_file():
+    # 1) read existing file up to—but not including—the first [Peer]
+    with open(WG_PATH, "r") as f:
+        lines = f.read().splitlines()
+    interface_section = []
+    for line in lines:
+        if line.strip() == "[Peer]":
+            break
+        interface_section.append(line)
+
+    # 2) overwrite disk config with just the interface
+    with open(WG_PATH, "w") as f:
+        f.write("\n".join(interface_section) + "\n")
+
+    # 3) re-append every peer from the DB
+    for p in get_all_peers():
+        append_peer_to_wgconf(p["public_key"], p["ipv4_address"], p["ipv6_address"])
+
+    # 4) push into the running interface
+    run(["wg", "syncconf", "wg0", WG_PATH], check=True)

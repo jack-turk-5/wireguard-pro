@@ -2,7 +2,7 @@ from subprocess import check_output, run
 from datetime import datetime, timezone, timedelta
 
 from db import add_peer_db, remove_peer_db, get_all_peers
-from utils import generate_keypair, next_available_ip, append_peer_to_wgconf
+from utils import generate_keypair, next_available_ip, append_peer_to_wgconf, remake_peers_file
 
 # Path to the on-disk WireGuard config file
 WG_PATH = "/etc/wireguard/wg0.conf"
@@ -52,30 +52,9 @@ def delete_peer(public_key):
     success = remove_peer_db(public_key)
     if not success:
         return False
-
-    # Filter out the peer stanza from the on-disk config
-    lines = open(WG_PATH).read().splitlines()
-    new_lines = []
-    skip = False
-    for line in lines:
-        if skip:
-            # Stop skipping once we hit a blank line
-            if line.strip() == "":
-                skip = False
-            continue
-        # Start skipping at the PublicKey line
-        if line.startswith("PublicKey") and public_key in line:
-            skip = True
-            continue
-        new_lines.append(line)
-
-    # Write the filtered config back
-    with open(WG_PATH, "w") as f:
-        f.write("\n".join(new_lines) + "\n")
-
-    # Remove the peer from the live interface
-    run(["wg", "set", "wg0", "peer", public_key, "remove"], check=True)
-    return True
+    else:
+        remake_peers_file()
+        return True
 
 def list_peers():
     """
