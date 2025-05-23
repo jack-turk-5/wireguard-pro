@@ -2,8 +2,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  NgApexchartsModule,
   ChartComponent,
+  NgApexchartsModule,
   ApexAxisChartSeries,
   ApexChart,
   ApexXAxis,
@@ -34,27 +34,22 @@ export class StatsComponent implements OnInit {
   @ViewChild('chart') chart!: ChartComponent;
 
   stats: Stat[] = [];
+  private history: Record<string, number[]> = {};   // public_key → [rxMB, …]
+  private timeLabels: string[] = [];
 
   public chartOptions: ChartOptions = {
-    series: [
-      { name: 'RX (MB)', data: [] },
-      { name: 'TX (MB)', data: [] }
-    ],
-    chart: {
-      type: 'line',
-      height: 350,
-      animations: { enabled: true }
-    },
+    series: [],
+    chart: { type: 'line', height: 350 },
     stroke: { curve: 'smooth' },
     dataLabels: { enabled: false },
     xaxis: { categories: [] },
-    title: { text: 'VPN Traffic (MB)', align: 'left' },
+    title: { text: 'Per‐Peer RX (MB)', align: 'left' },
     tooltip: {
-      theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',  
-      x: {
-        show: true,
-        formatter: (val: number, opts?: any): string => {
-          return String(val);
+      theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+      x: { show: false },     // hide the “index/label” header
+      y: {                   // each row’s title will be the seriesName
+        title: {
+          formatter: (seriesName: string): string => seriesName
         }
       }
     }
@@ -78,24 +73,28 @@ export class StatsComponent implements OnInit {
         ...s,
         last_handshake_time: now - Number(s.last_handshake_time)
       }));
-
       this.stats.splice(0, this.stats.length, ...updated);
 
-      const totalRx = updated.reduce((sum, s) => sum + s.rx_bytes, 0) / 1e6;
-      const totalTx = updated.reduce((sum, s) => sum + s.tx_bytes, 0) / 1e6;
-      const label   = new Date().toLocaleTimeString();
+      const label = new Date().toLocaleTimeString();
+      this.timeLabels = [...this.timeLabels, label].slice(-20);
 
-      const prevRx = this.chartOptions.series[0].data as number[];
-      const prevTx = this.chartOptions.series[1].data as number[];
-      const prevCat= this.chartOptions.xaxis.categories as string[];
+      updated.forEach(s => {
+        const mb = s.rx_bytes / 1e6;
+        if (!this.history[s.public_key]) this.history[s.public_key] = [];
+        this.history[s.public_key] = [...this.history[s.public_key], +mb.toFixed(2)].slice(-20);
+      });
 
-      const rxData = [...prevRx, +totalRx.toFixed(2)].slice(-20);
-      const txData = [...prevTx, +totalTx.toFixed(2)].slice(-20);
-      const cats   = [...prevCat, label].slice(-20);
+      const series = Object.entries(this.history).map(([key, data]) => ({
+        name: key,
+        data
+      }));
 
-      (this.chartOptions.series[0].data as number[]) = rxData;
-      (this.chartOptions.series[1].data as number[]) = txData;
-      (this.chartOptions.xaxis.categories as string[]) = cats;
+      this.chart.updateSeries(series, false);
+      this.chart.updateOptions(
+        { xaxis: { categories: this.timeLabels } },
+        false,
+        false
+      );
     });
   }
 }
