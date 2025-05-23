@@ -1,7 +1,5 @@
 @if (stats.length > 0) {
   <div class="stats-container">
-
-    <!-- Stats Table -->
     <table id="statsTable">
       <thead>
         <tr>
@@ -12,7 +10,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (s of stats; track s.public_key) {
+        @for (s of stats; let i = $index; track trackByKey(i, s)) {
           <tr>
             <td>{{ s.public_key }}</td>
             <td
@@ -28,14 +26,14 @@
       </tbody>
     </table>
 
-    <!-- ApexCharts Line Chart -->
     <apx-chart
-      [series]="chartOptions.series!"
-      [chart]="chartOptions.chart!"  
-      [xaxis]="chartOptions.xaxis!"  
-      [stroke]="chartOptions.stroke!"
-      [dataLabels]="chartOptions.dataLabels!"
-      [title]="chartOptions.title!">
+      #chart
+      [series]="chartOptions.series"
+      [chart]="chartOptions.chart"
+      [xaxis]="chartOptions.xaxis"
+      [stroke]="chartOptions.stroke"
+      [dataLabels]="chartOptions.dataLabels"
+      [title]="chartOptions.title">
     </apx-chart>
   </div>
 } @else {
