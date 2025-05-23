@@ -53,16 +53,29 @@ export class StatsComponent implements OnInit {
 
   fetchAndUpdate(): void {
     this.api.getStats().subscribe((data: Stat[]) => {
-      this.stats = data;                                    
+      const now = Math.floor(Date.now() / 1000);
 
-      const now = new Date().toLocaleTimeString();
-      const totalRx = data.reduce((sum, s) => sum + s.rx_bytes, 0) / 1e6;
-      const totalTx = data.reduce((sum, s) => sum + s.tx_bytes, 0) / 1e6;
+      this.stats = data.map(s => ({
+        ...s,
+        last_handshake_time: now - Number(s.last_handshake_time)
+      }));
 
-      // Append new points and keep only the last 20
-      const rxSeries = [...(this.chartOptions.series![0].data as number[]), +totalRx.toFixed(2)].slice(-20);
-      const txSeries = [...(this.chartOptions.series![1].data as number[]), +totalTx.toFixed(2)].slice(-20);
-      const categories = [...(this.chartOptions.xaxis!.categories as string[]), now].slice(-20);
+      const totalRx = this.stats.reduce((sum, s) => sum + s.rx_bytes, 0) / 1e6;
+      const totalTx = this.stats.reduce((sum, s) => sum + s.tx_bytes, 0) / 1e6;
+      const nowLabel = new Date().toLocaleTimeString();
+
+      const rxSeries = [
+        ...(this.chartOptions.series![0].data as number[]),
+        +totalRx.toFixed(2)
+      ].slice(-20);
+      const txSeries = [
+        ...(this.chartOptions.series![1].data as number[]),
+        +totalTx.toFixed(2)
+      ].slice(-20);
+      const categories = [
+        ...(this.chartOptions.xaxis!.categories as string[]),
+        nowLabel
+      ].slice(-20);
 
       this.chartOptions = {
         ...this.chartOptions,
@@ -71,7 +84,7 @@ export class StatsComponent implements OnInit {
           { name: 'TX (MB)', data: txSeries }
         ],
         xaxis: { categories }
-      };                                                    
+      };
     });
   }
 }
