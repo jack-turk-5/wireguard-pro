@@ -34,20 +34,34 @@ export class StatsComponent implements OnInit {
   @ViewChild('chart') chart!: ChartComponent;
 
   stats: Stat[] = [];
-  private history: Record<string, number[]> = {};   // public_key → [rxMB, …]
+  private rxHistory: number[] = [];
+  private txHistory: number[] = [];
   private timeLabels: string[] = [];
 
   public chartOptions: ChartOptions = {
-    series: [],
-    chart: { type: 'line', height: 350 },
+    series: [
+      { name: 'RX (MB)', data: [] },
+      { name: 'TX (MB)', data: [] }
+    ],
+    chart: {
+      type: 'line',
+      height: 350,
+      animations: { enabled: true }
+    },
     stroke: { curve: 'smooth' },
     dataLabels: { enabled: false },
     xaxis: { categories: [] },
-    title: { text: 'Per‐Peer RX (MB)', align: 'left' },
+    title: { text: '', align: 'left' },
     tooltip: {
       theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-      x: { show: false },     // hide the “index/label” header
-      y: {                   // each row’s title will be the seriesName
+      x: {
+        show: true,
+        formatter: (val: number, _opts?: any): string => {
+          // val is the index into our timeLabels array
+          return this.timeLabels[val] || '';
+        }
+      },
+      y: {
         title: {
           formatter: (seriesName: string): string => seriesName
         }
@@ -73,25 +87,33 @@ export class StatsComponent implements OnInit {
         ...s,
         last_handshake_time: now - Number(s.last_handshake_time)
       }));
+
       this.stats.splice(0, this.stats.length, ...updated);
-
+      const totalRx = +(
+        updated.reduce((sum, s) => sum + s.rx_bytes, 0) / 1e6
+      ).toFixed(2);
+      const totalTx = +(
+        updated.reduce((sum, s) => sum + s.tx_bytes, 0) / 1e6
+      ).toFixed(2);
       const label = new Date().toLocaleTimeString();
+
       this.timeLabels = [...this.timeLabels, label].slice(-20);
+      this.rxHistory   = [...this.rxHistory, totalRx].slice(-20);
+      this.txHistory   = [...this.txHistory, totalTx].slice(-20);
 
-      updated.forEach(s => {
-        const mb = s.rx_bytes / 1e6;
-        if (!this.history[s.public_key]) this.history[s.public_key] = [];
-        this.history[s.public_key] = [...this.history[s.public_key], +mb.toFixed(2)].slice(-20);
-      });
+      this.chart.updateSeries(
+        [
+          { name: 'RX (MB)', data: this.rxHistory },
+          { name: 'TX (MB)', data: this.txHistory }
+        ],
+        false
+      );
 
-      const series = Object.entries(this.history).map(([key, data]) => ({
-        name: key,
-        data
-      }));
-
-      this.chart.updateSeries(series, false);
       this.chart.updateOptions(
-        { xaxis: { categories: this.timeLabels } },
+        {
+          xaxis: { categories: this.timeLabels },
+          title: { text: updated[0]?.public_key ?? '' }
+        },
         false,
         false
       );
