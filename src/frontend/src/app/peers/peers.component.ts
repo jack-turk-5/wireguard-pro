@@ -19,7 +19,7 @@ export class PeersComponent implements OnInit {
     endpoint:    ''
   };
   @Output() qrClick = new EventEmitter<string>();
-  @Output() peerDeleted = new EventEmitter<void>();
+  @Output() peerChange = new EventEmitter<void>();
 
   constructor(private api: ApiService) {}
 
@@ -67,7 +67,7 @@ export class PeersComponent implements OnInit {
     this.api.deletePeer(key).subscribe(res => {
       this.loadPeers();
       if (res.deleted) {
-        this.peerDeleted.emit();
+        this.peerChange.emit();
       }
     });
   }

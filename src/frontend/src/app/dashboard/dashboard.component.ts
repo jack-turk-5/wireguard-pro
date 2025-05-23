@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal, ViewChild } from '@angular/core';
 import { ApiService, ServerHealthcheck } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { PeersComponent } from '../peers/peers.component';
@@ -19,6 +19,7 @@ export class DashboardComponent implements OnInit {
   loadAvg  = 'Loading...';
   isDarkMode = false;
   zoomedQr = signal<string|null>(null);
+  @Output() peerAdded = new EventEmitter<void>();
 
   /** Expose ApiService publicly so template can use it */
   constructor(private api: ApiService, private auth: AuthService, private router: Router) {}
@@ -52,7 +53,7 @@ export class DashboardComponent implements OnInit {
   addPeer() {
     this.api.createPeer(7).subscribe(() => {
       this.peersComp.loadPeers();
-      this.refreshStats();
+      this.peerAdded.emit();
     });
   }
 
@@ -79,7 +80,7 @@ export class DashboardComponent implements OnInit {
     document.body.classList.remove('modal-open');
   }
 
-  onPeerDeleted() {
+  onPeerChange() {
     this.refreshStats();
   }
 }
