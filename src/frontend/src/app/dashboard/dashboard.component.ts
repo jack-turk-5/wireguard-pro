@@ -72,8 +72,13 @@ export class DashboardComponent implements OnInit {
     this.zoomedQr.set(cfg);
     document.body.classList.add('modal-open');
   }
+
   closeQr() {
     this.zoomedQr.set(null);
     document.body.classList.remove('modal-open');
+  }
+
+  onPeerDeleted() {
+    this.refreshStats();
   }
 }
