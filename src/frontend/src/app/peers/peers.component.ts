@@ -9,7 +9,7 @@ import { ApiService, ServerConfig } from '../services/api.service';
   imports: [CommonModule, QRCodeComponent],
   templateUrl: './peers.component.html',
   styles: `.qrcode {
-  width: 160px; height: 160px; margin: auto;
+  width: 80px; height: 80px; margin: auto;
 }`
 })
 export class PeersComponent implements OnInit {
