@@ -52,6 +52,7 @@ export class DashboardComponent implements OnInit {
   addPeer() {
     this.api.createPeer(7).subscribe(() => {
       this.peersComp.loadPeers();
+      this.refreshStats();
     });
   }
 
