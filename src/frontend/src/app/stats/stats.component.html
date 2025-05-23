@@ -19,23 +19,32 @@
               [class.stale]="s.last_handshake_time >= 300">
               {{ s.last_handshake_time }}
             </td>
-            <td>{{ (s.rx_bytes / 1024 / 1024) | number:'1.2-2' }}</td>
-            <td>{{ (s.tx_bytes / 1024 / 1024) | number:'1.2-2' }}</td>
+            <td>{{ (s.rx_bytes / 1e6) | number:'1.2-2' }}</td>
+            <td>{{ (s.tx_bytes / 1e6) | number:'1.2-2' }}</td>
           </tr>
         }
       </tbody>
     </table>
 
-    <apx-chart
-      #chart
-      [series]="chartOptions.series"
-      [chart]="chartOptions.chart"
-      [xaxis]="chartOptions.xaxis"
-      [stroke]="chartOptions.stroke"
-      [dataLabels]="chartOptions.dataLabels"
-      [title]="chartOptions.title"
-      [tooltip]="chartOptions.tooltip">
-    </apx-chart>
+    <div class="charts">
+      @for (s of stats; let i = $index; track trackByKey(i, s)) {
+        <div class="client-chart">
+          <h3>{{ s.public_key }}</h3>
+          <apx-chart
+            #chart
+            [series]="[
+              { name: 'Received (MB)', data: clientHistories[s.public_key].rx },
+              { name: 'Sent (MB)',     data: clientHistories[s.public_key].tx }
+            ]"
+            [chart]="chartConfig.chart"
+            [xaxis]="{ categories: timeLabels }"
+            [stroke]="chartConfig.stroke"
+            [dataLabels]="chartConfig.dataLabels"
+            [tooltip]="chartConfig.tooltip">
+          </apx-chart>
+        </div>
+      }
+    </div>
   </div>
 } @else {
   <p>No statistics to display.</p>
