@@ -19,8 +19,8 @@
               [class.stale]="s.last_handshake_time >= 300">
               {{ s.last_handshake_time }}
             </td>
-            <td>{{ (s.rx_bytes / 1e6) | number:'1.2-2' }}</td>
             <td>{{ (s.tx_bytes / 1e6) | number:'1.2-2' }}</td>
+            <td>{{ (s.rx_bytes / 1e6) | number:'1.2-2' }}</td>
           </tr>
         }
       </tbody>

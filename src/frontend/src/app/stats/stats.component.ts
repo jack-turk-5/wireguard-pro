@@ -24,14 +24,12 @@ export class StatsComponent implements OnInit {
 
   stats: Stat[] = [];
   timeLabels: string[] = [];
-  /** each peer key → its { rx: history[], tx: history[] } */
   clientHistories: Record<string, { rx: number[]; tx: number[] }> = {};
 
-  /** static config so Angular never tears down/recreates the chart */
   public chartConfig = {
     series: [
-      { name: 'Received (MB)', data: [] },  // will drive via updateSeries()
-      { name: 'Sent (MB)',     data: [] }
+      { name: 'Received (MB)', data: [] },
+      { name: 'Sent (MB)', data: [] }
     ] as ApexAxisChartSeries,
     chart: {
       type: 'line',
@@ -99,7 +97,7 @@ export class StatsComponent implements OnInit {
         chartComp.updateSeries(
           [
             { name: 'Received (MB)', data: hist.rx },
-            { name: 'Sent (MB)',     data: hist.tx }
+            { name: 'Sent (MB)', data: hist.tx }
           ],
           false
         );
