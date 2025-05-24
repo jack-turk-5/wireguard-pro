@@ -1,3 +1,4 @@
+// stats.component.ts
 import { Component, OnInit, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -23,11 +24,23 @@ export class StatsComponent implements OnInit {
 
   stats: Stat[] = [];
   timeLabels: string[] = [];
+  /** each peer key → its { rx: history[], tx: history[] } */
   clientHistories: Record<string, { rx: number[]; tx: number[] }> = {};
+
+  /** static config so Angular never tears down/recreates the chart */
   public chartConfig = {
-    chart: { type: 'line', height: 300, animations: { enabled: true } } as ApexChart,
+    series: [
+      { name: 'Received (MB)', data: [] },  // will drive via updateSeries()
+      { name: 'Sent (MB)',     data: [] }
+    ] as ApexAxisChartSeries,
+    chart: {
+      type: 'line',
+      height: 300,
+      animations: { enabled: true }
+    } as ApexChart,
     stroke: { curve: 'smooth' } as ApexStroke,
     dataLabels: { enabled: false } as ApexDataLabels,
+    xaxis: { categories: [] } as ApexXAxis,
     tooltip: {
       theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
       x: {
@@ -54,25 +67,47 @@ export class StatsComponent implements OnInit {
   }
 
   fetchAndUpdate(): void {
-    this.api.getStats().subscribe(data => {
+    this.api.getStats().subscribe(raw => {
       const now = Math.floor(Date.now() / 1000);
-      const updated = data.map(s => ({
+      const updated = raw.map(s => ({
         ...s,
         last_handshake_time: now - Number(s.last_handshake_time)
       }));
 
       this.stats.splice(0, this.stats.length, ...updated);
+
       const label = new Date().toLocaleTimeString();
       this.timeLabels = [...this.timeLabels, label].slice(-20);
+
       updated.forEach(s => {
         const mbRx = +(s.rx_bytes / 1e6).toFixed(2);
         const mbTx = +(s.tx_bytes / 1e6).toFixed(2);
-        if (!this.clientHistories[s.public_key]) {
-          this.clientHistories[s.public_key] = { rx: [], tx: [] };
+        const key  = s.public_key;
+        if (!this.clientHistories[key]) {
+          this.clientHistories[key] = { rx: [], tx: [] };
         }
-        const hist = this.clientHistories[s.public_key];
-        hist.rx = [...hist.rx, mbRx].slice(-20);
-        hist.tx = [...hist.tx, mbTx].slice(-20);
+        const hist = this.clientHistories[key];
+        hist.rx = [...hist.rx, mbTx].slice(-20);
+        hist.tx = [...hist.tx, mbRx].slice(-20);
+      });
+
+      this.charts.forEach((chartComp, idx) => {
+        const peer = this.stats[idx];
+        if (!peer) return;
+
+        const hist = this.clientHistories[peer.public_key];
+        chartComp.updateSeries(
+          [
+            { name: 'Received (MB)', data: hist.rx },
+            { name: 'Sent (MB)',     data: hist.tx }
+          ],
+          false
+        );
+        chartComp.updateOptions(
+          { xaxis: { categories: this.timeLabels } },
+          false,
+          false
+        );
       });
     });
   }

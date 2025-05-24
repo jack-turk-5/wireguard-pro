@@ -32,12 +32,9 @@
           <h3>{{ s.public_key }}</h3>
           <apx-chart
             #chart
-            [series]="[
-              { name: 'Received (MB)', data: clientHistories[s.public_key].rx },
-              { name: 'Sent (MB)',     data: clientHistories[s.public_key].tx }
-            ]"
+            [series]="chartConfig.series"
             [chart]="chartConfig.chart"
-            [xaxis]="{ categories: timeLabels }"
+            [xaxis]="chartConfig.xaxis"
             [stroke]="chartConfig.stroke"
             [dataLabels]="chartConfig.dataLabels"
             [tooltip]="chartConfig.tooltip">
