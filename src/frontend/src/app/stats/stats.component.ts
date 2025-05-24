@@ -1,4 +1,3 @@
-// stats.component.ts
 import { Component, OnInit, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {

@@ -36,6 +36,7 @@ if not path.isfile(WG_CONF):
         "Address = 10.8.0.1/24",
         "Address = fd86:ea04:1111::1/64",
         "ListenPort = 51820",
+        "MTU = 1420"
     ]
     with open(WG_CONF, 'w', newline='\n') as f:
         f.write("\n".join(config) + "\n")
