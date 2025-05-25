@@ -18,7 +18,7 @@ Sysctl=net.ipv4.ip_forward=1
 Sysctl=net.ipv6.conf.all.forwarding=1
 Environment=WG_SUDO=1
 Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli
-EnvironmentFile=%h/.config/wireguard-pro/env
+EnvironmentFile=/etc/wireguard-pro/env
 
 [Install]
 WantedBy=default.target
