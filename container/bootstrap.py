@@ -54,7 +54,7 @@ except CalledProcessError as e:
 Popen([
     '/venv/bin/gunicorn',
     '--preload',
-    '--bind',   '0.0.0.0:51818',
+    '--bind', '0.0.0.0:51818',
     '--workers', '4',
     '--timeout', '30',
     '--graceful-timeout', '20',
