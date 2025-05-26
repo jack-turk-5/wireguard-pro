@@ -68,4 +68,4 @@ status:
 
 ## Follow logs
 logs:
-	journalctl-unit $(CONTAINER_NAME).service -f
+	journalctl $(CONTAINER_NAME).service -f
