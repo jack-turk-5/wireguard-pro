@@ -64,7 +64,7 @@ Popen([
 
 # Apply nftables + ethtool tweaks
 run(['nft','-f','/etc/nftables.conf'], check=True)
-run(['ethtool','-K','tap0','gro','on','gso','on','ufo','on'], check=True)
+# run(['ethtool','-K','tap0','gro','on','gso','on','ufo','on'], check=True)
 
 # Exec into Caddy as PID 1
 caddy = which('caddy')
