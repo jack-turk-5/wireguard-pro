@@ -50,7 +50,7 @@ export class PeersComponent implements OnInit {
       `[Peer]`,
       `PublicKey = ${this.config.public_key}`,
       `Endpoint = ${this.config.endpoint}`,
-      `AllowedIPs = 0.0.0.0/0, ::/0`,
+      `AllowedIPs = 10.8.0.1/32, 192.168.0.2/32`,
       `PersistentKeepalive = 25`
     ].join('\n');
   }
