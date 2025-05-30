@@ -44,6 +44,7 @@ def create_app():
     CORS(
         flask_app,
         resources={
+            #TODO Restrict origins
             r"/api/*": {"origins": "*"}
         },
         methods=["GET", "POST", "OPTIONS"],
