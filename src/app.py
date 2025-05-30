@@ -34,7 +34,8 @@ def create_app():
     flask_app = Flask(__name__, instance_relative_config=True)
     flask_app.config['SECRET_KEY'] = environ['SECRET_KEY']
     flask_app.config['WG_SERVER_PUBKEY'] = get_server_pubkey()
-    flask_app.config['WG_ENDPOINT'] = environ.get('WG_ENDPOINT')
+    flask_app.config['WG_ENDPOINT'] = environ['WG_ENDPOINT']
+    flask_app.config['WG_ALLOWED_IPS'] = environ['WG_ALLOWED_IPS']
 
     Swagger(flask_app)
     scheduler.init_app(flask_app)
@@ -43,8 +44,7 @@ def create_app():
     CORS(
         flask_app,
         resources={
-            r"/api/*": {"origins": "*"},
-            r"/serverinfo": {"origins": "*"}
+            r"/api/*": {"origins": "*"}
         },
         methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type"],
@@ -83,7 +83,8 @@ def create_app():
     def api_get_config():
         return jsonify({
                 'public_key': flask_app.config['WG_SERVER_PUBKEY'], 
-                'endpoint': flask_app.config['WG_ENDPOINT']
+                'endpoint': flask_app.config['WG_ENDPOINT'],
+                'allowed_ips': flask_app.config['WG_ALLOWED_IPS']
             }
         )
 

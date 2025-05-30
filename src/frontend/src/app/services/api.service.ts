@@ -25,6 +25,7 @@ export interface ServerHealthcheck {
 export interface ServerConfig {
     public_key: string;
     endpoint: string;
+    allowed_ips: string;
 }
 
 @Injectable({ providedIn: 'root' })

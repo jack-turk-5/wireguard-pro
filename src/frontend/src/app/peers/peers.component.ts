@@ -15,8 +15,9 @@ import { ApiService, ServerConfig } from '../services/api.service';
 export class PeersComponent implements OnInit {
   peers = signal<any[]>([]);
   config: ServerConfig = {
-    public_key:  '',
-    endpoint:    ''
+    public_key: '',
+    endpoint: '',
+    allowed_ips: ''
   };
   @Output() qrClick = new EventEmitter<string>();
   @Output() peerChange = new EventEmitter<void>();
@@ -50,7 +51,7 @@ export class PeersComponent implements OnInit {
       `[Peer]`,
       `PublicKey = ${this.config.public_key}`,
       `Endpoint = ${this.config.endpoint}`,
-      `AllowedIPs = 10.8.0.1/32, 192.168.0.2/32`,
+      `AllowedIPs = ${this.config.allowed_ips}`,
       `PersistentKeepalive = 25`
     ].join('\n');
   }
