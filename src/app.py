@@ -32,11 +32,11 @@ def verify_token(s, token, max_age=1800):
 
 def create_app():
     flask_app = Flask(__name__, instance_relative_config=True)
+    #TODO Document envs, move username-password to podman secrets
     flask_app.config['SECRET_KEY'] = environ['SECRET_KEY']
     flask_app.config['WG_SERVER_PUBKEY'] = get_server_pubkey()
     flask_app.config['WG_ENDPOINT'] = environ['WG_ENDPOINT']
-    flask_app.config['WG_ALLOWED_IPS'] = environ['WG_ALLOWED_IPS']
-
+    flask_app.config['WG_ALLOWED_IPS'] = environ.get('WG_ALLOWED_IPS', '0.0.0.0/0, ::/0')
     Swagger(flask_app)
     scheduler.init_app(flask_app)
     scheduler.start()
