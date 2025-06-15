@@ -8,9 +8,8 @@ RUN npm ci && npm run build --omit=dev
 FROM python:3.13-slim AS builder
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      gcc build-essential pkg-config libssl-dev cargo \
-    && rm -rf /var/lib/apt/lists/* && \
-    cargo install boringtun-cli --locked --root /usr/local
+      gcc build-essential pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY requirements.txt .
@@ -41,7 +40,7 @@ https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main\n' \
 COPY --from=angular-builder /app/dist/frontend/browser /usr/share/caddy/html
 
 # Copy BoringTun, venv, app & bootstrap
-COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
+COPY build/boringtun-cli /usr/local/bin/
 COPY --from=builder /venv /venv
 
 WORKDIR /app
