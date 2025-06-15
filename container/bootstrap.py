@@ -66,6 +66,8 @@ Popen([
 ], env=environ.copy())
 
 # Apply nftables
+run(['sysctl', '-w', 'net.ipv4.ip_forward=1'], check=True)
+run(['sysctl', '-w', 'net.ipv6.conf.all.forwarding=1'], check=True)
 run(['nft','-f','/etc/nftables.conf'], check=True)
 
 # Exec into Caddy as PID 1
