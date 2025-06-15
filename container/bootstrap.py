@@ -42,7 +42,7 @@ if not path.isfile(WG_CONF):
         f.write("\n".join(config) + "\n")
 
 if environ.get('WG_SOCKET_FD', None) is None:
-    environ['WG_SOCKET_FD'] = 4
+    environ['WG_SOCKET_FD'] = '4'
 
 # Tear down any old wg0, bring up fresh
 run(['wg-quick','down','wg0'], check=False)
