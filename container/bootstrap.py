@@ -41,7 +41,7 @@ if not path.isfile(WG_CONF):
     with open(WG_CONF, 'w', newline='\n') as f:
         f.write("\n".join(config) + "\n")
 
-if environ['WG_SOCKET_FD'] is None:
+if environ.get('WG_SOCKET_FD', None) is None:
     environ['WG_SOCKET_FD'] = 4
 
 # Tear down any old wg0, bring up fresh
