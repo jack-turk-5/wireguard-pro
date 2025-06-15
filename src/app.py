@@ -43,8 +43,8 @@ def create_app():
     CORS(
         flask_app,
         resources={
-            r"/api/*": {"origins": "*"},
-            r"/serverinfo": {"origins": "*"}
+            r"/api/*": {"origins": "0.0.0.0:51819"},
+            r"/serverinfo": {"origins": "0.0.0.0:51819"}
         },
         methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type"],
