@@ -65,9 +65,6 @@ Popen([
     'app:app'
 ], env=environ.copy())
 
-# Apply nftables
-run(['nft','-f','/etc/nftables.conf'], check=True)
-
 # Exec into Caddy as PID 1
 caddy = which('caddy')
 execv(caddy, [

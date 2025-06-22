@@ -22,7 +22,7 @@ FROM python:3.13-slim AS runtime
 # Install Caddy and tooling
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      curl gnupg ca-certificates wireguard-tools iproute2 nftables ethtool \
+      curl gnupg ca-certificates wireguard-tools iproute2 ethtool \
     && rm -rf /var/lib/apt/lists/*
 
 # Add Caddy’s apt repo & install
@@ -51,7 +51,7 @@ COPY container/nftables.conf /etc/nftables.conf
 ENV PATH="/venv/bin:$PATH"
 RUN chmod +x /bootstrap.py
 
-# Copy your Caddyfile
+# Copy Caddyfile
 COPY container/Caddyfile /etc/caddy/Caddyfile
 
 ENTRYPOINT ["/bootstrap.py"]
