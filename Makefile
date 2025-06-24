@@ -35,9 +35,10 @@ reload:
 
 ## Create wg-keys if missing (tempfile fallback)
 wg-keys:
-	@echo "→ ensuring keys exist"
-	@if podman secret exists "$(PRIV_KEY)" >/dev/null 2>&1; then \
-	  echo "✓ Secret '$(PRIV_KEY)' already registered, skipping."; \
+	@echo "→ Ensuring keys exist"
+	@if podman secret exists "$(PRIV_KEY)" >/dev/null 2>&1 && \
+	  podman secret exists "$(PUB_KEY)" >/dev/null 2>&1; then \
+	  echo "✓ Secrets '$(PRIV_KEY)' and '$(PUB_KEY)' already registered, skipping."; \
 	else \
 	  echo "✗ Not found, generating keys (tempfile)"; \
 	  umask 077; \
