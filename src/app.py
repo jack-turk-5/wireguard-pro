@@ -55,8 +55,8 @@ def create_app():
     # DB + seed admin user
     with flask_app.app_context():
         init_db()
-        user = environ['ADMIN_USER']
-        pw = environ['ADMIN_PASS']
+        user = open('/run/secrets/admin-user').read().strip()
+        pw = open('/run/secrets/admin-pass').read().strip()
         add_or_update_user_db(user, pw)
         flask_app.logger.info(f"Seeded user `{user}`")
 
