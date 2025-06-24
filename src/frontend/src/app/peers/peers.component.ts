@@ -16,7 +16,8 @@ export class PeersComponent implements OnInit {
   peers = signal<any[]>([]);
   config: ServerConfig = {
     public_key:  '',
-    endpoint:    ''
+    endpoint:    '',
+    allowed_ips: ''
   };
   @Output() qrClick = new EventEmitter<string>();
   @Output() peerChange = new EventEmitter<void>();
@@ -45,12 +46,12 @@ export class PeersComponent implements OnInit {
       `[Interface]`,
       `PrivateKey = ${p.private_key}`,
       `Address = ${p.ipv4_address}/32`,
-      `DNS = 1.1.1.1`,
+      `DNS = 1.1.1.1`, // Always using CloudFlare unless a better alternative exists???
       ``,
       `[Peer]`,
       `PublicKey = ${this.config.public_key}`,
       `Endpoint = ${this.config.endpoint}`,
-      `AllowedIPs = 0.0.0.0/0, ::/0`,
+      `AllowedIPs = ${this.config.allowed_ips}`,
       `PersistentKeepalive = 25`
     ].join('\n');
   }

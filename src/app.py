@@ -32,7 +32,7 @@ def verify_token(s, token, max_age=1800):
 
 def create_app():
     flask_app = Flask(__name__, instance_relative_config=True)
-    flask_app.config['SECRET_KEY'] = environ['SECRET_KEY']
+    flask_app.config['SECRET_KEY'] = environ.get('SECRET_KEY')
     flask_app.config['WG_SERVER_PUBKEY'] = get_server_pubkey()
     flask_app.config['WG_ENDPOINT'] = environ.get('WG_ENDPOINT')
 
@@ -81,9 +81,11 @@ def create_app():
     @flask_app.route('/api/config', methods=['GET'])
     @token_auth.login_required
     def api_get_config():
-        return jsonify({
+        return jsonify(
+            {
                 'public_key': flask_app.config['WG_SERVER_PUBKEY'], 
-                'endpoint': flask_app.config['WG_ENDPOINT']
+                'endpoint': flask_app.config['WG_ENDPOINT'],
+                'allowed_ips': environ.get('WG_ALLOWED_IPS', '0.0.0.0/0, ::/0'),
             }
         )
 
