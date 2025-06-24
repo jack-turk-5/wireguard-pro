@@ -16,6 +16,10 @@ AddCapability=CAP_NET_ADMIN CAP_NET_RAW CAP_SETUID CAP_SETGID
 AddDevice=/dev/net/tun:/dev/net/tun:rwm
 Sysctl=net.ipv4.ip_forward=1
 Sysctl=net.ipv6.conf.all.forwarding=1
+Secret=admin-user
+Secret=admin-pass
+Secret=wg-privatekey
+Secret=wg-publickey
 Environment=WG_SUDO=1
 Environment=WG_LOG_LEVEL=trace
 Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli

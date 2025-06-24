@@ -37,21 +37,21 @@ reload:
 wg-keys:
 	@echo "→ ensuring keys exist"
 	@if podman secret exists "$(PRIV_KEY)" >/dev/null 2>&1; then \
-	  echo "✓ secret '$(PRIV_KEY)' already registered, skipping."; \
+	  echo "✓ Secret '$(PRIV_KEY)' already registered, skipping."; \
 	else \
-	  echo "✗ not found, generating keys (tempfile)"; \
+	  echo "✗ Not found, generating keys (tempfile)"; \
 	  umask 077; \
 	  tmp=$$(mktemp); \
 	  wg genkey > $$tmp; \
 	  podman secret create "$(PRIV_KEY)" $$tmp; \
 	  wg pubkey < $$tmp | podman secret create "$(PUB_KEY)" -; \
 	  rm -f $$tmp; \
-	  echo "✓ keys created and stored in Podman secrets, no files left on disk!"; \
+	  echo "✓ Keys created and stored in Podman secrets, no files left on disk!"; \
 	fi
 
 ## Create UI credentials if missing 
 credentials:
-	@echo "→ creating admin_user/admin_pass secrets"
+	@echo "→ Creating admin-user/admin-pass secrets"
 	@./secrets/create_credentials.py
 
 ## Start container and socket
