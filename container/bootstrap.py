@@ -67,8 +67,9 @@ Popen([
 
 # Exec into Caddy as PID 1
 caddy = which('caddy')
-execv(caddy, [
-    'caddy','run',
-    '--config','/etc/caddy/Caddyfile',
-    '--adapter','caddyfile'
-])
+if caddy:
+    execv(caddy, [
+        'caddy','run',
+        '--config','/etc/caddy/Caddyfile',
+        '--adapter','caddyfile'
+    ])
