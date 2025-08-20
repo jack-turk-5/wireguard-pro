@@ -41,6 +41,9 @@ if not path.isfile(WG_CONF):
     with open(WG_CONF, 'w', newline='\n') as f:
         f.write("\n".join(config) + "\n")
 
+if environ.get('WG_SOCKET_FD', None) is None:
+    environ['WG_SOCKET_FD'] = '4'
+
 # Tear down any old wg0, bring up fresh
 run(['wg-quick','down','wg0'], check=False)
 run(['ip','link','delete','wg0'], check=False)
@@ -54,7 +57,7 @@ except CalledProcessError as e:
 Popen([
     '/venv/bin/gunicorn',
     '--preload',
-    '--bind',   '0.0.0.0:51818',
+    '--bind', '0.0.0.0:51818',
     '--workers', '4',
     '--timeout', '30',
     '--graceful-timeout', '20',
@@ -62,14 +65,11 @@ Popen([
     'app:app'
 ], env=environ.copy())
 
-# Apply nftables + ethtool tweaks
-run(['nft','-f','/etc/nftables.conf'], check=True)
-run(['ethtool','-K','tap0','gro','on','gso','on','ufo','on'], check=True)
-
 # Exec into Caddy as PID 1
 caddy = which('caddy')
-execv(caddy, [
-    'caddy','run',
-    '--config','/etc/caddy/Caddyfile',
-    '--adapter','caddyfile'
-])
+if caddy:
+    execv(caddy, [
+        'caddy','run',
+        '--config','/etc/caddy/Caddyfile',
+        '--adapter','caddyfile'
+    ])

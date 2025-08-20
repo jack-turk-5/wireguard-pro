@@ -32,7 +32,7 @@ def verify_token(s, token, max_age=1800):
 
 def create_app():
     flask_app = Flask(__name__, instance_relative_config=True)
-    flask_app.config['SECRET_KEY'] = environ['SECRET_KEY']
+    flask_app.config['SECRET_KEY'] = environ.get('SECRET_KEY')
     flask_app.config['WG_SERVER_PUBKEY'] = get_server_pubkey()
     flask_app.config['WG_ENDPOINT'] = environ.get('WG_ENDPOINT')
 
@@ -43,8 +43,8 @@ def create_app():
     CORS(
         flask_app,
         resources={
-            r"/api/*": {"origins": "*"},
-            r"/serverinfo": {"origins": "*"}
+            r"/api/*": {"origins": "0.0.0.0:51819"},
+            r"/serverinfo": {"origins": "0.0.0.0:51819"}
         },
         methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type"],
@@ -55,8 +55,8 @@ def create_app():
     # DB + seed admin user
     with flask_app.app_context():
         init_db()
-        user = environ['ADMIN_USER']
-        pw = environ['ADMIN_PASS']
+        user = open('/run/secrets/admin-user').read().strip()
+        pw = open('/run/secrets/admin-pass').read().strip()
         add_or_update_user_db(user, pw)
         flask_app.logger.info(f"Seeded user `{user}`")
 
@@ -81,9 +81,11 @@ def create_app():
     @flask_app.route('/api/config', methods=['GET'])
     @token_auth.login_required
     def api_get_config():
-        return jsonify({
+        return jsonify(
+            {
                 'public_key': flask_app.config['WG_SERVER_PUBKEY'], 
-                'endpoint': flask_app.config['WG_ENDPOINT']
+                'endpoint': flask_app.config['WG_ENDPOINT'],
+                'allowed_ips': environ.get('WG_ALLOWED_IPS', '0.0.0.0/0, ::/0'),
             }
         )
 

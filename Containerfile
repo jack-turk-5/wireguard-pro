@@ -52,7 +52,7 @@ COPY container/nftables.conf /etc/nftables.conf
 ENV PATH="/venv/bin:$PATH"
 RUN chmod +x /bootstrap.py
 
-# Copy your Caddyfile
+# Copy Caddyfile
 COPY container/Caddyfile /etc/caddy/Caddyfile
 
 ENTRYPOINT ["/bootstrap.py"]

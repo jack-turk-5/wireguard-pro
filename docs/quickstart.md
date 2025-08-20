@@ -2,9 +2,9 @@
 
 ### 🛠 Requirements:
 - ✅ Podman (rootless)
+- ✅ Python
 - ✅ Wireguard Tools
 - ✅ Systemd user services enabled
-- ✅ Rootless networking (slirp4netns)
 - ✅ Linux server (Debian/Ubuntu recommended, others untested)
 
 ---
@@ -22,8 +22,6 @@ sudo apt-get install wireguard-tools
 ```bash
 git clone https://github.com/jack-turk-5/wireguard-pro.git
 cd wireguard-pro
-# Set at least ADMIN_USER, ADMIN_PASS, and WG_ENDPOINT at
-# ~/.config/wireguard-pro/env
 make deploy
 ```
 

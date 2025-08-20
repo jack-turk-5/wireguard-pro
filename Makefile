@@ -1,19 +1,21 @@
 IMAGE_NAME=localhost/wireguard/wireguard-pro
 CONTAINER_NAME=wireguard-pro
-SECRETS_NAME=wg-privatekey
-SECRETS_NAME_PUB=wg-publickey
+BORINGTUN_DATA=boringtun-data
+UI_DATA=wg-pro-data
+PRIV_KEY=wg-privatekey
+PUB_KEY=wg-publickey
 
-.PHONY: build optimize reload start stop secrets clean upgrade deploy status logs
+.PHONY: build optimize reload start stop wg-keys credentials clean upgrade deploy status logs
 
 upgrade-optimal: optimize reload status
 
 ## Upgrade container (build + reload)
 upgrade: build reload status
 
-deploy-optimal: secrets optimize start status
+deploy-optimal: wg-keys credentials optimize start status
 
 ## Deploy: secrets + build + start
-deploy: secrets build start status
+deploy: wg-keys credentials build start status
 
 ## Build the container and reload systemd
 build:
@@ -31,20 +33,27 @@ reload:
 	systemctl --user daemon-reload
 	systemctl --user restart $(CONTAINER_NAME).socket $(CONTAINER_NAME).service
 
-## Create secrets if missing
-secrets:
-	@echo "→ ensuring secrets/ directory exists…"
-	mkdir -p secrets
-	@echo "→ checking if Podman secret '$(SECRETS_NAME)' exists…"
-	@if podman secret exists $(SECRETS_NAME) >/dev/null 2>&1; then \
-	  echo "✓ secret '$(SECRETS_NAME)' already registered, skipping."; \
+## Create wg-keys if missing (tempfile fallback)
+wg-keys:
+	@echo "→ Ensuring keys exist"
+	@if podman secret exists "$(PRIV_KEY)" >/dev/null 2>&1 && \
+	  podman secret exists "$(PUB_KEY)" >/dev/null 2>&1; then \
+	  echo "✓ Secrets '$(PRIV_KEY)' and '$(PUB_KEY)' already registered, skipping."; \
 	else \
-	  echo "✗ not found, generating WireGuard keypair…"; \
-	  wg genkey | tee secrets/$(SECRETS_NAME) | wg pubkey > secrets/$(SECRETS_NAME_PUB); \
-	  echo "✎ creating Podman secret '$(SECRETS_NAME)' from private key…"; \
-	  podman secret create $(SECRETS_NAME) secrets/$(SECRETS_NAME); \
-	  echo "✓ secret registered."; \
+	  echo "✗ Not found, generating keys (tempfile)"; \
+	  umask 077; \
+	  tmp=$$(mktemp); \
+	  wg genkey > $$tmp; \
+	  podman secret create "$(PRIV_KEY)" $$tmp; \
+	  wg pubkey < $$tmp | podman secret create "$(PUB_KEY)" -; \
+	  rm -f $$tmp; \
+	  echo "✓ Keys created and stored in Podman secrets, no files left on disk!"; \
 	fi
+
+## Create UI credentials if missing 
+credentials:
+	@echo "→ Creating admin-user/admin-pass secrets"
+	@./secrets/create_credentials.py
 
 ## Start container and socket
 start:
@@ -60,6 +69,7 @@ stop:
 clean:
 	-podman container rm -f $(CONTAINER_NAME)
 	-podman rmi $(IMAGE_NAME):latest
+	-podman volume rm $(BORINGTUN_DATA) $(UI_DATA)
 	systemctl --user daemon-reload
 
 ## Check container status
