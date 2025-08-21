@@ -1,7 +1,7 @@
 # WireGuard Pro 🛡️
 
 [![Release and Publish Image](https://github.com/jack-turk-5/wireguard-pro/actions/workflows/release.yml/badge.svg)](https://github.com/jack-turk-5/wireguard-pro/actions/workflows/release.yml)
-[![License](https://img.shields.io/badge/license-BSD-blue)](LICENSE)
+[![License](https://img.shields.io/badge/license-BSD-blue)](LICENSE.md)
 [![Rootless-Podman](https://img.shields.io/badge/podman-rootless-blueviolet)](https://podman.io/)
 
 🚀 **Rootless, Dynamic, API-Driven WireGuard VPN Dashboard**  
