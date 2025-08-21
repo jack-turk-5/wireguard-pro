@@ -61,7 +61,7 @@ def main():
 
     # Start Gunicorn with Uvicorn workers
     gunicorn_args = os.environ.get("GUNICORN_CMD_ARGS", "--workers 2 --worker-class uvicorn.workers.UvicornWorker --bind unix:/run/gunicorn.sock").split()
-    subprocess.Popen(['/venv/bin/gunicorn', 'src.main:app', *gunicorn_args])
+    subprocess.Popen(['/venv/bin/gunicorn', 'main:app', *gunicorn_args])
 
     # Apply nftables rules
     run_command(['nft', '-f', '/etc/nftables.conf'])
