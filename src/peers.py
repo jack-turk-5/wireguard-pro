@@ -1,8 +1,9 @@
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List
+import base64
 
-from pyroute2 import IPDB
+from pyroute2 import WireGuard
 from db import add_peer_db, remove_peer_db, get_all_peers
 from utils import generate_keypair, next_available_ip, append_peer_to_wgconf, remove_peer_from_wgconf
 
@@ -34,12 +35,11 @@ def create_peer(days_valid: int = 7) -> Dict[str, Any]:
 
     # Step 3: Add to the live WireGuard interface.
     try:
-        with IPDB() as ip:
-            with ip.interfaces['wg0'] as wg:
-                wg.add_peer({
-                    "public_key": pub,
-                    "allowed_ips": [f"{ipv4}/32", f"{ipv6}/128"]
-                })
+        with WireGuard() as wg:
+            wg.set(interface='wg0', peer={
+                'public_key': base64.b64decode(pub),
+                'allowed_ips': [(ipv4, 32), (ipv6, 128)]
+            })
     except Exception as e:
         logging.error(f"Failed to add peer to WireGuard interface: {e}")
         # Rollback: Remove from DB and config file if interface update fails
@@ -78,9 +78,11 @@ def delete_peer(public_key: str) -> bool:
     
     # Step 3: Remove from the live interface.
     try:
-        with IPDB() as ip:
-            with ip.interfaces['wg0'] as wg:
-                wg.del_peer(public_key)
+        with WireGuard() as wg:
+            wg.set(interface='wg0', peer={
+                'public_key': base64.b64decode(public_key),
+                'remove': True
+            })
     except Exception as e:
         logging.error(f"Failed to remove peer {public_key} from WireGuard interface: {e}")
         # Log a critical error for manual intervention.
@@ -96,20 +98,33 @@ def peer_stats() -> List[Dict[str, Any]]:
     """Return live WireGuard peer stats using pyroute2."""
     stats = []
     try:
-        with IPDB() as ip:
-            wg0 = ip.interfaces['wg0']
-            if 'IFLA_INFO_DATA' in wg0:
-                wg0_data = wg0['IFLA_INFO_DATA']
-                for peer in wg0_data.get('peers', []):
+        with WireGuard() as wg:
+            info = wg.info(interface='wg0')
+            if not info:
+                return []
+
+            # info() returns a list of interfaces, we only expect one
+            interface_attrs = dict(info[0]['attrs'])
+            
+            if 'WGDEVICE_A_PEERS' in interface_attrs:
+                for peer_msg in interface_attrs['WGDEVICE_A_PEERS']:
+                    peer = dict(peer_msg['attrs'])
+                    
+                    pub_key_bytes = peer.get('WGPEER_A_PUBLIC_KEY')
+                    if not pub_key_bytes:
+                        continue
+                    
+                    last_handshake = peer.get('WGPEER_A_LAST_HANDHANDSHAKE_TIME', {})
+                    
                     stats.append({
-                        "public_key": peer.get('WGPEER_A_PUBLIC_KEY', b'').decode(),
-                        "last_handshake_time": peer.get('WGPEER_A_LAST_HANDSHAKE_TIME', {}).get('tv_sec', 0),
+                        "public_key": base64.b64encode(pub_key_bytes).decode('ascii'),
+                        "last_handshake_time": last_handshake.get('tv_sec', 0),
                         "rx_bytes": peer.get('WGPEER_A_RX_BYTES', 0),
                         "tx_bytes": peer.get('WGPEER_A_TX_BYTES', 0),
                         "persistent_keepalive": peer.get('WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL', 0),
                     })
     except Exception as e:
-        logging.error(f"Failed to get peer stats from WireGuard interface: {e}")
+        logging.error(f"Failed to get peer stats from WireGuard interface: {e}", exc_info=True)
     return stats
 
 def remove_expired_peers() -> int:
