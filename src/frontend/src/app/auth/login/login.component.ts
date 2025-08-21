@@ -15,16 +15,24 @@ import { AuthService } from '../../services/auth.service';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <form [formGroup]="loginForm" (ngSubmit)="submit()">
+      @if (errorMessage) {
+        <div class="error">
+          {{ errorMessage }}
+        </div>
+      }
       <label for="user">Username</label>
       <input
         id="user"
         type="text"
         formControlName="user"
         placeholder="Username"
+        (focus)="clearError()"
       />
-      <div class="error" *ngIf="loginForm.controls.user.invalid && loginForm.controls.user.touched">
-        Username is required.
-      </div>
+      @if (loginForm.controls.user.invalid && loginForm.controls.user.touched) {
+        <div class="error-inline">
+          Username is required.
+        </div>
+      }
 
       <label for="pass">Password</label>
       <input
@@ -32,10 +40,13 @@ import { AuthService } from '../../services/auth.service';
         type="password"
         formControlName="pass"
         placeholder="Password"
+        (focus)="clearError()"
       />
-      <div class="error" *ngIf="loginForm.controls.pass.invalid && loginForm.controls.pass.touched">
-        Password is required.
-      </div>
+      @if (loginForm.controls.pass.invalid && loginForm.controls.pass.touched) {
+        <div class="error-inline">
+          Password is required.
+        </div>
+      }
 
       <button type="submit" [disabled]="loginForm.invalid">
         Login
@@ -62,6 +73,16 @@ import { AuthService } from '../../services/auth.service';
     .error {
       color: #d9534f;
       font-size: 0.875rem;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #f2dede;
+      border: 1px solid #ebccd1;
+      text-align: center;
+    }
+    .error-inline {
+      color: #d9534f;
+      font-size: 0.875rem;
     }
     button {
       margin-top: 1rem;
@@ -77,6 +98,8 @@ import { AuthService } from '../../services/auth.service';
   `]
 })
 export class LoginComponent {
+  errorMessage: string | null = null;
+
   // A FormGroup with non-nullable FormControls<string>
   loginForm = new FormGroup({
     user: new FormControl<string>('', {
@@ -99,12 +122,31 @@ export class LoginComponent {
       this.loginForm.markAllAsTouched();
       return;
     }
+    this.clearError();
 
     // Use getRawValue() so `user` and `pass` are typed as string, not string|undefined
     const { user, pass } = this.loginForm.getRawValue();
 
-    this.auth.login({ username: user, password: pass }).subscribe(() => {
-      this.router.navigate(['/dashboard']);
+    this.auth.login({ username: user, password: pass }).subscribe({
+      next: () => {
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        if (err.status === 401) {
+          this.errorMessage = 'Incorrect username or password.';
+          // Clear invalid credentials
+          this.loginForm.controls.user.setValue("");
+          this.loginForm.controls.pass.setValue("");
+        } else if (err.status >= 500) {
+          this.errorMessage = 'A server error occurred. Please try again later.';
+        } else {
+          this.errorMessage = 'An unexpected error occurred. Please try again.';
+        }
+      }
     });
+  }
+
+  clearError() {
+    this.errorMessage = null;
   }
 }
