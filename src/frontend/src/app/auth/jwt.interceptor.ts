@@ -35,11 +35,12 @@ export const JwtInterceptor: HttpInterceptorFn = (req, next) => {
   };
 
   const handleError = (error: HttpErrorResponse) => {
-    if (error.status === 401 || error.status === 403) {
+    // Do not redirect on auth errors from the login page itself
+    if ((error.status === 401 || error.status === 403) && !req.url.endsWith('/api/login')) {
       router.navigateByUrl('/login');
     }
-    console.error('HTTP Error:', error.message);
-    return throwError(() => new Error(error.message));
+    // Re-throw the original HttpErrorResponse
+    return throwError(() => error);
   };
 
   try {
