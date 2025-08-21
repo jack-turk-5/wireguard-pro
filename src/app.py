@@ -31,9 +31,6 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-class NewPeerRequest(BaseModel):
-    days_valid: int = 7
-
 class DeletePeerRequest(BaseModel):
     public_key: str
 
@@ -52,7 +49,13 @@ class Peer(BaseModel):
     ipv4_address: str
     ipv6_address: str
     expires_at: str
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"))
+    created_at: str
+
+class PeerCreate(BaseModel):
+    days_valid: int = 7
+
+class DeleteResponse(BaseModel):
+    deleted: bool
 
 
 # --- Token Management ---
@@ -133,11 +136,11 @@ async def get_config(current_user: str = Depends(verify_token)):
         "allowed_ips": WG_ALLOWED_IPS,
     }
 
-@app.post("/api/peers/new", response_model=Peer)
-async def api_create_peer(req: NewPeerRequest, current_user: str = Depends(verify_token)):
+@app.post("/api/peers/new", response_model=Peer, status_code=status.HTTP_201_CREATED)
+async def api_create_peer(req: PeerCreate, current_user: str = Depends(verify_token)):
     return create_peer(req.days_valid)
 
-@app.post("/api/peers/delete")
+@app.post("/api/peers/delete", response_model=DeleteResponse)
 async def api_delete_peer(req: DeletePeerRequest, current_user: str = Depends(verify_token)):
     return {"deleted": delete_peer(req.public_key)}
 

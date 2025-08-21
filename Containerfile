@@ -33,12 +33,6 @@ RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
     apt-get install -y --no-install-recommends caddy \
     && rm -rf /var/lib/apt/lists/*
 
-# Create and populate the Python virtual environment
-WORKDIR /app
-COPY requirements.txt .
-RUN python3 -m venv /venv && \
-    /venv/bin/pip install --no-cache-dir -r requirements.txt
-
 
 # === Stage 2: Final Runtime Image ===
 # Use a minimal Debian base image for the final stage.
@@ -47,14 +41,13 @@ FROM debian:bookworm-slim AS runtime
 # Install only the necessary runtime dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      wireguard-tools iproute2 nftables ethtool python3-venv libmnl-dev \
+      wireguard-tools iproute2 nftables ethtool python3-venv python3-pip build-essential libmnl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy all artifacts from the builder stages
 COPY --from=angular-builder /app/dist/frontend/browser /usr/share/caddy/html
 COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
-COPY --from=builder /venv /venv
 
 # Copy application code and configs
 WORKDIR /app
@@ -62,6 +55,11 @@ COPY src/ .
 COPY container/bootstrap.py /
 COPY container/nftables.conf /etc/nftables.conf
 COPY container/Caddyfile /etc/caddy/Caddyfile
+COPY requirements.txt .
+
+# Create and populate the Python virtual environment
+RUN python3 -m venv /venv && \
+    /venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Set up environment
 ENV PATH="/venv/bin:/usr/local/bin:$PATH"
@@ -70,3 +68,4 @@ RUN chmod +x /bootstrap.py
 
 # Set the entrypoint
 ENTRYPOINT ["/bootstrap.py"]
+

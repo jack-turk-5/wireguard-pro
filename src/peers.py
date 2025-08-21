@@ -1,10 +1,12 @@
 import logging
 from datetime import datetime, timezone, timedelta
+from typing import Dict, Any, List
+
 from pyroute2 import IPDB
 from db import add_peer_db, remove_peer_db, get_all_peers
 from utils import generate_keypair, next_available_ip, append_peer_to_wgconf, remove_peer_from_wgconf
 
-def create_peer(days_valid=7):
+def create_peer(days_valid: int = 7) -> Dict[str, Any]:
     """
     Generate a new peer and add it to the database, config file, and running interface.
     This operation is transactional to ensure consistency.
@@ -86,11 +88,11 @@ def delete_peer(public_key: str) -> bool:
 
     return True
 
-def list_peers():
+def list_peers() -> List[Dict[str, Any]]:
     """Return all stored peers from the database."""
     return get_all_peers()
 
-def peer_stats():
+def peer_stats() -> List[Dict[str, Any]]:
     """Return live WireGuard peer stats using pyroute2."""
     stats = []
     try:
