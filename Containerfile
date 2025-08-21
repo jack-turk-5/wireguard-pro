@@ -8,9 +8,12 @@ RUN npm ci && npm run build --omit=dev
 FROM python:3.13-slim AS builder
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      gcc build-essential pkg-config libssl-dev cargo \
+      gcc build-essential pkg-config libssl-dev cargo git \
     && rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /.cargo && \
+    echo -e '[net]\ngit-fetch-with-cli = true' > /.cargo/config.toml && \
     cargo install boringtun-cli --locked --root /usr/local
+
 
 WORKDIR /app
 COPY requirements.txt .
