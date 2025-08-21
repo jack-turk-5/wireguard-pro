@@ -3,7 +3,6 @@
 [![Release and Publish Image](https://github.com/jack-turk-5/wireguard-pro/actions/workflows/release.yml/badge.svg)](https://github.com/jack-turk-5/wireguard-pro/actions/workflows/release.yml)
 [![License](https://img.shields.io/badge/license-BSD-blue)](LICENSE)
 [![Rootless-Podman](https://img.shields.io/badge/podman-rootless-blueviolet)](https://podman.io/)
-[![API Docs](https://img.shields.io/badge/docs-Swagger-informational)](http(s)://ip:51819/apidocs/)
 
 🚀 **Rootless, Dynamic, API-Driven WireGuard VPN Dashboard**  
 🌐 **Socket Activated via Systemd Quadlet**  
