@@ -41,9 +41,6 @@ if not path.isfile(WG_CONF):
     with open(WG_CONF, 'w', newline='\n') as f:
         f.write("\n".join(config) + "\n")
 
-if environ.get('WG_SOCKET_FD', None) is None:
-    environ['WG_SOCKET_FD'] = '4'
-
 # Tear down any old wg0, bring up fresh
 run(['wg-quick','down','wg0'], check=False)
 run(['ip','link','delete','wg0'], check=False)
@@ -64,6 +61,10 @@ Popen([
     '--reuse-port',
     'app:app'
 ], env=environ.copy())
+
+# Apply nftables + ethtool tweaks
+run(['nft','-f','/etc/nftables.conf'], check=True)
+run(['ethtool','-K','tap0','gro','on','gso','on','ufo','on'], check=True)
 
 # Exec into Caddy as PID 1
 caddy = which('caddy')
