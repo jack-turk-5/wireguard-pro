@@ -97,15 +97,16 @@ def peer_stats() -> List[Dict[str, Any]]:
     stats = []
     try:
         with IPDB() as ip:
-            wg0_data = ip.interfaces['wg0'].get_attr('IFLA_INFO_DATA')
-            if wg0_data:
+            wg0 = ip.interfaces['wg0']
+            if 'IFLA_INFO_DATA' in wg0:
+                wg0_data = wg0['IFLA_INFO_DATA']
                 for peer in wg0_data.get('peers', []):
                     stats.append({
-                        "public_key": peer.get_attr('WGPEER_A_PUBLIC_KEY').decode(),
-                        "last_handshake_time": peer.get_attr('WGPEER_A_LAST_HANDSHAKE_TIME', {}).get('tv_sec', 0),
-                        "rx_bytes": peer.get_attr('WGPEER_A_RX_BYTES'),
-                        "tx_bytes": peer.get_attr('WGPEER_A_TX_BYTES'),
-                        "persistent_keepalive": peer.get_attr('WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL', 0),
+                        "public_key": peer.get('WGPEER_A_PUBLIC_KEY', b'').decode(),
+                        "last_handshake_time": peer.get('WGPEER_A_LAST_HANDSHAKE_TIME', {}).get('tv_sec', 0),
+                        "rx_bytes": peer.get('WGPEER_A_RX_BYTES', 0),
+                        "tx_bytes": peer.get('WGPEER_A_TX_BYTES', 0),
+                        "persistent_keepalive": peer.get('WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL', 0),
                     })
     except Exception as e:
         logging.error(f"Failed to get peer stats from WireGuard interface: {e}")
