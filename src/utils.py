@@ -4,25 +4,28 @@ from subprocess import check_output, run, PIPE
 
 WG_PATH = "/etc/wireguard/wg0.conf"
 
-def generate_keypair():
+from typing import Tuple
+
+def generate_keypair() -> Tuple[str, str]:
     """Generate a private/public keypair."""
     private_key = check_output(["wg", "genkey"]).decode().strip()
     public_key = check_output(["wg", "pubkey"], input=private_key.encode()).decode().strip()
     return private_key, public_key
 
-def get_server_pubkey():
+def get_server_pubkey() -> str:
     """Derive server public key from stored private key."""
     with open('/etc/wireguard/privatekey') as f:
         private_key = f.read().strip()
     return check_output(['wg', 'pubkey'], input=private_key.encode()).decode().strip()
 
-def next_available_ip():
+def next_available_ip() -> Tuple[str, str]:
     """Allocate the next free IPv4/IPv6 addresses."""
     peers = get_all_peers()
     used_v4 = {p['ipv4_address'] for p in peers}
     used_v6 = {p['ipv6_address'] for p in peers}
 
     # Find next available IPv4
+    ipv4 = ""
     for i in range(2, 255):
         candidate_v4 = f"10.8.0.{i}"
         if candidate_v4 not in used_v4:
@@ -32,6 +35,7 @@ def next_available_ip():
         raise RuntimeError("No free IPv4 addresses left in 10.8.0.0/24")
 
     # Find next available IPv6
+    ipv6 = ""
     for i in range(2, 65535):
         candidate_v6 = f"fd86:ea04:1111::{i:x}"
         if candidate_v6 not in used_v6:
@@ -42,12 +46,13 @@ def next_available_ip():
 
     return ipv4, ipv6
 
-def append_peer_to_wgconf(public_key, ipv4, ipv6):
+def append_peer_to_wgconf(public_key: str, ipv4: str, ipv6: str) -> None:
     """Append a peer to the wg0.conf file."""
     with open(WG_PATH, "a") as f:
         f.write(f"\n[Peer]\nPublicKey = {public_key}\nAllowedIPs = {ipv4}/32, {ipv6}/128\n")
 
-def remove_peer_from_wgconf(public_key: str):
+def remove_peer_from_wgconf(public_key: str) -> None:
+
     """
     Removes a peer's [Peer] block from the wg0.conf file.
     """

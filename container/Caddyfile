@@ -10,7 +10,7 @@
 	encode gzip
 
 	handle /api* {
-		reverse_proxy :51818 {
+		reverse_proxy unix//run/gunicorn.sock {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
 		}
