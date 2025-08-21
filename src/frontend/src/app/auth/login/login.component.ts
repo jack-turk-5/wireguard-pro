@@ -15,6 +15,9 @@ import { AuthService } from '../../services/auth.service';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <form [formGroup]="loginForm" (ngSubmit)="submit()">
+      <div class="error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
       <label for="user">Username</label>
       <input
         id="user"
@@ -62,6 +65,11 @@ import { AuthService } from '../../services/auth.service';
     .error {
       color: #d9534f;
       font-size: 0.875rem;
+      margin-bottom: 5px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #f2dede;
+      border: 1px solid #ebccd1;
     }
     button {
       margin-top: 1rem;
@@ -77,6 +85,8 @@ import { AuthService } from '../../services/auth.service';
   `]
 })
 export class LoginComponent {
+  errorMessage: string | null = null;
+
   // A FormGroup with non-nullable FormControls<string>
   loginForm = new FormGroup({
     user: new FormControl<string>('', {
@@ -99,12 +109,18 @@ export class LoginComponent {
       this.loginForm.markAllAsTouched();
       return;
     }
+    this.errorMessage = null;
 
     // Use getRawValue() so `user` and `pass` are typed as string, not string|undefined
     const { user, pass } = this.loginForm.getRawValue();
 
-    this.auth.login({ username: user, password: pass }).subscribe(() => {
-      this.router.navigate(['/dashboard']);
+    this.auth.login({ username: user, password: pass }).subscribe({
+      next: () => {
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.detail || 'An unexpected error occurred. Please try again.';
+      }
     });
   }
 }
