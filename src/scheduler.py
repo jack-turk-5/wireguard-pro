@@ -5,11 +5,11 @@ import logging
 # Use a standard BackgroundScheduler
 scheduler = BackgroundScheduler()
 
-def expire_peers_job():
+async def expire_peers_job():
     """Scheduled job to remove expired peers."""
     logging.info("Scheduler: Running job to remove expired peers...")
     try:
-        removed_count = remove_expired_peers()
+        removed_count = await remove_expired_peers()
         if removed_count > 0:
             logging.info(f"Scheduler: Successfully removed {removed_count} expired peers.")
         else:

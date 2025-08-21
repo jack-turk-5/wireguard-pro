@@ -1,53 +1,39 @@
-import logging
+import asyncio
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List
-import base64
+import logging
 
-from pyroute2 import NDB
 from db import add_peer_db, remove_peer_db, get_all_peers
-from utils import generate_keypair, next_available_ip, append_peer_to_wgconf, remove_peer_from_wgconf
+from utils import generate_keypair, next_available_ip, append_peer_to_wgconf, remake_peers_file, _run_command
+
+# Path to the on-disk WireGuard config file
+WG_PATH = "/etc/wireguard/wg0.conf"
 
 
-async def create_peer(days_valid: int = 7) -> Dict[str, Any]:
+async def create_peer(days_valid=7):
     """
-    Generate a new peer and add it to the database, config file, and running interface.
-    This operation is transactional to ensure consistency.
+    Generate a new peer, store it in the DB, append to disk config,
+    and inject into the running WireGuard interface asynchronously.
     """
-    priv, pub = generate_keypair()
+    # Generate keypair
+    priv, pub = await generate_keypair()
+
+    # Allocate next free IPv4/IPv6
     ipv4, ipv6 = next_available_ip()
+
+    # Compute expiration timestamp
     expires = datetime.now(timezone.utc) + timedelta(days=days_valid)
     expires_str = expires.strftime("%Y-%m-%d %H:%M:%S")
 
-    # Step 1: Persist to database first. This is our source of truth.
-    try:
-        add_peer_db(pub, priv, ipv4, ipv6, expires_str)
-    except Exception as e:
-        logging.error(f"Failed to add peer to database: {e}")
-        raise  # Fail fast if the DB operation fails
+    # Persist in database
+    add_peer_db(pub, priv, ipv4, ipv6, expires_str)
 
-    # Step 2: Append to the on-disk config.
-    try:
-        append_peer_to_wgconf(pub, ipv4, ipv6)
-    except Exception as e:
-        logging.error(f"Failed to append peer to wg0.conf: {e}")
-        # Rollback: Remove from DB if config write fails
-        remove_peer_db(pub)
-        raise
+    # Append to the on-disk WireGuard config
+    append_peer_to_wgconf(pub, ipv4, ipv6)
 
-    # Step 3: Add to the live WireGuard interface.
-    try:
-        with NDB() as ndb:
-            ndb.interfaces['wg0'].set(wg_peers=[{
-                'public_key': base64.b64decode(pub),
-                'allowed_ips': [(ipv4, 32), (ipv6, 128)]
-            }]).commit()
-    except Exception as e:
-        logging.error(f"Failed to add peer to WireGuard interface: {e}")
-        # Rollback: Remove from DB and config file if interface update fails
-        remove_peer_db(pub)
-        remove_peer_from_wgconf(pub)
-        raise
+    # Inject into the running interface without full reload
+    await _run_command(f"wg set wg0 peer {pub} allowed-ips {ipv4}/32,{ipv6}/128")
 
+    # Return details for frontend
     return {
         "private_key": priv,
         "public_key": pub,
@@ -58,68 +44,49 @@ async def create_peer(days_valid: int = 7) -> Dict[str, Any]:
     }
 
 
-async def delete_peer(public_key: str) -> bool:
+async def delete_peer(public_key):
     """
-    Remove a peer by public key from the database, config file, and interface.
-    This operation is transactional to ensure consistency.
+    Remove a peer by public key: delete from DB, remove stanza on disk,
+    and remove from the running interface asynchronously.
     """
-    # Step 1: Remove from the database first.
-    if not remove_peer_db(public_key):
-        logging.warning(f"Attempted to delete non-existent peer {public_key} from DB.")
-        return False  # Peer didn't exist in our source of truth
-
-    # Step 2: Remove from the on-disk config.
-    try:
-        remove_peer_from_wgconf(public_key)
-    except Exception as e:
-        logging.error(f"Failed to remove peer from wg0.conf: {e}")
-        logging.critical(f"INCONSISTENT STATE: Peer {public_key} removed from DB but not from config file!")
-
-    # Step 3: Remove from the live interface.
-    try:
-        with NDB() as ndb:
-            ndb.interfaces['wg0'].set(wg_peers=[{
-                'public_key': base64.b64decode(public_key),
-                'remove': True
-            }]).commit()
-    except Exception as e:
-        logging.error(f"Failed to remove peer {public_key} from WireGuard interface: {e}")
-        logging.critical(f"INCONSISTENT STATE: Peer {public_key} removed from DB/config but not from live interface!")
-
-    return True
+    success = remove_peer_db(public_key)
+    if not success:
+        return False
+    else:
+        await remake_peers_file()
+        return True
 
 
-def list_peers() -> List[Dict[str, Any]]:
-    """Return all stored peers from the database."""
+def list_peers():
+    """
+    Return all stored peers from the database.
+    """
     return get_all_peers()
 
 
-async def peer_stats() -> List[Dict[str, Any]]:
-    """Return live WireGuard peer stats using pyroute2."""
+async def peer_stats():
+    """
+    Return live WireGuard peer stats asynchronously.
+    """
+    output = await _run_command("wg show wg0 dump")
+    lines = output.strip().split("\n")[1:]  # Skip header line
     stats = []
-    try:
-        with NDB() as ndb:
-            wg0_info = ndb.interfaces.get('wg0', {})
-            info_data = wg0_info.get('ifla_info_data', {})
-            for peer_nla in info_data.get('peers', []):
-                peer_attrs = dict(peer_nla['attrs'])
-                pub_key_bytes = peer_attrs.get('WGPEER_A_PUBLIC_KEY')
-                if not pub_key_bytes:
-                    continue
-                last_handshake = peer_attrs.get('WGPEER_A_LAST_HANDHANDSHAKE_TIME', {})
-                stats.append({
-                    "public_key": base64.b64encode(pub_key_bytes).decode('ascii'),
-                    "last_handshake_time": last_handshake.get('tv_sec', 0),
-                    "rx_bytes": peer_attrs.get('WGPEER_A_RX_BYTES', 0),
-                    "tx_bytes": peer_attrs.get('WGPEER_A_TX_BYTES', 0),
-                    "persistent_keepalive": peer_attrs.get('WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL', 0),
-                })
-    except Exception as e:
-        logging.error(f"Failed to get peer stats from WireGuard interface: {e}", exc_info=True)
+    for line in lines:
+        fields = line.split("\t")
+        if len(fields) < 8:
+            continue
+        pub, _, _, _, last_hs, rx, tx, keepalive, *_ = fields
+        stats.append({
+            "public_key": pub,
+            "last_handshake_time": last_hs,
+            "rx_bytes": rx,
+            "tx_bytes": tx,
+            "persistent_keepalive": keepalive,
+        })
     return stats
 
 
-async def remove_expired_peers() -> int:
+async def remove_expired_peers():
     """
     Remove all peers whose `expires_at` is in the past.
     Returns the number of peers that were removed.
