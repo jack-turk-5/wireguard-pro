@@ -24,8 +24,9 @@ import { AuthService } from '../../services/auth.service';
         type="text"
         formControlName="user"
         placeholder="Username"
+        (focus)="clearError()"
       />
-      <div class="error" *ngIf="loginForm.controls.user.invalid && loginForm.controls.user.touched">
+      <div class="error-inline" *ngIf="loginForm.controls.user.invalid && loginForm.controls.user.touched">
         Username is required.
       </div>
 
@@ -35,8 +36,9 @@ import { AuthService } from '../../services/auth.service';
         type="password"
         formControlName="pass"
         placeholder="Password"
+        (focus)="clearError()"
       />
-      <div class="error" *ngIf="loginForm.controls.pass.invalid && loginForm.controls.pass.touched">
+      <div class="error-inline" *ngIf="loginForm.controls.pass.invalid && loginForm.controls.pass.touched">
         Password is required.
       </div>
 
@@ -65,11 +67,16 @@ import { AuthService } from '../../services/auth.service';
     .error {
       color: #d9534f;
       font-size: 0.875rem;
-      margin-bottom: 5px;
+      margin-bottom: 10px;
       padding: 10px;
       border-radius: 4px;
       background-color: #f2dede;
       border: 1px solid #ebccd1;
+      text-align: center;
+    }
+    .error-inline {
+      color: #d9534f;
+      font-size: 0.875rem;
     }
     button {
       margin-top: 1rem;
@@ -109,7 +116,7 @@ export class LoginComponent {
       this.loginForm.markAllAsTouched();
       return;
     }
-    this.errorMessage = null;
+    this.clearError();
 
     // Use getRawValue() so `user` and `pass` are typed as string, not string|undefined
     const { user, pass } = this.loginForm.getRawValue();
@@ -119,8 +126,18 @@ export class LoginComponent {
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
-        this.errorMessage = err.error?.detail || 'An unexpected error occurred. Please try again.';
+        if (err.status === 401) {
+          this.errorMessage = 'Incorrect username or password.';
+        } else if (err.status >= 500) {
+          this.errorMessage = 'A server error occurred. Please try again later.';
+        } else {
+          this.errorMessage = 'An unexpected error occurred. Please try again.';
+        }
       }
     });
+  }
+
+  clearError() {
+    this.errorMessage = null;
   }
 }
