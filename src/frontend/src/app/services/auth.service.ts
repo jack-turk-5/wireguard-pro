@@ -18,11 +18,7 @@ export class AuthService {
       .set('username', creds.username)
       .set('password', creds.password);
 
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/x-www-form-urlencoded'
-    });
-
-    return this.httpClient.post<AuthResponse>('/api/login', body.toString(), { headers }).pipe(
+    return this.httpClient.post<AuthResponse>('/api/login', body).pipe(
       tap(res => {
         localStorage.setItem(this.TOKEN_KEY, res.access_token);
       })
