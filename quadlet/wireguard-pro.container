@@ -7,7 +7,7 @@ After=wireguard-pro.socket
 Image=localhost/wireguard/wireguard-pro:latest
 ContainerName=wireguard-pro
 PublishPort=51820:51820/udp
-Network=slirp4netns:mtu=1500,port_handler=slirp4netns,allow_host_loopback=false,enable_ipv6=true
+Network=slirp4netns:mtu=1500,port_handler=slirp4netns,allow_host_loopback=false,enable_ipv6=false
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=wg-pro-data:/data:Z,U
 Secret=wg-privatekey
