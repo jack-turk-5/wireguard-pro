@@ -1,57 +1,41 @@
+import re
 from db import get_all_peers
 from subprocess import check_output, run, PIPE
-
 
 WG_PATH = "/etc/wireguard/wg0.conf"
 
 def generate_keypair():
-    """
-    Generate a private/public keypair
-    """
+    """Generate a private/public keypair."""
     private_key = check_output(["wg", "genkey"]).decode().strip()
-    res = run(
-        args=["wg", "pubkey"],
-        input=private_key,
-        capture_output=True,
-        check=True,
-        text=True
-    )
-    public_key = res.stdout.strip()
+    public_key = check_output(["wg", "pubkey"], input=private_key.encode()).decode().strip()
     return private_key, public_key
 
 def get_server_pubkey():
-    """
-    Derive server public key from stored private key
-    """
-    priv = open('/etc/wireguard/privatekey').read().strip()
-    proc = run(
-        ['wg', 'pubkey'],
-        input=priv.encode(),
-        stdout=PIPE,
-        check=True
-    )
-    return proc.stdout.decode().strip()
+    """Derive server public key from stored private key."""
+    with open('/etc/wireguard/privatekey') as f:
+        private_key = f.read().strip()
+    return check_output(['wg', 'pubkey'], input=private_key.encode()).decode().strip()
 
 def next_available_ip():
-    """
-    Allocate the next free IPv4/IPv6 addresses
-    """
+    """Allocate the next free IPv4/IPv6 addresses."""
     peers = get_all_peers()
     used_v4 = {p['ipv4_address'] for p in peers}
     used_v6 = {p['ipv6_address'] for p in peers}
 
+    # Find next available IPv4
     for i in range(2, 255):
-        candidate = f"10.8.0.{i}"
-        if candidate not in used_v4:
-            ipv4 = candidate
+        candidate_v4 = f"10.8.0.{i}"
+        if candidate_v4 not in used_v4:
+            ipv4 = candidate_v4
             break
     else:
         raise RuntimeError("No free IPv4 addresses left in 10.8.0.0/24")
 
-    for suffix in range(0x100, 0x10000):
-        candidate6 = f"fd86:ea04:1111::{suffix:x}"
-        if candidate6 not in used_v6:
-            ipv6 = candidate6
+    # Find next available IPv6
+    for i in range(2, 65535):
+        candidate_v6 = f"fd86:ea04:1111::{i:x}"
+        if candidate_v6 not in used_v6:
+            ipv6 = candidate_v6
             break
     else:
         raise RuntimeError("No free IPv6 addresses left in fd86:ea04:1111::/64")
@@ -59,44 +43,34 @@ def next_available_ip():
     return ipv4, ipv6
 
 def append_peer_to_wgconf(public_key, ipv4, ipv6):
-    """
-    Append a peer to the wg0.conf file
-    """
+    """Append a peer to the wg0.conf file."""
     with open(WG_PATH, "a") as f:
-        lines = [
-            "[Peer]",
-            f"PublicKey = {public_key}",
-            f"AllowedIPs = {ipv4}/32, {ipv6}/128"
-        ]
-        f.write("\n".join(lines) + "\n")
+        f.write(f"\n[Peer]\nPublicKey = {public_key}\nAllowedIPs = {ipv4}/32, {ipv6}/128\n")
 
-def reload_wireguard():
+def remove_peer_from_wgconf(public_key: str):
     """
-    Reload peers dynamically (strip + syncconf)
+    Removes a peer's [Peer] block from the wg0.conf file.
     """
-    strip = run(["wg-quick", "strip", "wg0"], stdout=PIPE, check=True, text=True)
-    with open("/run/wg0.peers.conf", "w") as f:
-        f.write(strip.stdout)
-
-    run(["wg", "syncconf", "wg0", "/run/wg0.peers.conf"], check=True)
-
-def remake_peers_file():
-    # 1) read existing file up to—but not including—the first [Peer]
     with open(WG_PATH, "r") as f:
-        lines = f.read().splitlines()
-    interface_section = []
-    for line in lines:
-        if line.strip() == "[Peer]":
-            break
-        interface_section.append(line)
+        lines = f.readlines()
 
-    # 2) overwrite disk config with just the interface
+    # Find the start of the peer block
+    try:
+        start_index = lines.index(f"PublicKey = {public_key}\n") - 1
+        # Ensure we found a [Peer] block
+        if lines[start_index].strip() != "[Peer]":
+            return
+    except ValueError:
+        return # Peer not found in file
+
+    # Find the end of the block (next [Peer] or end of file)
+    end_index = start_index + 1
+    while end_index < len(lines) and lines[end_index].strip() != "[Peer]":
+        end_index += 1
+
+    # Remove the lines for the peer
+    del lines[start_index:end_index]
+
+    # Write the file back
     with open(WG_PATH, "w") as f:
-        f.write("\n".join(interface_section) + "\n")
-
-    # 3) re-append every peer from the DB
-    for p in get_all_peers():
-        append_peer_to_wgconf(p["public_key"], p["ipv4_address"], p["ipv6_address"])
-
-    # 4) push into the running interface
-    reload_wireguard()
+        f.writelines(lines)

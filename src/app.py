@@ -1,131 +1,162 @@
-from time import strftime, gmtime
-from os import getloadavg, environ
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from flask_httpauth import HTTPTokenAuth
-from itsdangerous import SignatureExpired, URLSafeTimedSerializer as Serializer
-from itsdangerous.exc import BadSignature
-from scheduler import scheduler
-from peers import create_peer, delete_peer, list_peers, peer_stats
-from flasgger import Swagger
-from utils import get_server_pubkey
+from datetime import datetime, timezone
+import logging
+from contextlib import asynccontextmanager
+from os import environ, getloadavg
+from time import gmtime, strftime
+from typing import List
+
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from itsdangerous import URLSafeTimedSerializer as Serializer, SignatureExpired, BadSignature
+from pydantic import BaseModel, Field
+
 from db import init_db, add_or_update_user_db, verify_user_db
-from logging import basicConfig, DEBUG, error, warning
+from peers import create_peer, delete_peer, list_peers, peer_stats
+from scheduler import scheduler
+from utils import get_server_pubkey
 
-basicConfig(level=DEBUG)
+# --- Configuration & Logging ---
+logging.basicConfig(level=logging.DEBUG)
+SECRET_KEY = environ.get('SECRET_KEY')
+WG_SERVER_PUBKEY = get_server_pubkey()
+WG_ENDPOINT = environ.get('WG_ENDPOINT')
+WG_ALLOWED_IPS = environ.get('WG_ALLOWED_IPS', '0.0.0.0/0, ::/0')
 
-def make_token_serializer(flask_app):
-    return Serializer(flask_app.config['SECRET_KEY'], salt='auth-token')
+if not SECRET_KEY or not WG_ENDPOINT:
+    raise Exception('Missing SECRET_KEY and/or WG_ENDPOINT')
 
-def generate_token(s, username):
-    return s.dumps({'user': username})
+# --- Pydantic Models ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
-def verify_token(s, token, max_age=1800):
+class NewPeerRequest(BaseModel):
+    days_valid: int = 7
+
+class DeletePeerRequest(BaseModel):
+    public_key: str
+
+class ServerInfo(BaseModel):
+    uptime: str
+    load: str
+
+class ServerConfig(BaseModel):
+    public_key: str
+    endpoint: str
+    allowed_ips: str
+
+class Peer(BaseModel):
+    public_key: str
+    private_key: str
+    ipv4_address: str
+    ipv6_address: str
+    expires_at: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"))
+
+
+# --- Token Management ---
+ts = Serializer(SECRET_KEY, salt='auth-token')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+
+def generate_token(username: str) -> str:
+    return ts.dumps({'user': username})
+
+def verify_token(token: str = Depends(oauth2_scheme)) -> str:
     try:
-        return s.loads(token, max_age=max_age).get('user')
-    except SignatureExpired as e:
-        warning(f"Token expired at {e.date_signed}")
-        return None
-    except BadSignature as e:
-        error(f"Invalid token signature: {e}")
-        return None
+        user = ts.loads(token, max_age=1800).get('user')
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return user
+    except SignatureExpired:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except BadSignature:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token signature",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
-def create_app():
-    flask_app = Flask(__name__, instance_relative_config=True)
-    flask_app.config['SECRET_KEY'] = environ.get('SECRET_KEY')
-    flask_app.config['WG_SERVER_PUBKEY'] = get_server_pubkey()
-    flask_app.config['WG_ENDPOINT'] = environ.get('WG_ENDPOINT')
-
-    Swagger(flask_app)
-    scheduler.init_app(flask_app)
-    scheduler.start()
-
-    CORS(
-        flask_app,
-        resources={
-            r"/api/*": {"origins": "0.0.0.0:51819"},
-            r"/serverinfo": {"origins": "0.0.0.0:51819"}
-        },
-        methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type"],
-        expose_headers=["Authorization"],
-        supports_credentials=True
-    )
-
-    # DB + seed admin user
-    with flask_app.app_context():
-        init_db()
+# --- Lifespan Management (for startup/shutdown events) ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    init_db()
+    try:
         user = open('/run/secrets/admin-user').read().strip()
         pw = open('/run/secrets/admin-pass').read().strip()
         add_or_update_user_db(user, pw)
-        flask_app.logger.info(f"Seeded user `{user}`")
+        logging.info(f"Seeded user `{user}`")
+    except FileNotFoundError:
+        logging.warning("Admin secrets not found. Skipping user seeding.")
+    scheduler.start()
+    yield
+    # Shutdown
+    scheduler.shutdown()
 
-    # Token-only auth
-    token_auth = HTTPTokenAuth(scheme='Bearer')
-    ts = make_token_serializer(flask_app)
+# --- FastAPI App ---
+app = FastAPI(lifespan=lifespan)
 
-    @token_auth.verify_token
-    def verify_tok(token):
-        return verify_token(ts, token)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:51819", "http://0.0.0.0:51819"], # Be more specific in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    # ——— Routes ———
-    @flask_app.route('/api/login', methods=['POST'])
-    def login():
-        data = request.get_json() or {}
-        u = data.get('username','').strip()
-        p = data.get('password','')
-        if not u or not p or not verify_user_db(u, p):
-            return jsonify({'error':'invalid credentials'}), 401
-        return jsonify({'token': generate_token(ts,u)})
-    
-    @flask_app.route('/api/config', methods=['GET'])
-    @token_auth.login_required
-    def api_get_config():
-        return jsonify(
-            {
-                'public_key': flask_app.config['WG_SERVER_PUBKEY'], 
-                'endpoint': flask_app.config['WG_ENDPOINT'],
-                'allowed_ips': environ.get('WG_ALLOWED_IPS', '0.0.0.0/0, ::/0'),
-            }
+# --- API Endpoints ---
+@app.post("/api/login", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    if not verify_user_db(form_data.username, form_data.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
         )
+    access_token = generate_token(form_data.username)
+    return {"access_token": access_token, "token_type": "bearer"}
 
-    @flask_app.route('/api/peers/new', methods=['POST'])
-    @token_auth.login_required
-    def api_create_peer():
-        days = (request.get_json() or {}).get('days_valid', 7)
-        return jsonify(create_peer(days))
+@app.get("/api/config", response_model=ServerConfig)
+async def get_config(current_user: str = Depends(verify_token)):
+    return {
+        "public_key": WG_SERVER_PUBKEY,
+        "endpoint": WG_ENDPOINT,
+        "allowed_ips": WG_ALLOWED_IPS,
+    }
 
-    @flask_app.route('/api/peers/delete', methods=['POST'])
-    @token_auth.login_required
-    def api_delete_peer():
-        key = (request.get_json() or {}).get('public_key','')
-        return jsonify({'deleted': delete_peer(key)})
+@app.post("/api/peers/new", response_model=Peer)
+async def api_create_peer(req: NewPeerRequest, current_user: str = Depends(verify_token)):
+    return create_peer(req.days_valid)
 
-    @flask_app.route('/api/peers/list', methods=['GET'])
-    @token_auth.login_required
-    def api_list_peers():
-        return jsonify(list_peers())
+@app.post("/api/peers/delete")
+async def api_delete_peer(req: DeletePeerRequest, current_user: str = Depends(verify_token)):
+    return {"deleted": delete_peer(req.public_key)}
 
-    @flask_app.route('/api/peers/stats', methods=['GET'])
-    @token_auth.login_required
-    def api_peer_stats():
-        return jsonify(peer_stats())
+@app.get("/api/peers/list", response_model=List[Peer])
+async def api_list_peers(current_user: str = Depends(verify_token)):
+    return list_peers()
 
-    @flask_app.route('/api/serverinfo', methods=['GET'])
-    @token_auth.login_required
-    def server_info():
-        try:
-            with open('/proc/uptime') as f:
-                up = float(f.readline().split()[0])
-            return jsonify({
-                'uptime': strftime("%H:%M:%S", gmtime(up)),
-                'load': "{:.2f} {:.2f} {:.2f}".format(*getloadavg())
-            })
-        except Exception as e:
-            return jsonify({'error':str(e)}), 500
+@app.get("/api/peers/stats")
+async def api_peer_stats(current_user: str = Depends(verify_token)):
+    return peer_stats()
 
-    return flask_app
-
-app = create_app()
-if __name__=="__main__":
-    app.run()
+@app.get("/api/serverinfo", response_model=ServerInfo)
+async def server_info(current_user: str = Depends(verify_token)):
+    try:
+        with open('/proc/uptime') as f:
+            up = float(f.readline().split()[0])
+        return {
+            'uptime': strftime("%H:%M:%S", gmtime(up)),
+            'load': "{:.2f} {:.2f} {:.2f}".format(*getloadavg())
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

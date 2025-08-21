@@ -1,24 +1,30 @@
 import { Injectable } from '@angular/core';
 import { tap } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 
 export interface AuthResponse {
-  token: string;
+  access_token: string;
+  token_type: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'jwt-token';
-  private readonly httpClient: HttpClient;
 
-  constructor(httpClient: HttpClient) {
-    this.httpClient = httpClient;
-  }
+  constructor(private httpClient: HttpClient) {}
 
   login(creds: { username: string; password: string }) {
-    return this.httpClient.post<AuthResponse>('/api/login', creds).pipe(
+    const body = new HttpParams()
+      .set('username', creds.username)
+      .set('password', creds.password);
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/x-www-form-urlencoded'
+    });
+
+    return this.httpClient.post<AuthResponse>('/api/login', body.toString(), { headers }).pipe(
       tap(res => {
-        localStorage.setItem(this.TOKEN_KEY, res.token);
+        localStorage.setItem(this.TOKEN_KEY, res.access_token);
       })
     );
   }

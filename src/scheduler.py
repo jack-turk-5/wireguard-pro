@@ -1,15 +1,21 @@
-from flask_apscheduler import APScheduler
-from peers import list_peers, delete_peer
-from datetime import datetime, timezone
+from apscheduler.schedulers.background import BackgroundScheduler
+from peers import remove_expired_peers
+import logging
 
+# Use a standard BackgroundScheduler
+scheduler = BackgroundScheduler()
 
-scheduler = APScheduler()
+def expire_peers_job():
+    """Scheduled job to remove expired peers."""
+    logging.info("Scheduler: Running job to remove expired peers...")
+    try:
+        removed_count = remove_expired_peers()
+        if removed_count > 0:
+            logging.info(f"Scheduler: Successfully removed {removed_count} expired peers.")
+        else:
+            logging.info("Scheduler: No expired peers found.")
+    except Exception as e:
+        logging.error(f"Scheduler: Error during expired peer removal: {e}")
 
-@scheduler.task('interval', id='expire_peers', seconds=3600)
-def expire_peers():
-    now = datetime.now(timezone.utc).isoformat()
-    peers = list_peers()
-    for peer in peers:
-        if peer['expires_at'] and peer['expires_at'] < now:
-            print(f"[AutoExpire] Removing expired peer {peer['public_key']}")
-            delete_peer(peer['public_key'])
+# Add the job to the scheduler instance
+scheduler.add_job(expire_peers_job, 'interval', id='expire_peers', hours=1)
