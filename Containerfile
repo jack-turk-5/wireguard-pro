@@ -4,7 +4,7 @@ FROM node:24-alpine AS angular-builder
 WORKDIR /app
 COPY src/frontend/ .
 # Use --no-optional to skip unnecessary packages like puppeteer
-RUN npm ci --no-optional && npm run build --omit=dev
+RUN npm ci --omit=optional && npm run build --omit=dev
 
 
 # === Stage 1: Build Python venv, BoringTun, and Caddy ===
