@@ -6,11 +6,12 @@ After=wireguard-pro.socket
 [Container]
 Image=localhost/wireguard/wireguard-pro:latest
 ContainerName=wireguard-pro
+PublishPort=51820:51820/udp
 Network=slirp4netns:mtu=1500,port_handler=slirp4netns,allow_host_loopback=false,enable_ipv6=true
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=wg-pro-data:/data:Z,U
 Secret=wg-privatekey
-PodmanArgs=--preserve-fds=1 --publish=51820:51820/udp
+PodmanArgs=--preserve-fds=1
 
 AddCapability=CAP_NET_ADMIN CAP_NET_RAW CAP_SETUID CAP_SETGID
 AddDevice=/dev/net/tun:/dev/net/tun:rwm
