@@ -138,11 +138,11 @@ async def get_config(current_user: str = Depends(verify_token)):
 
 @app.post("/api/peers/new", response_model=Peer, status_code=status.HTTP_201_CREATED)
 async def api_create_peer(req: PeerCreate, current_user: str = Depends(verify_token)):
-    return create_peer(req.days_valid)
+    return await create_peer(req.days_valid)
 
 @app.post("/api/peers/delete", response_model=DeleteResponse)
 async def api_delete_peer(req: DeletePeerRequest, current_user: str = Depends(verify_token)):
-    return {"deleted": delete_peer(req.public_key)}
+    return {"deleted": await delete_peer(req.public_key)}
 
 @app.get("/api/peers/list", response_model=List[Peer])
 async def api_list_peers(current_user: str = Depends(verify_token)):
