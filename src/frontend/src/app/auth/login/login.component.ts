@@ -15,9 +15,11 @@ import { AuthService } from '../../services/auth.service';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <form [formGroup]="loginForm" (ngSubmit)="submit()">
-      <div class="error" *ngIf="errorMessage">
-        {{ errorMessage }}
-      </div>
+      @if (errorMessage) {
+        <div class="error">
+          {{ errorMessage }}
+        </div>
+      }
       <label for="user">Username</label>
       <input
         id="user"
@@ -26,9 +28,11 @@ import { AuthService } from '../../services/auth.service';
         placeholder="Username"
         (focus)="clearError()"
       />
-      <div class="error-inline" *ngIf="loginForm.controls.user.invalid && loginForm.controls.user.touched">
-        Username is required.
-      </div>
+      @if (loginForm.controls.user.invalid && loginForm.controls.user.touched) {
+        <div class="error-inline">
+          Username is required.
+        </div>
+      }
 
       <label for="pass">Password</label>
       <input
@@ -38,9 +42,11 @@ import { AuthService } from '../../services/auth.service';
         placeholder="Password"
         (focus)="clearError()"
       />
-      <div class="error-inline" *ngIf="loginForm.controls.pass.invalid && loginForm.controls.pass.touched">
-        Password is required.
-      </div>
+      @if (loginForm.controls.pass.invalid && loginForm.controls.pass.touched) {
+        <div class="error-inline">
+          Password is required.
+        </div>
+      }
 
       <button type="submit" [disabled]="loginForm.invalid">
         Login
