@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List
 import base64
 
-from pyroute2 import WireGuard
+from pyroute2 import IPDB, WireGuard
 from db import add_peer_db, remove_peer_db, get_all_peers
 from utils import generate_keypair, next_available_ip, append_peer_to_wgconf, remove_peer_from_wgconf
 
@@ -94,37 +94,42 @@ def list_peers() -> List[Dict[str, Any]]:
     """Return all stored peers from the database."""
     return get_all_peers()
 
-def peer_stats() -> List[Dict[str, Any]]:
+async def peer_stats() -> List[Dict[str, Any]]:
     """Return live WireGuard peer stats using pyroute2."""
     stats = []
+    ip = IPDB(async_lib='asyncio')
     try:
-        with WireGuard() as wg:
-            info = wg.info(interface='wg0')
-            if not info:
-                return []
+        # The WireGuard object requires a reference to an IPDB instance
+        # in async mode.
+        wg = WireGuard(use_event_loop=ip)
+        info = await wg.info(interface='wg0') # type: ignore
+        if not info:
+            return []
 
-            # info() returns a list of interfaces, we only expect one
-            interface_attrs = dict(info[0]['attrs'])
-            
-            if 'WGDEVICE_A_PEERS' in interface_attrs:
-                for peer_msg in interface_attrs['WGDEVICE_A_PEERS']:
-                    peer = dict(peer_msg['attrs'])
-                    
-                    pub_key_bytes = peer.get('WGPEER_A_PUBLIC_KEY')
-                    if not pub_key_bytes:
-                        continue
-                    
-                    last_handshake = peer.get('WGPEER_A_LAST_HANDHANDSHAKE_TIME', {})
-                    
-                    stats.append({
-                        "public_key": base64.b64encode(pub_key_bytes).decode('ascii'),
-                        "last_handshake_time": last_handshake.get('tv_sec', 0),
-                        "rx_bytes": peer.get('WGPEER_A_RX_BYTES', 0),
-                        "tx_bytes": peer.get('WGPEER_A_TX_BYTES', 0),
-                        "persistent_keepalive": peer.get('WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL', 0),
-                    })
+        # info() returns a list of interfaces, we only expect one
+        interface_attrs = dict(info[0]['attrs'])
+        
+        if 'WGDEVICE_A_PEERS' in interface_attrs:
+            for peer_msg in interface_attrs['WGDEVICE_A_PEERS']:
+                peer = dict(peer_msg['attrs'])
+                
+                pub_key_bytes = peer.get('WGPEER_A_PUBLIC_KEY')
+                if not pub_key_bytes:
+                    continue
+                
+                last_handshake = peer.get('WGPEER_A_LAST_HANDSHAKE_TIME', {})
+                
+                stats.append({
+                    "public_key": base64.b64encode(pub_key_bytes).decode('ascii'),
+                    "last_handshake_time": last_handshake.get('tv_sec', 0),
+                    "rx_bytes": peer.get('WGPEER_A_RX_BYTES', 0),
+                    "tx_bytes": peer.get('WGPEER_A_TX_BYTES', 0),
+                    "persistent_keepalive": peer.get('WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL', 0),
+                })
     except Exception as e:
         logging.error(f"Failed to get peer stats from WireGuard interface: {e}", exc_info=True)
+    finally:
+        ip.release()
     return stats
 
 def remove_expired_peers() -> int:

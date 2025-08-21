@@ -150,7 +150,7 @@ async def api_list_peers(current_user: str = Depends(verify_token)):
 
 @app.get("/api/peers/stats")
 async def api_peer_stats(current_user: str = Depends(verify_token)):
-    return peer_stats()
+    return await peer_stats()
 
 @app.get("/api/serverinfo", response_model=ServerInfo)
 async def server_info(current_user: str = Depends(verify_token)):
