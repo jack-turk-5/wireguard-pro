@@ -11,7 +11,7 @@ RUN apt-get update && \
       gcc build-essential pkg-config libssl-dev cargo git \
     && rm -rf /var/lib/apt/lists/* && \
     mkdir -p /.cargo && \
-    echo -e '[net]\ngit-fetch-with-cli = true' > /.cargo/config.toml && \
+    printf '[net]\ngit-fetch-with-cli = true\n' > /.cargo/config.toml && \
     cargo install boringtun-cli --locked --root /usr/local
 
 
