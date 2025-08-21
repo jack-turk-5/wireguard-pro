@@ -36,7 +36,7 @@ RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
 
 # === Stage 2: Final Runtime Image ===
 # Use a minimal Debian base image for the final stage.
-FROM debian:bookworm-slim AS runtime
+FROM debian:trixie-slim AS runtime
 
 # Install only the necessary runtime dependencies
 RUN apt-get update && \
@@ -68,4 +68,3 @@ RUN chmod +x /bootstrap.py
 
 # Set the entrypoint
 ENTRYPOINT ["/bootstrap.py"]
-
