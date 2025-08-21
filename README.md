@@ -1,6 +1,6 @@
 # WireGuard Pro 🛡️
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/jack-turk-5/wireguard-pro/actions)
+[![Build](https://github.com/jack-turk-5/wireguard-pro/actions/workflows/release.yml/badge.svg)](https://github.com/jack-turk-5/wireguard-pro/actions/workflows/release.yml)
 [![License](https://img.shields.io/badge/license-BSD-blue)](LICENSE)
 [![Rootless-Podman](https://img.shields.io/badge/podman-rootless-blueviolet)](https://podman.io/)
 [![API Docs](https://img.shields.io/badge/docs-Swagger-informational)](http(s)://ip:51819/apidocs/)
@@ -35,18 +35,6 @@ make deploy
 Visit `http(s)://ip:51819/` to open the dashboard!
 
 For setup instructions: see [quickstart.md](docs/quickstart.md)
-
----
-
-## 📜 API Documentation
-
-- Swagger UI: [http://your-server-ip:10086/apidocs/](http://your-server-ip:10086/apidocs/)
-
-Example Endpoints:
-- `POST /api/peers/new` → Create peer
-- `POST /api/peers/delete` → Remove peer
-- `GET /api/peers/list` → List peers
-- `GET /api/peers/stats` → Live stats
 
 ---
 
@@ -99,9 +87,10 @@ make deploy
 
 # 🎁 Future Additions
 
-✅ Kubernetes Helm Chart  
-✅ OAuth2.0 Integration
-✅ 2-Factor Authentication
+- Kubernetes Helm Chart  
+- OAuth2.0 Integration
+- 2-Factor Authentication
+- Swagger API Docs
 
 ---
 
