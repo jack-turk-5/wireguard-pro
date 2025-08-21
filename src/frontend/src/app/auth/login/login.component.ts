@@ -134,6 +134,9 @@ export class LoginComponent {
       error: (err) => {
         if (err.status === 401) {
           this.errorMessage = 'Incorrect username or password.';
+          // Clear invalid credentials
+          this.loginForm.controls.user.setValue("");
+          this.loginForm.controls.pass.setValue("");
         } else if (err.status >= 500) {
           this.errorMessage = 'A server error occurred. Please try again later.';
         } else {
