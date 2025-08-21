@@ -37,11 +37,10 @@ async def create_peer(days_valid: int = 7) -> Dict[str, Any]:
     # Step 3: Add to the live WireGuard interface.
     try:
         with NDB() as ndb:
-            with ndb.interfaces.get('wg0') as wg:
-                wg.set(wg_peers=[{
-                    'public_key': base64.b64decode(pub),
-                    'allowed_ips': [(ipv4, 32), (ipv6, 128)]
-                }])
+            ndb.interfaces['wg0'].set(wg_peers=[{
+                'public_key': base64.b64decode(pub),
+                'allowed_ips': [(ipv4, 32), (ipv6, 128)]
+            }]).commit()
     except Exception as e:
         logging.error(f"Failed to add peer to WireGuard interface: {e}")
         # Rollback: Remove from DB and config file if interface update fails
@@ -79,11 +78,10 @@ async def delete_peer(public_key: str) -> bool:
     # Step 3: Remove from the live interface.
     try:
         with NDB() as ndb:
-            with ndb.interfaces.get('wg0') as wg:
-                wg.set(wg_peers=[{
-                    'public_key': base64.b64decode(public_key),
-                    'remove': True
-                }])
+            ndb.interfaces['wg0'].set(wg_peers=[{
+                'public_key': base64.b64decode(public_key),
+                'remove': True
+            }]).commit()
     except Exception as e:
         logging.error(f"Failed to remove peer {public_key} from WireGuard interface: {e}")
         logging.critical(f"INCONSISTENT STATE: Peer {public_key} removed from DB/config but not from live interface!")
@@ -101,21 +99,21 @@ async def peer_stats() -> List[Dict[str, Any]]:
     stats = []
     try:
         with NDB() as ndb:
-            with ndb.interfaces.get('wg0') as wg:
-                info_data = wg.get('ifla_info_data', {})
-                for peer_nla in info_data.get('peers', []):
-                    peer_attrs = dict(peer_nla['attrs'])
-                    pub_key_bytes = peer_attrs.get('WGPEER_A_PUBLIC_KEY')
-                    if not pub_key_bytes:
-                        continue
-                    last_handshake = peer_attrs.get('WGPEER_A_LAST_HANDSHAKE_TIME', {})
-                    stats.append({
-                        "public_key": base64.b64encode(pub_key_bytes).decode('ascii'),
-                        "last_handshake_time": last_handshake.get('tv_sec', 0),
-                        "rx_bytes": peer_attrs.get('WGPEER_A_RX_BYTES', 0),
-                        "tx_bytes": peer_attrs.get('WGPEER_A_TX_BYTES', 0),
-                        "persistent_keepalive": peer_attrs.get('WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL', 0),
-                    })
+            wg0_info = ndb.interfaces.get('wg0', {})
+            info_data = wg0_info.get('ifla_info_data', {})
+            for peer_nla in info_data.get('peers', []):
+                peer_attrs = dict(peer_nla['attrs'])
+                pub_key_bytes = peer_attrs.get('WGPEER_A_PUBLIC_KEY')
+                if not pub_key_bytes:
+                    continue
+                last_handshake = peer_attrs.get('WGPEER_A_LAST_HANDHANDSHAKE_TIME', {})
+                stats.append({
+                    "public_key": base64.b64encode(pub_key_bytes).decode('ascii'),
+                    "last_handshake_time": last_handshake.get('tv_sec', 0),
+                    "rx_bytes": peer_attrs.get('WGPEER_A_RX_BYTES', 0),
+                    "tx_bytes": peer_attrs.get('WGPEER_A_TX_BYTES', 0),
+                    "persistent_keepalive": peer_attrs.get('WGPEER_A_PERSISTENT_KEEPALIVE_INTERVAL', 0),
+                })
     except Exception as e:
         logging.error(f"Failed to get peer stats from WireGuard interface: {e}", exc_info=True)
     return stats
