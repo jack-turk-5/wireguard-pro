@@ -9,8 +9,7 @@ permissions:
   packages: write
 
 env:
-  # The static, full name of the image.
-  IMAGE_NAME: ghcr.io/jack-turk-5/wireguard/wiregaurd-pro
+  IMAGE_NAME: ghcr.io/jack-turk-5/wireguard/wireguard-pro
 
 jobs:
   build-and-publish:
@@ -27,30 +26,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get short commit SHA
-        id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
       - name: Build image using Makefile
-        # This is expected to create a local image named 'wireguard-pro:latest'
-        run: make image
+        run: podman build -t ${{ env.IMAGE_NAME }}:latest -f Containerfile
 
-      - name: Re-tag image for release, latest, and SHA
+      - name: Tag and Push images to GHCR
         run: |
-          RELEASE_VERSION=${{ github.ref_name }}
-          SHA_TAG=${{ steps.vars.outputs.sha_short }}
-          
-          # Re-tag the local build with the full registry path for all desired tags
-          podman tag localhost/wireguard-pro:latest "${{ env.IMAGE_NAME }}:${RELEASE_VERSION}"
-          podman tag localhost/wireguard-pro:latest "${{ env.IMAGE_NAME }}:latest"
-          podman tag localhost/wireguard-pro:latest "${{ env.IMAGE_NAME }}:${SHA_TAG}"
+          LATEST_TAG="${{ env.IMAGE_NAME }}:latest"
+          RELEASE_TAG="${{ env.IMAGE_NAME }}:${{ github.event.release.tag_name }}"
+          SHA_TAG="${{ env.IMAGE_NAME }}:${{ github.sha }}"
 
-      - name: Push images to GHCR
-        run: |
-          RELEASE_VERSION=${{ github.ref_name }}
-          SHA_TAG=${{ steps.vars.outputs.sha_short }}
+          podman tag "$LATEST_TAG" "$RELEASE_TAG"
+          podman tag "$LATEST_TAG" "$SHA_TAG"
 
-          # Push all three tags
-          podman push "${{ env.IMAGE_NAME }}:${RELEASE_VERSION}"
-          podman push "${{ env.IMAGE_NAME }}:latest"
-          podman push "${{ env.IMAGE_NAME }}:${SHA_TAG}"
+          podman push "$LATEST_TAG"
+          podman push "$RELEASE_TAG"
+          podman push "$SHA_TAG"
