@@ -52,7 +52,7 @@ def main():
 
     # --- Start BoringTun ---
     print("Starting BoringTun")
-    boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug']
+    boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug', '--disable-drop-privileges']
     boringtun_proc = subprocess.Popen(boringtun_args, pass_fds=fds.keys())
 
     # --- Configure WireGuard interface (after it's created by boringtun) ---
