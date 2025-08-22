@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+import sys
+import socket
 from secrets import token_urlsafe
-from shutil import which
 
 def run_command(command, check=True):
     """Helper to run a command and log its output."""
     print(f"Running command: {' '.join(command)}")
-    subprocess.run(command, check=check)
+    try:
+        subprocess.run(command, check=check)
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed: {e}")
+        sys.exit(1)
 
 def setup_secret_key():
     """Set up the application's secret key."""
@@ -23,58 +28,81 @@ def setup_secret_key():
                 f.write(key)
             os.environ['SECRET_KEY'] = key
 
-def setup_wireguard():
-    """Configure and bring up the WireGuard interface."""
-    conf_file = '/etc/wireguard/wg0.conf'
-    secret_file = '/run/secrets/wg-privatekey'
-    
-    if not os.path.isfile(conf_file):
-        os.makedirs(os.path.dirname(conf_file), exist_ok=True)
-        if os.path.exists(secret_file):
-            with open(secret_file) as f:
-                private_key = f.read().strip()
-        else:
-            private_key = subprocess.check_output(['wg', 'genkey']).decode().strip()
-        
-        with open('/etc/wireguard/privatekey', 'w') as f:
-            f.write(private_key)
-            
-        public_key = subprocess.check_output(['wg', 'pubkey'], input=private_key.encode()).decode().strip()
-        
-        config = [
-            "[Interface]",
-            f"PrivateKey = {private_key}",
-            "Address = 10.8.0.1/24, fd86:ea04:1111::1/64",
-            "ListenPort = 51820",
-            "MTU = 1420"
-        ]
-        with open(conf_file, 'w') as f:
-            f.write(f"{'/n'.join(config)}\n")
+def get_socket_fds():
+    """Get file descriptors passed by systemd."""
+    listen_fds = int(os.environ.get('LISTEN_FDS', 0))
+    if listen_fds < 2:
+        print(f"Error: Expected 2 file descriptors from systemd, but got {listen_fds}. Exiting.")
+        sys.exit(1)
 
-    # Bring up the interface
-    run_command(['wg-quick', 'up', 'wg0'])
+    # The first file descriptor from systemd is always 3
+    tcp_fd, udp_fd = 3, 4
+    
+    # A simple check to differentiate TCP and UDP sockets
+    s_tcp = socket.fromfd(tcp_fd, socket.AF_INET6, socket.SOCK_STREAM)
+    s_udp = socket.fromfd(udp_fd, socket.AF_INET6, socket.SOCK_DGRAM)
+
+    if s_tcp.type != socket.SOCK_STREAM:
+        tcp_fd, udp_fd = udp_fd, tcp_fd # Swap if order is unexpected
+
+    print(f"Identified TCP FD: {tcp_fd} for Gunicorn")
+    print(f"Identified UDP FD: {udp_fd} for BoringTun")
+    
+    return tcp_fd, udp_fd
 
 def main():
-    """Main bootstrap script."""
+    """Main bootstrap script to manage all services."""
     setup_secret_key()
-    setup_wireguard()
+    tcp_fd, udp_fd = get_socket_fds()
 
-    # Start Gunicorn with Uvicorn workers
-    gunicorn_args = os.environ.get("GUNICORN_CMD_ARGS", "--workers 2 --worker-class uvicorn.workers.UvicornWorker --bind unix:/run/gunicorn.sock").split()
-    subprocess.Popen(['/venv/bin/gunicorn', 'main:app', *gunicorn_args])
+    # --- Start BoringTun ---
+    print("Starting BoringTun...")
+    boringtun_proc = subprocess.Popen([
+        'boringtun-cli', 'wg0',
+        '--fd', str(udp_fd),
+        '--foreground',
+        '--verbosity', 'debug'
+    ])
 
-    # Apply nftables rules
+    # --- Configure WireGuard interface (after it's created by boringtun) ---
+    # This part is tricky, we need to wait a moment for the device to appear
+    import time
+    time.sleep(1) 
+    run_command(['wg', 'set', 'wg0', 'private-key', '/run/secrets/wg-privatekey'])
+    run_command(['ip', 'address', 'add', '10.8.0.1/24', 'dev', 'wg0'])
+    run_command(['ip', 'address', 'add', 'fd86:ea04:1111::1/64', 'dev', 'wg0'])
+    run_command(['ip', 'link', 'set', 'mtu', '1420', 'up', 'dev', 'wg0'])
+
+    # --- Start Gunicorn ---
+    print("Starting Gunicorn...")
+    gunicorn_proc = subprocess.Popen([
+        '/venv/bin/gunicorn', 'main:app',
+        '--workers', '2',
+        '--worker-class', 'uvicorn.workers.UvicornWorker',
+        '--bind', f'fd://{tcp_fd}'
+    ])
+
+    # --- Apply nftables rules ---
     run_command(['nft', '-f', '/etc/nftables.conf'])
 
-    # Exec into Caddy
-    caddy_executable = which('caddy')
-    if caddy_executable:
-        os.execv(caddy_executable, [
-            'caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile'
-        ])
-    else:
-        print("Error: 'caddy' executable not found.")
-        exit(1)
+    # --- Start Caddy ---
+    print("Starting Caddy...")
+    caddy_proc = subprocess.Popen([
+        'caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile'
+    ])
+
+    # --- Wait for any process to exit ---
+    procs = [boringtun_proc, gunicorn_proc, caddy_proc]
+    while True:
+        for p in procs:
+            if p.poll() is not None:
+                print(f"Process {p.args[0]} exited with code {p.returncode}. Shutting down.")
+                # Terminate other processes
+                for other_p in procs:
+                    if other_p.pid != p.pid:
+                        other_p.terminate()
+                sys.exit(1)
+        time.sleep(1)
 
 if __name__ == "__main__":
     main()

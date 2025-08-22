@@ -17,12 +17,8 @@ RUN apt-get update && \
       gcc build-essential pkg-config libssl-dev cargo git curl gnupg ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure cargo for faster, non-interactive builds
-RUN mkdir -p /.cargo && \
-    printf '[net]\ngit-fetch-with-cli = true\n' > /.cargo/config.toml
-
-# Install BoringTun
-RUN cargo install boringtun-cli --locked --root /usr/local
+# Install BoringTun from local build
+COPY bin/boringtun-cli /usr/local/bin/
 
 # Install Caddy
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \

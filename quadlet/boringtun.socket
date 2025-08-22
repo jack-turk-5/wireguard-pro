@@ -1,0 +1,12 @@
+[Unit]
+Description=WireGuard Pro UDP Socket
+PartOf=wireguard-pro.service
+
+[Socket]
+ListenDatagram=[::]:51820
+BindIPv6Only=both
+SocketMode=0600
+Service=wireguard-pro.service
+
+[Install]
+WantedBy=sockets.target
