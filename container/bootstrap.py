@@ -33,8 +33,14 @@ def get_named_socket_fds():
     """Get file descriptors passed by systemd using their names."""
     n = sdnotify.SystemdNotifier()
     
-    tcp_fds = n.get_named_socket_fds('wireguard-pro-tcp')
-    udp_fds = n.get_named_socket_fds('boringtun-udp')
+    named_fds = n.listen_fds_with_names()
+
+    if not named_fds:
+        print("Fatal: Did not receive any named file descriptors from systemd.")
+        sys.exit(1)
+
+    tcp_fds = named_fds.get('wireguard-pro-tcp')
+    udp_fds = named_fds.get('boringtun-udp')
 
     if not tcp_fds:
         print("Fatal: Could not find any TCP sockets named 'wireguard-pro-tcp'.")
