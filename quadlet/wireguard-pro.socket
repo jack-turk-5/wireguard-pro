@@ -6,7 +6,6 @@ ListenStream=0.0.0.0:51819
 ListenDatagram=0.0.0.0:51820
 ListenStream=[::]:51819
 ListenDatagram=[::]:51820
-BindIPv6Only=both
 SocketMode=0600
 Service=wireguard-pro.service
 FileDescriptorName=wireguard-pro-tcp
