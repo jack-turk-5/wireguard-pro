@@ -29,9 +29,9 @@ optimize:
 
 ## Reload the container and socket (zero downtime)
 reload:
-	-systemctl --user stop $(CONTAINER_NAME).socket boringtun.socket
+	-systemctl --user stop $(CONTAINER_NAME).socket
 	systemctl --user daemon-reload
-	systemctl --user restart $(CONTAINER_NAME).socket boringtun.socket
+	systemctl --user restart $(CONTAINER_NAME).socket
 
 ## Create wg-keys if missing (tempfile fallback)
 wg-keys:
@@ -57,13 +57,13 @@ credentials:
 
 ## Start container and socket
 start:
-	systemctl --user enable --now $(CONTAINER_NAME).socket boringtun.socket
-	systemctl --user start $(CONTAINER_NAME).socket boringtun.socket
+	systemctl --user enable --now $(CONTAINER_NAME).socket
+	systemctl --user start $(CONTAINER_NAME).socket
 
 ## Stop container and socket
 stop:
-	-systemctl --user disable --now $(CONTAINER_NAME).socket boringtun.socket
-	systemctl --user stop $(CONTAINER_NAME).socket boringtun.socket
+	-systemctl --user disable --now $(CONTAINER_NAME).socket
+	systemctl --user stop $(CONTAINER_NAME).socket
 
 ## Clean container and image
 clean:
@@ -74,7 +74,7 @@ clean:
 
 ## Check container status
 status:
-	systemctl --user status $(CONTAINER_NAME).socket boringtun.socket $(CONTAINER_NAME).service
+	systemctl --user status $(CONTAINER_NAME).socket $(CONTAINER_NAME).service
 
 ## Follow logs
 logs:
