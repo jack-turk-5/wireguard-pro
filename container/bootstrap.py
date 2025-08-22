@@ -30,25 +30,29 @@ def setup_secret_key():
             os.environ['SECRET_KEY'] = key
 
 def get_socket_fds():
-    """Get file descriptors passed by systemd."""
+    """Get file descriptors passed by systemd and identify them."""
     listen_fds = int(os.environ.get('LISTEN_FDS', 0))
     if listen_fds < 2:
         print(f"Error: Expected 2 file descriptors from systemd, but got {listen_fds}. Exiting.")
         sys.exit(1)
 
     # The first file descriptor from systemd is always 3
-    tcp_fd, udp_fd = 3, 4
+    fd1, fd2 = 3, 4
     
-    # A simple check to differentiate TCP and UDP sockets
-    s_tcp = socket.fromfd(tcp_fd, socket.AF_INET6, socket.SOCK_STREAM)
-    s_udp = socket.fromfd(udp_fd, socket.AF_INET6, socket.SOCK_DGRAM)
-
-    if s_tcp.type != socket.SOCK_STREAM:
-        tcp_fd, udp_fd = udp_fd, tcp_fd # Swap if order is unexpected
+    # Use getsockopt to reliably determine the socket type
+    s1 = socket.fromfd(fd1, socket.AF_INET6, socket.SOCK_STREAM) # Family/type are placeholders
+    
+    if s1.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE) == socket.SOCK_STREAM:
+        tcp_fd, udp_fd = fd1, fd2
+    else:
+        tcp_fd, udp_fd = fd2, fd1
 
     print(f"Identified TCP FD: {tcp_fd} for Gunicorn")
     print(f"Identified UDP FD: {udp_fd} for BoringTun")
     
+    # Close the temporary socket objects, but not the underlying FDs
+    s1.close()
+
     return tcp_fd, udp_fd
 
 def main():
