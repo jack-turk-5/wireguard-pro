@@ -89,7 +89,7 @@ def main():
 
     # --- Start BoringTun ---
     print("Starting BoringTun")
-    boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug', '--disable-drop-privileges']
+    boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug', '--disable-drop-privileges', '--uapi-fd', '10']
     if not udp_fds:
         print("Warning: No UDP file descriptors found for BoringTun.")
     for fd in udp_fds:
