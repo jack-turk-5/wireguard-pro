@@ -67,8 +67,8 @@ def get_named_socket_fds():
             named_fds[name] = []
         named_fds[name].append(fd)
 
-    tcp_fds = named_fds.get('wireguard-pro-tcp')
-    udp_fds = named_fds.get('boringtun-udp')
+    tcp_fds = named_fds.get('wireguard-pro-tcp', []) + named_fds.get('wireguard-pro-tcp6', [])
+    udp_fds = named_fds.get('boringtun-udp', []) + named_fds.get('boringtun-udp6', [])
 
     if not tcp_fds:
         print("Fatal: Could not find any TCP sockets named 'wireguard-pro-tcp'.")

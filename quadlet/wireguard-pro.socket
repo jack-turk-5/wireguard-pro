@@ -8,7 +8,7 @@ ListenStream=[::]:51819
 ListenDatagram=[::]:51820
 SocketMode=0600
 Service=wireguard-pro.service
-FileDescriptorName=wireguard-pro-tcp
+FileDescriptorName=wireguard-pro-tcp:boringtun-udp:wireguard-pro-tcp6:boringtun-udp6
 
 [Install]
 WantedBy=sockets.target

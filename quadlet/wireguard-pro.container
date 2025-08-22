@@ -1,7 +1,7 @@
 [Unit]
 Description=WireGuard Pro Container
-Requires=wireguard-pro.socket boringtun.socket
-After=wireguard-pro.socket boringtun.socket
+Requires=wireguard-pro.socket
+After=wireguard-pro.socket
 
 [Container]
 Image=localhost/wireguard/wireguard-pro:latest
