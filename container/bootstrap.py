@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import socket
+from socket import SocketKind
 import subprocess
 import sys
 from secrets import token_urlsafe
@@ -28,76 +30,30 @@ def setup_secret_key():
                 f.write(key)
             os.environ['SECRET_KEY'] = key
 
-import socket
-
 def get_activated_sockets():
-    """
-    Inspects file descriptors passed by systemd and returns a tuple of
-    (tcp_fds, udp_fds) by directly querying the kernel for the socket type.
-    """
-    listen_pid = os.environ.get('LISTEN_PID')
     listen_fds = os.environ.get('LISTEN_FDS')
-
-    if not listen_pid or not listen_fds:
+    if not listen_fds:
         print("Info: No LISTEN_PID or LISTEN_FDS. No socket activation.")
-        return [], []
-
-    try:
-        pid = int(listen_pid)
-        num_fds = int(listen_fds)
-    except (ValueError, TypeError):
-        print(f"Fatal: Invalid LISTEN_PID ('{listen_pid}') or LISTEN_FDS ('{listen_fds}') value.")
-        sys.exit(1)
-
-    if pid != os.getpid():
-        print(f"Fatal: LISTEN_PID ({pid}) does not match current PID ({os.getpid()}).")
-        sys.exit(1)
-
-    if num_fds < 1:
-        return [], []
-
-    LISTEN_FDS_START = 3
-    tcp_fds = []
-    udp_fds = []
-    for fd_num in range(LISTEN_FDS_START, LISTEN_FDS_START + num_fds):
-        try:
-            # Create a socket object from the file descriptor number
-            sock = socket.socket(fileno=fd_num)
-            
-            print(f"DEBUG: Processing FD={fd_num}, Family={sock.family}, Type={sock.type}")
-
-            # Ask the kernel what type of socket it is
-            sock_type = sock.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
-
-            if sock_type == socket.SOCK_STREAM and sock.family in [socket.AF_INET, socket.AF_INET6]:
-                tcp_fds.append(fd_num)
-            elif sock_type == socket.SOCK_DGRAM and sock.family in [socket.AF_INET, socket.AF_INET6]:
-                udp_fds.append(fd_num)
-            
-            # Detach the socket object so the underlying FD is not closed
+        return {}
+    else:
+        fds_count = int(listen_fds)
+        fd_lookups = {}
+        for fd in range(fds_count):
+            id = fd + 3
+            sock = socket.socket(fileno=id)
+            fd_lookups[id] = {'Family': sock.family, 'Type': sock.type}
             sock.detach()
-        except (OSError, socket.error) as e:
-            print(f"Warning: Could not process file descriptor {fd_num}: {e}")
-            pass # Ignore non-socket FDs
-
-    print(f"Identified TCP FDs: {tcp_fds}")
-    print(f"Identified UDP FDs: {udp_fds}")
-    return tcp_fds, udp_fds
-
+        return fd_lookups
+    
 def main():
     """Main bootstrap script to manage all services."""
     setup_secret_key()
-    tcp_fds, udp_fds = get_activated_sockets()
+    fds = get_activated_sockets()
 
     # --- Start BoringTun ---
     print("Starting BoringTun")
-    boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug']#, '--disable-drop-privileges']
-    if not udp_fds:
-        print("Warning: No UDP file descriptors found for BoringTun.")
-    for fd in udp_fds:
-        boringtun_args.extend(['--fd', str(fd)])
-    
-    boringtun_proc = subprocess.Popen(boringtun_args)
+    boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug']
+    boringtun_proc = subprocess.Popen(boringtun_args, pass_fds=fds.keys())
 
     # --- Configure WireGuard interface (after it's created by boringtun) ---
     print("Waiting for wg0 interface to be created")
@@ -135,12 +91,9 @@ def main():
     # --- Start Caddy ---
     print("Starting Caddy")
     caddy_env = os.environ.copy()
-    if not tcp_fds:
-        print("Warning: No TCP file descriptor found for Caddy.")
-    else:
-        # Pass the first available TCP socket FD to Caddy.
-        caddy_env['CADDY_TCP_FD'] = str(tcp_fds[0])
-        print(f"Passing TCP FD {tcp_fds[0]} to Caddy via CADDY_TCP_FD env var.")
+    # Pass the first available TCP socket FD to Caddy.
+    caddy_env['CADDY_TCP_FD'] = [fd for fd in fds if fds[fd]['Family'] is SocketKind.SOCK_STREAM][0]
+    print(f"Passing TCP FD {str(fds[0])} to Caddy via CADDY_TCP_FD env var.")
     
     caddy_proc = subprocess.Popen(
         ['caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile'],
