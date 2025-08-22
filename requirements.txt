@@ -7,4 +7,3 @@ uvicorn==0.35.0
 APScheduler==3.11.0
 tzlocal==5.3.1
 itsdangerous==2.2.0
-sdnotify==0.3.2

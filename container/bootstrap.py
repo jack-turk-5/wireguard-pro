@@ -4,7 +4,6 @@ import subprocess
 import sys
 from secrets import token_urlsafe
 import time
-import sdnotify
 
 def run_command(command, check=True):
     """Helper to run a command and log its output."""
@@ -30,14 +29,43 @@ def setup_secret_key():
             os.environ['SECRET_KEY'] = key
 
 def get_named_socket_fds():
-    """Get file descriptors passed by systemd using their names."""
-    n = sdnotify.SystemdNotifier()
-    
-    named_fds = n.listen_fds_with_names()
+    """Get file descriptors passed by systemd using their names from environment variables."""
+    listen_pid = os.environ.get('LISTEN_PID')
+    listen_fds = os.environ.get('LISTEN_FDS')
+    listen_fdnames = os.environ.get('LISTEN_FDNAMES')
 
-    if not named_fds:
-        print("Fatal: Did not receive any named file descriptors from systemd.")
+    if not listen_pid or not listen_fds or not listen_fdnames:
+        print("Fatal: Socket activation environment variables not set (LISTEN_PID, LISTEN_FDS, LISTEN_FDNAMES).")
         sys.exit(1)
+
+    try:
+        pid = int(listen_pid)
+        num_fds = int(listen_fds)
+    except ValueError:
+        print("Fatal: Invalid LISTEN_PID or LISTEN_FDS value.")
+        sys.exit(1)
+
+    if pid != os.getpid():
+        print(f"Fatal: LISTEN_PID ({pid}) does not match current PID ({os.getpid()}).")
+        sys.exit(1)
+
+    if num_fds < 1:
+        print("Fatal: No file descriptors received (LISTEN_FDS is 0).")
+        sys.exit(1)
+
+    fd_names = listen_fdnames.split(':')
+    if len(fd_names) != num_fds:
+        print(f"Fatal: Mismatch between FD count ({num_fds}) and FD names count ({len(fd_names)}).")
+        sys.exit(1)
+
+    # File descriptors start at 3
+    LISTEN_FDS_START = 3
+    named_fds = {}
+    for i, name in enumerate(fd_names):
+        fd = LISTEN_FDS_START + i
+        if name not in named_fds:
+            named_fds[name] = []
+        named_fds[name].append(fd)
 
     tcp_fds = named_fds.get('wireguard-pro-tcp')
     udp_fds = named_fds.get('boringtun-udp')
@@ -45,7 +73,7 @@ def get_named_socket_fds():
     if not tcp_fds:
         print("Fatal: Could not find any TCP sockets named 'wireguard-pro-tcp'.")
         sys.exit(1)
-        
+
     if not udp_fds:
         print("Fatal: Could not find any UDP sockets named 'boringtun-udp'.")
         sys.exit(1)
@@ -55,7 +83,7 @@ def get_named_socket_fds():
 
     print(f"Identified TCP FD: {tcp_fd} for Gunicorn")
     print(f"Identified UDP FDs: {udp_fds} for BoringTun")
-    
+
     return tcp_fd, udp_fds
 
 def main():

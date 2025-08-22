@@ -43,7 +43,6 @@ COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 # Copy application code and configs
 WORKDIR /app
 COPY src/ .
-COPY container/bootstrap.py /
 COPY container/nftables.conf /etc/nftables.conf
 COPY container/Caddyfile /etc/caddy/Caddyfile
 COPY requirements.txt .
@@ -55,10 +54,11 @@ RUN python3 -m venv /venv && \
 # Set up environment
 ENV PATH="/venv/bin:/usr/local/bin:$PATH"
 ENV GUNICORN_CMD_ARGS="--workers 2 --worker-class uvicorn.workers.UvicornWorker --bind unix:/run/gunicorn.sock"
-RUN chmod +x /bootstrap.py
 
-# Install BoringTun from local build
+# Install BoringTun from local build and copy bootstrapper
 COPY bin/boringtun-cli /usr/local/bin/
+COPY container/bootstrap.py /
+RUN chmod +x /bootstrap.py
 
 # Set the entrypoint
 ENTRYPOINT ["/bootstrap.py"]
