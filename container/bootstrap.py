@@ -1,7 +1,7 @@
+#!/usr/bin/env python3
 import os
 import subprocess
 import sys
-import socket
 from secrets import token_urlsafe
 import time
 import sdnotify
@@ -66,13 +66,13 @@ def main():
     boringtun_proc = subprocess.Popen(boringtun_args)
 
     # --- Configure WireGuard interface (after it's created by boringtun) ---
-    print("Waiting for wg0 interface to be created...")
+    print("Waiting for wg0 interface to be created")
     iface_path = '/sys/class/net/wg0'
     timeout = 5  # seconds
     start_time = time.time()
     while not os.path.exists(iface_path):
         if time.time() - start_time > timeout:
-            print(f"Error: Timeout waiting for {iface_path} to appear.")
+            print(f"Error: Timeout waiting for {iface_path} to appear")
             boringtun_proc.terminate()
             sys.exit(1)
         if boringtun_proc.poll() is not None:
@@ -87,7 +87,7 @@ def main():
     run_command(['ip', 'link', 'set', 'mtu', '1420', 'up', 'dev', 'wg0'])
 
     # --- Start Gunicorn ---
-    print("Starting Gunicorn...")
+    print("Starting Gunicorn")
     gunicorn_proc = subprocess.Popen([
         '/venv/bin/gunicorn', 'main:app',
         '--workers', '2',
@@ -109,7 +109,7 @@ def main():
     while True:
         for p in procs:
             if p.poll() is not None:
-                print(f"Process {p.args[0]} exited with code {p.returncode}. Shutting down.")
+                print(f"Process {p.args[0]} exited with code {p.returncode}, Shutting down now") # type: ignore
                 # Terminate other processes
                 for other_p in procs:
                     if other_p.pid != p.pid:
