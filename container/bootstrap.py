@@ -67,9 +67,9 @@ def get_activated_sockets():
             # Ask the kernel what type of socket it is
             sock_type = sock.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
 
-            if sock_type == socket.SOCK_STREAM:
+            if sock_type == socket.SOCK_STREAM and sock.family in [socket.AF_INET, socket.AF_INET6]:
                 tcp_fds.append(fd_num)
-            elif sock_type == socket.SOCK_DGRAM:
+            elif sock_type == socket.SOCK_DGRAM and sock.family in [socket.AF_INET, socket.AF_INET6]:
                 udp_fds.append(fd_num)
             
             # Detach the socket object so the underlying FD is not closed
