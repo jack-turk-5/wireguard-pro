@@ -30,48 +30,54 @@ def setup_secret_key():
             os.environ['SECRET_KEY'] = key
 
 def get_socket_fds():
-    """Get file descriptors passed by systemd and identify them."""
+    """Get file descriptors passed by systemd and identify them robustly."""
     listen_fds = int(os.environ.get('LISTEN_FDS', 0))
-    if listen_fds < 2:
-        print(f"Error: Expected 2 file descriptors from systemd, but got {listen_fds}. Exiting.")
+    if listen_fds < 1: # We need at least one socket
+        print(f"Error: No file descriptors received from systemd. Exiting.")
         sys.exit(1)
 
-    fd1, fd2 = 3, 4
-    tcp_fd, udp_fd = None, None
+    fds = [3 + i for i in range(listen_fds)]
+    tcp_fd = None
+    udp_fds = []
 
-    try:
-        # Try to treat fd1 as TCP. If it works, we know the order.
-        s = socket.fromfd(fd1, socket.AF_INET6, socket.SOCK_STREAM)
-        s.close()
-        tcp_fd, udp_fd = fd1, fd2
-        print(f"FD {fd1} is TCP, FD {fd2} is UDP.")
-    except OSError:
-        # If it fails, the order must be swapped.
-        tcp_fd, udp_fd = fd2, fd1
-        print(f"FD {fd1} is not TCP, assuming FD {fd2} is TCP and FD {fd1} is UDP.")
-    
-    if tcp_fd is None or udp_fd is None:
-        print(f"Fatal: Could not identify both a TCP and a UDP socket.")
+    for fd in fds:
+        try:
+            s = socket.fromfd(fd, socket.AF_UNIX, socket.SOCK_RAW) # Family is a placeholder
+            sock_type = s.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
+            s.close()
+
+            if sock_type == socket.SOCK_STREAM:
+                if tcp_fd is None:
+                    tcp_fd = fd
+            elif sock_type == socket.SOCK_DGRAM:
+                udp_fds.append(fd)
+        except OSError:
+            pass # Not a socket we can inspect
+
+    if tcp_fd is None:
+        print(f"Fatal: Could not identify a TCP socket for Gunicorn.")
+        sys.exit(1)
+    if not udp_fds:
+        print(f"Fatal: Could not identify any UDP sockets for BoringTun.")
         sys.exit(1)
 
     print(f"Identified TCP FD: {tcp_fd} for Gunicorn")
-    print(f"Identified UDP FD: {udp_fd} for BoringTun")
+    print(f"Identified UDP FDs: {udp_fds} for BoringTun")
     
-    return tcp_fd, udp_fd
+    return tcp_fd, udp_fds
 
 def main():
     """Main bootstrap script to manage all services."""
     setup_secret_key()
-    tcp_fd, udp_fd = get_socket_fds()
+    tcp_fd, udp_fds = get_socket_fds()
 
     # --- Start BoringTun ---
     print("Starting BoringTun...")
-    boringtun_proc = subprocess.Popen([
-        'boringtun-cli', 'wg0',
-        '--fd', str(udp_fd),
-        '--foreground',
-        '--verbosity', 'debug'
-    ])
+    boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug']
+    for fd in udp_fds:
+        boringtun_args.extend(['--fd', str(fd)])
+    
+    boringtun_proc = subprocess.Popen(boringtun_args)
 
     # --- Configure WireGuard interface (after it's created by boringtun) ---
     print("Waiting for wg0 interface to be created...")

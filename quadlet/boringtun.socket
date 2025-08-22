@@ -3,8 +3,8 @@ Description=WireGuard Pro UDP Socket
 PartOf=wireguard-pro.service
 
 [Socket]
+ListenDatagram=0.0.0.0:51820
 ListenDatagram=[::]:51820
-BindIPv6Only=both
 SocketMode=0600
 Service=wireguard-pro.service
 
