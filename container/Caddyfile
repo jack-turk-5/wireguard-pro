@@ -3,7 +3,8 @@
 	auto_https off
 }
 
-fd://{$CADDY_TCP_FD} {
+:51819 {
+	bind fd/{$CADDY_TCP_FD}
 	encode gzip
 
 	handle /api* {
