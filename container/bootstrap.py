@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
 import os
 import subprocess
 import sys
 import socket
 from secrets import token_urlsafe
 import time
+import sdnotify
 
 def run_command(command, check=True):
     """Helper to run a command and log its output."""
@@ -29,44 +29,23 @@ def setup_secret_key():
                 f.write(key)
             os.environ['SECRET_KEY'] = key
 
-def get_socket_fds():
-    """Get file descriptors passed by systemd and identify them robustly."""
-    listen_fds = int(os.environ.get('LISTEN_FDS', 0))
-    if listen_fds < 1: # We need at least one socket
-        print(f"Error: No file descriptors received from systemd. Exiting.")
+def get_named_socket_fds():
+    """Get file descriptors passed by systemd using their names."""
+    n = sdnotify.SystemdNotifier()
+    
+    tcp_fds = n.get_named_socket_fds('wireguard-pro-tcp')
+    udp_fds = n.get_named_socket_fds('boringtun-udp')
+
+    if not tcp_fds:
+        print("Fatal: Could not find any TCP sockets named 'wireguard-pro-tcp'.")
         sys.exit(1)
-
-    fds = [3 + i for i in range(listen_fds)]
-    tcp_fd = None
-    udp_fds = []
-
-    for fd in fds:
-        try:
-            # We don't know the family or type, so we must probe.
-            # We create a socket object to inspect it. Using 0 for the type
-            # should be generic enough to allow getsockopt to work.
-            try:
-                s = socket.fromfd(fd, socket.AF_INET, 0)
-            except OSError:
-                s = socket.fromfd(fd, socket.AF_INET6, 0)
-
-            sock_type = s.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
-            s.detach() # Prevent the socket from being closed
-
-            if sock_type == socket.SOCK_STREAM:
-                if tcp_fd is None:
-                    tcp_fd = fd
-            elif sock_type == socket.SOCK_DGRAM:
-                udp_fds.append(fd)
-        except OSError:
-            pass # Not a socket we can inspect
-
-    if tcp_fd is None:
-        print(f"Fatal: Could not identify a TCP socket for Gunicorn.")
-        sys.exit(1)
+        
     if not udp_fds:
-        print(f"Fatal: Could not identify any UDP sockets for BoringTun.")
+        print("Fatal: Could not find any UDP sockets named 'boringtun-udp'.")
         sys.exit(1)
+
+    # We only expect one TCP socket for the web UI
+    tcp_fd = tcp_fds[0]
 
     print(f"Identified TCP FD: {tcp_fd} for Gunicorn")
     print(f"Identified UDP FDs: {udp_fds} for BoringTun")
@@ -76,7 +55,7 @@ def get_socket_fds():
 def main():
     """Main bootstrap script to manage all services."""
     setup_secret_key()
-    tcp_fd, udp_fds = get_socket_fds()
+    tcp_fd, udp_fds = get_named_socket_fds()
 
     # --- Start BoringTun ---
     print("Starting BoringTun...")
