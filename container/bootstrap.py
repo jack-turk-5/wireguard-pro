@@ -33,7 +33,7 @@ import socket
 def get_activated_sockets():
     """
     Inspects file descriptors passed by systemd and returns a tuple of
-    (tcp_fds, udp_fds), leaving them open for other processes.
+    (tcp_fds, udp_fds) by directly querying the kernel for the socket type.
     """
     listen_pid = os.environ.get('LISTEN_PID')
     listen_fds = os.environ.get('LISTEN_FDS')
@@ -61,13 +61,21 @@ def get_activated_sockets():
     udp_fds = []
     for fd_num in range(LISTEN_FDS_START, LISTEN_FDS_START + num_fds):
         try:
-            sock = socket.fromfd(fd_num, socket.AF_UNSPEC, 0)
-            if sock.type == socket.SOCK_STREAM:
+            # Create a socket object from the file descriptor number
+            sock = socket.socket(fileno=fd_num)
+            
+            # Ask the kernel what type of socket it is
+            sock_type = sock.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
+
+            if sock_type == socket.SOCK_STREAM:
                 tcp_fds.append(fd_num)
-            elif sock.type == socket.SOCK_DGRAM:
+            elif sock_type == socket.SOCK_DGRAM:
                 udp_fds.append(fd_num)
-            sock.detach() # Leave the original FD open
-        except (OSError, socket.error):
+            
+            # Detach the socket object so the underlying FD is not closed
+            sock.detach()
+        except (OSError, socket.error) as e:
+            print(f"Warning: Could not process file descriptor {fd_num}: {e}")
             pass # Ignore non-socket FDs
 
     print(f"Identified TCP FDs: {tcp_fds}")
