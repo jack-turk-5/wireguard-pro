@@ -3,10 +3,7 @@
 	auto_https off
 }
 
-:51819 {
-	bind fd://{$CADDY_TCP_FD} {
-		protocols h1
-	}
+fd://{$CADDY_TCP_FD} {
 	encode gzip
 
 	handle /api* {
