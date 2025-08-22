@@ -103,7 +103,8 @@ def main():
 
     caddy_proc = subprocess.Popen(
         ['caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile'],
-        env=caddy_env
+        env=caddy_env,
+        pass_fds=fds.keys()
     )
 
     # --- Wait for any process to exit ---
