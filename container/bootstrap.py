@@ -65,9 +65,21 @@ def main():
     ])
 
     # --- Configure WireGuard interface (after it's created by boringtun) ---
-    # This part is tricky, we need to wait a moment for the device to appear
-    import time
-    time.sleep(1) 
+    print("Waiting for wg0 interface to be created...")
+    iface_path = '/sys/class/net/wg0'
+    timeout = 5  # seconds
+    start_time = time.time()
+    while not os.path.exists(iface_path):
+        if time.time() - start_time > timeout:
+            print(f"Error: Timeout waiting for {iface_path} to appear.")
+            boringtun_proc.terminate()
+            sys.exit(1)
+        if boringtun_proc.poll() is not None:
+            print(f"Error: boringtun process exited prematurely with code {boringtun_proc.returncode}.")
+            sys.exit(1)
+        time.sleep(0.1)
+
+    print("wg0 interface created.")
     run_command(['wg', 'set', 'wg0', 'private-key', '/run/secrets/wg-privatekey'])
     run_command(['ip', 'address', 'add', '10.8.0.1/24', 'dev', 'wg0'])
     run_command(['ip', 'address', 'add', 'fd86:ea04:1111::1/64', 'dev', 'wg0'])
