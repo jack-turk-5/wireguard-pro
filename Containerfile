@@ -17,9 +17,6 @@ RUN apt-get update && \
       gcc build-essential pkg-config libssl-dev cargo git curl gnupg ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install BoringTun from local build
-COPY bin/boringtun-cli /usr/local/bin/
-
 # Install Caddy
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
       | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg && \
@@ -29,6 +26,8 @@ RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
     apt-get install -y --no-install-recommends caddy \
     && rm -rf /var/lib/apt/lists/*
 
+# Install BoringTun from local build
+COPY bin/boringtun-cli /usr/local/bin/
 
 # === Stage 2: Final Runtime Image ===
 # Use a minimal Debian base image for the final stage.
