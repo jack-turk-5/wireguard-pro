@@ -14,7 +14,7 @@ FROM python:3.13-slim AS builder
 # Install build dependencies for BoringTun and Caddy
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      gcc build-essential pkg-config libssl-dev cargo git curl gnupg ca-certificates \
+      gcc build-essential pkg-config libssl-dev git curl gnupg ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Caddy
@@ -25,9 +25,6 @@ RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
     apt-get update && \
     apt-get install -y --no-install-recommends caddy \
     && rm -rf /var/lib/apt/lists/*
-
-# Install BoringTun from local build
-COPY bin/boringtun-cli /usr/local/bin/
 
 # === Stage 2: Final Runtime Image ===
 # Use a minimal Debian base image for the final stage.
@@ -41,7 +38,6 @@ RUN apt-get update && \
 
 # Copy all artifacts from the builder stages
 COPY --from=angular-builder /app/dist/frontend/browser /usr/share/caddy/html
-COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
 # Copy application code and configs
@@ -60,6 +56,9 @@ RUN python3 -m venv /venv && \
 ENV PATH="/venv/bin:/usr/local/bin:$PATH"
 ENV GUNICORN_CMD_ARGS="--workers 2 --worker-class uvicorn.workers.UvicornWorker --bind unix:/run/gunicorn.sock"
 RUN chmod +x /bootstrap.py
+
+# Install BoringTun from local build
+COPY bin/boringtun-cli /usr/local/bin/
 
 # Set the entrypoint
 ENTRYPOINT ["/bootstrap.py"]
