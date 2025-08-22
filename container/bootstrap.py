@@ -42,14 +42,15 @@ def get_socket_fds():
 
     for fd in fds:
         try:
-            s = socket.fromfd(fd, socket.AF_UNIX, socket.SOCK_RAW) # Family is a placeholder
+            s = socket.fromfd(fd, socket.AF_UNSPEC, socket.SOCK_DGRAM)
+            family = s.family
             sock_type = s.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
             s.detach()
 
-            if sock_type == socket.SOCK_STREAM:
+            if sock_type == socket.SOCK_STREAM and family in [socket.AF_INET, socket.AF_INET6]:
                 if tcp_fd is None:
                     tcp_fd = fd
-            elif sock_type == socket.SOCK_DGRAM:
+            elif sock_type == socket.SOCK_DGRAM and family in [socket.AF_INET, socket.AF_INET6]:
                 udp_fds.append(fd)
         except OSError:
             pass # Not a socket we can inspect
