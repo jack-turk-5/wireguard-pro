@@ -36,7 +36,7 @@ def get_udp_socket_fds():
     leaving other socket types untouched.
     """
     listen_pid = os.environ.get('LISTEN_PID')
-    listen_fds = os.environ.get('LISTEN_FD')
+    listen_fds = os.environ.get('LISTEN_FDS')
 
     if not listen_pid or not listen_fds:
         print("Info: No LISTEN_PID or LISTEN_FD. Assuming no socket activation for UDP.")
@@ -85,7 +85,7 @@ def main():
 
     # --- Start BoringTun ---
     print("Starting BoringTun...")
-    boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug']
+    boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug', '--disable-drop-privileges']
     for fd in udp_fds:
         boringtun_args.extend(['--fd', str(fd)])
     
