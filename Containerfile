@@ -53,7 +53,6 @@ RUN python3 -m venv /venv && \
 
 # Set up environment
 ENV PATH="/venv/bin:/usr/local/bin:$PATH"
-ENV GUNICORN_CMD_ARGS="--workers 2 --worker-class uvicorn.workers.UvicornWorker --bind unix:/run/gunicorn.sock"
 
 # Install BoringTun from local build and copy bootstrapper
 COPY bin/boringtun-cli /usr/local/bin/

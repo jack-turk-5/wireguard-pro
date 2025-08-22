@@ -4,7 +4,7 @@
 }
 
 :51819 {
-	bind fd/3 {
+	bind fd://{$CADDY_TCP_FD} {
 		protocols h1
 	}
 	encode gzip

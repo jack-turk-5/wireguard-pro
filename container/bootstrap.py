@@ -30,23 +30,23 @@ def setup_secret_key():
 
 import socket
 
-def get_udp_socket_fds():
+def get_activated_sockets():
     """
-    Inspects file descriptors passed by systemd and returns a list of UDP socket FDs,
-    leaving other socket types untouched.
+    Inspects file descriptors passed by systemd and returns a tuple of
+    (tcp_fds, udp_fds), leaving them open for other processes.
     """
     listen_pid = os.environ.get('LISTEN_PID')
     listen_fds = os.environ.get('LISTEN_FDS')
 
     if not listen_pid or not listen_fds:
-        print("Info: No LISTEN_PID or LISTEN_FD. Assuming no socket activation for UDP.")
-        return []
+        print("Info: No LISTEN_PID or LISTEN_FDS. No socket activation.")
+        return [], []
 
     try:
         pid = int(listen_pid)
         num_fds = int(listen_fds)
     except (ValueError, TypeError):
-        print(f"Fatal: Invalid LISTEN_PID ('{listen_pid}') or LISTEN_FD ('{listen_fds}') value.")
+        print(f"Fatal: Invalid LISTEN_PID ('{listen_pid}') or LISTEN_FDS ('{listen_fds}') value.")
         sys.exit(1)
 
     if pid != os.getpid():
@@ -54,38 +54,36 @@ def get_udp_socket_fds():
         sys.exit(1)
 
     if num_fds < 1:
-        return []
+        return [], []
 
     LISTEN_FDS_START = 3
+    tcp_fds = []
     udp_fds = []
     for fd_num in range(LISTEN_FDS_START, LISTEN_FDS_START + num_fds):
         try:
-            # Create a socket object from the file descriptor to inspect its type
             sock = socket.fromfd(fd_num, socket.AF_UNSPEC, 0)
-            if sock.type == socket.SOCK_DGRAM:
+            if sock.type == socket.SOCK_STREAM:
+                tcp_fds.append(fd_num)
+            elif sock.type == socket.SOCK_DGRAM:
                 udp_fds.append(fd_num)
-            # IMPORTANT: Detach the socket object so the underlying FD is not closed.
-            # This leaves the TCP sockets for Caddy untouched.
-            sock.detach()
+            sock.detach() # Leave the original FD open
         except (OSError, socket.error):
-            # This will fail for non-socket FDs, which we can safely ignore.
-            pass
+            pass # Ignore non-socket FDs
 
-    if not udp_fds:
-        print("Warning: No UDP file descriptors found from systemd for BoringTun.")
-    else:
-        print(f"Identified UDP FDs: {udp_fds} for BoringTun")
-        
-    return udp_fds
+    print(f"Identified TCP FDs: {tcp_fds}")
+    print(f"Identified UDP FDs: {udp_fds}")
+    return tcp_fds, udp_fds
 
 def main():
     """Main bootstrap script to manage all services."""
     setup_secret_key()
-    udp_fds = get_udp_socket_fds()
+    tcp_fds, udp_fds = get_activated_sockets()
 
     # --- Start BoringTun ---
-    print("Starting BoringTun...")
+    print("Starting BoringTun")
     boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug', '--disable-drop-privileges']
+    if not udp_fds:
+        print("Warning: No UDP file descriptors found for BoringTun.")
     for fd in udp_fds:
         boringtun_args.extend(['--fd', str(fd)])
     
@@ -125,10 +123,19 @@ def main():
     run_command(['nft', '-f', '/etc/nftables.conf'])
 
     # --- Start Caddy ---
-    print("Starting Caddy...")
-    caddy_proc = subprocess.Popen([
-        'caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile'
-    ])
+    print("Starting Caddy")
+    caddy_env = os.environ.copy()
+    if not tcp_fds:
+        print("Warning: No TCP file descriptor found for Caddy.")
+    else:
+        # Pass the first available TCP socket FD to Caddy.
+        caddy_env['CADDY_TCP_FD'] = str(tcp_fds[0])
+        print(f"Passing TCP FD {tcp_fds[0]} to Caddy via CADDY_TCP_FD env var.")
+    
+    caddy_proc = subprocess.Popen(
+        ['caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile'],
+        env=caddy_env
+    )
 
     # --- Wait for any process to exit ---
     procs = [boringtun_proc, gunicorn_proc, caddy_proc]
