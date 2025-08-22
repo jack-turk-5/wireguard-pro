@@ -30,39 +30,28 @@ def setup_secret_key():
             os.environ['SECRET_KEY'] = key
 
 def get_socket_fds():
-    """Get file descriptors passed by systemd and identify them robustly."""
+    """Get file descriptors passed by systemd and identify them."""
     listen_fds = int(os.environ.get('LISTEN_FDS', 0))
     if listen_fds < 2:
-        print(f"Error: Expected at least 2 file descriptors from systemd, but got {listen_fds}. Exiting.")
+        print(f"Error: Expected 2 file descriptors from systemd, but got {listen_fds}. Exiting.")
         sys.exit(1)
 
-    fds = [3 + i for i in range(listen_fds)]
-    tcp_fd = None
-    udp_fd = None
+    fd1, fd2 = 3, 4
+    tcp_fd, udp_fd = None, None
 
-    for fd in fds:
-        try:
-            # We don't know the family/type, so we just need a socket object to inspect
-            s = socket.fromfd(fd, socket.AF_INET6, socket.SOCK_RAW, 0) 
-            sock_type = s.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
-            s.close() # Close the python object, not the underlying FD
-
-            if sock_type == socket.SOCK_STREAM:
-                if tcp_fd is None:
-                    tcp_fd = fd
-                else:
-                    print(f"Warning: Found multiple TCP sockets. Using first one found: FD {tcp_fd}")
-            elif sock_type == socket.SOCK_DGRAM:
-                if udp_fd is None:
-                    udp_fd = fd
-                else:
-                    print(f"Warning: Found multiple UDP sockets. Using first one found: FD {udp_fd}")
-        except Exception as e:
-            print(f"Warning: Could not inspect file descriptor {fd}: {e}")
-
-
+    try:
+        # Try to treat fd1 as TCP. If it works, we know the order.
+        s = socket.fromfd(fd1, socket.AF_INET6, socket.SOCK_STREAM)
+        s.close()
+        tcp_fd, udp_fd = fd1, fd2
+        print(f"FD {fd1} is TCP, FD {fd2} is UDP.")
+    except OSError:
+        # If it fails, the order must be swapped.
+        tcp_fd, udp_fd = fd2, fd1
+        print(f"FD {fd1} is not TCP, assuming FD {fd2} is TCP and FD {fd1} is UDP.")
+    
     if tcp_fd is None or udp_fd is None:
-        print(f"Fatal: Could not identify both a TCP and a UDP socket. TCP={tcp_fd}, UDP={udp_fd}")
+        print(f"Fatal: Could not identify both a TCP and a UDP socket.")
         sys.exit(1)
 
     print(f"Identified TCP FD: {tcp_fd} for Gunicorn")
