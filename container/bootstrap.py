@@ -64,6 +64,8 @@ def get_activated_sockets():
             # Create a socket object from the file descriptor number
             sock = socket.socket(fileno=fd_num)
             
+            print(f"DEBUG: Processing FD={fd_num}, Family={sock.family}, Type={sock.type}")
+
             # Ask the kernel what type of socket it is
             sock_type = sock.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
 
