@@ -28,21 +28,25 @@ def setup_secret_key():
                 f.write(key)
             os.environ['SECRET_KEY'] = key
 
-def get_named_socket_fds():
-    """Get file descriptors passed by systemd using their names from environment variables."""
-    listen_pid = os.environ.get('LISTEN_PID')
-    listen_fds = os.environ.get('LISTEN_FDS')
-    listen_fdnames = os.environ.get('LISTEN_FDNAMES')
+import socket
 
-    if not listen_pid or not listen_fds or not listen_fdnames:
-        print("Fatal: Socket activation environment variables not set (LISTEN_PID, LISTEN_FDS, LISTEN_FDNAMES).")
-        sys.exit(1)
+def get_udp_socket_fds():
+    """
+    Inspects file descriptors passed by systemd and returns a list of UDP socket FDs,
+    leaving other socket types untouched.
+    """
+    listen_pid = os.environ.get('LISTEN_PID')
+    listen_fds = os.environ.get('LISTEN_FD')
+
+    if not listen_pid or not listen_fds:
+        print("Info: No LISTEN_PID or LISTEN_FD. Assuming no socket activation for UDP.")
+        return []
 
     try:
         pid = int(listen_pid)
         num_fds = int(listen_fds)
-    except ValueError:
-        print("Fatal: Invalid LISTEN_PID or LISTEN_FDS value.")
+    except (ValueError, TypeError):
+        print(f"Fatal: Invalid LISTEN_PID ('{listen_pid}') or LISTEN_FD ('{listen_fds}') value.")
         sys.exit(1)
 
     if pid != os.getpid():
@@ -50,46 +54,34 @@ def get_named_socket_fds():
         sys.exit(1)
 
     if num_fds < 1:
-        print("Fatal: No file descriptors received (LISTEN_FDS is 0).")
-        sys.exit(1)
+        return []
 
-    fd_names = listen_fdnames.split(':')
-    if len(fd_names) != num_fds:
-        print(f"Fatal: Mismatch between FD count ({num_fds}) and FD names count ({len(fd_names)}).")
-        sys.exit(1)
-
-    # File descriptors start at 3
     LISTEN_FDS_START = 3
-    named_fds = {}
-    for i, name in enumerate(fd_names):
-        fd = LISTEN_FDS_START + i
-        if name not in named_fds:
-            named_fds[name] = []
-        named_fds[name].append(fd)
-
-    tcp_fds = named_fds.get('wireguard-pro-tcp', []) + named_fds.get('wireguard-pro-tcp6', [])
-    udp_fds = named_fds.get('boringtun-udp', []) + named_fds.get('boringtun-udp6', [])
-
-    if not tcp_fds:
-        print("Fatal: Could not find any TCP sockets named 'wireguard-pro-tcp'.")
-        sys.exit(1)
+    udp_fds = []
+    for fd_num in range(LISTEN_FDS_START, LISTEN_FDS_START + num_fds):
+        try:
+            # Create a socket object from the file descriptor to inspect its type
+            sock = socket.fromfd(fd_num, socket.AF_UNSPEC, 0)
+            if sock.type == socket.SOCK_DGRAM:
+                udp_fds.append(fd_num)
+            # IMPORTANT: Detach the socket object so the underlying FD is not closed.
+            # This leaves the TCP sockets for Caddy untouched.
+            sock.detach()
+        except (OSError, socket.error):
+            # This will fail for non-socket FDs, which we can safely ignore.
+            pass
 
     if not udp_fds:
-        print("Fatal: Could not find any UDP sockets named 'boringtun-udp'.")
-        sys.exit(1)
-
-    # We only expect one TCP socket for the web UI
-    tcp_fd = tcp_fds[0]
-
-    print(f"Identified TCP FD: {tcp_fd} for Gunicorn")
-    print(f"Identified UDP FDs: {udp_fds} for BoringTun")
-
-    return tcp_fd, udp_fds
+        print("Warning: No UDP file descriptors found from systemd for BoringTun.")
+    else:
+        print(f"Identified UDP FDs: {udp_fds} for BoringTun")
+        
+    return udp_fds
 
 def main():
     """Main bootstrap script to manage all services."""
     setup_secret_key()
-    tcp_fd, udp_fds = get_named_socket_fds()
+    udp_fds = get_udp_socket_fds()
 
     # --- Start BoringTun ---
     print("Starting BoringTun...")
@@ -126,7 +118,7 @@ def main():
         '/venv/bin/gunicorn', 'main:app',
         '--workers', '2',
         '--worker-class', 'uvicorn.workers.UvicornWorker',
-        '--bind', f'fd://{tcp_fd}'
+        '--bind', 'unix:/run/gunicorn.sock'
     ])
 
     # --- Apply nftables rules ---
