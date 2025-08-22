@@ -92,9 +92,15 @@ def main():
     print("Starting Caddy")
     caddy_env = os.environ.copy()
     # Pass the first available TCP socket FD to Caddy.
-    caddy_env['CADDY_TCP_FD'] = [fd for fd in fds if fds[fd]['Family'] is SocketKind.SOCK_STREAM][0]
-    print(f"Passing TCP FD {str(fds[0])} to Caddy via CADDY_TCP_FD env var.")
-    
+    tcp_fds = [fd for fd in fds if fds[fd]['Type'] is SocketKind.SOCK_STREAM]
+    if not tcp_fds:
+        print("Error: No TCP socket found for Caddy.", file=sys.stderr)
+        sys.exit(1)
+
+    caddy_tcp_fd = tcp_fds[0]
+    caddy_env['CADDY_TCP_FD'] = str(caddy_tcp_fd)
+    print(f"Passing TCP FD {caddy_tcp_fd} to Caddy via CADDY_TCP_FD env var.")
+
     caddy_proc = subprocess.Popen(
         ['caddy', 'run', '--config', '/etc/caddy/Caddyfile', '--adapter', 'caddyfile'],
         env=caddy_env
