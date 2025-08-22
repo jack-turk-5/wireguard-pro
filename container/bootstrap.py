@@ -44,7 +44,7 @@ def get_socket_fds():
         try:
             s = socket.fromfd(fd, socket.AF_UNIX, socket.SOCK_RAW) # Family is a placeholder
             sock_type = s.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
-            s.close()
+            s.detach()
 
             if sock_type == socket.SOCK_STREAM:
                 if tcp_fd is None:
