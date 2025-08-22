@@ -30,29 +30,44 @@ def setup_secret_key():
             os.environ['SECRET_KEY'] = key
 
 def get_socket_fds():
-    """Get file descriptors passed by systemd and identify them."""
+    """Get file descriptors passed by systemd and identify them robustly."""
     listen_fds = int(os.environ.get('LISTEN_FDS', 0))
     if listen_fds < 2:
-        print(f"Error: Expected 2 file descriptors from systemd, but got {listen_fds}. Exiting.")
+        print(f"Error: Expected at least 2 file descriptors from systemd, but got {listen_fds}. Exiting.")
         sys.exit(1)
 
-    # The first file descriptor from systemd is always 3
-    fd1, fd2 = 3, 4
-    
-    # Use getsockopt to reliably determine the socket type
-    s1 = socket.fromfd(fd1, socket.AF_INET6, socket.SOCK_STREAM) # Family/type are placeholders
-    
-    if s1.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE) == socket.SOCK_STREAM:
-        tcp_fd, udp_fd = fd1, fd2
-    else:
-        tcp_fd, udp_fd = fd2, fd1
+    fds = [3 + i for i in range(listen_fds)]
+    tcp_fd = None
+    udp_fd = None
+
+    for fd in fds:
+        try:
+            # We don't know the family/type, so we just need a socket object to inspect
+            s = socket.fromfd(fd, socket.AF_INET6, socket.SOCK_RAW, 0) 
+            sock_type = s.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
+            s.close() # Close the python object, not the underlying FD
+
+            if sock_type == socket.SOCK_STREAM:
+                if tcp_fd is None:
+                    tcp_fd = fd
+                else:
+                    print(f"Warning: Found multiple TCP sockets. Using first one found: FD {tcp_fd}")
+            elif sock_type == socket.SOCK_DGRAM:
+                if udp_fd is None:
+                    udp_fd = fd
+                else:
+                    print(f"Warning: Found multiple UDP sockets. Using first one found: FD {udp_fd}")
+        except Exception as e:
+            print(f"Warning: Could not inspect file descriptor {fd}: {e}")
+
+
+    if tcp_fd is None or udp_fd is None:
+        print(f"Fatal: Could not identify both a TCP and a UDP socket. TCP={tcp_fd}, UDP={udp_fd}")
+        sys.exit(1)
 
     print(f"Identified TCP FD: {tcp_fd} for Gunicorn")
     print(f"Identified UDP FD: {udp_fd} for BoringTun")
     
-    # Close the temporary socket objects, but not the underlying FDs
-    s1.close()
-
     return tcp_fd, udp_fd
 
 def main():
