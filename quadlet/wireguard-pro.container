@@ -9,7 +9,7 @@ ContainerName=wireguard-pro
 Network=bridge
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=wg-pro-data:/data:Z,U
-PodmanArgs=--preserve-fds=3
+
 
 AddCapability=CAP_NET_ADMIN CAP_NET_RAW CAP_SETUID CAP_SETGID
 AddDevice=/dev/net/tun:/dev/net/tun:rwm
