@@ -43,7 +43,6 @@ COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 # Copy application code and configs
 WORKDIR /app
 COPY src/ .
-COPY container/nftables.conf /etc/nftables.conf
 COPY container/Caddyfile /etc/caddy/Caddyfile
 COPY requirements.txt .
 
@@ -56,6 +55,7 @@ ENV PATH="/venv/bin:/usr/local/bin:$PATH"
 
 # Install BoringTun from local build and copy bootstrapper
 COPY bin/boringtun-cli /usr/local/bin/
+COPY container/nftables.conf /etc/nftables.conf
 COPY container/bootstrap.py /
 RUN chmod +x /bootstrap.py
 
