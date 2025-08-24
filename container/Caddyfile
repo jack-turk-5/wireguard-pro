@@ -4,7 +4,9 @@
 }
 
 :51819 {
-	bind fd/{$CADDY_TCP_FD}
+	bind fd/{$CADDY_TCP_FD} {
+		protocols h1
+	}
 	encode gzip
 
 	handle /api* {

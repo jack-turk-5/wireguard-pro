@@ -52,7 +52,10 @@ def main():
 
     # --- Start BoringTun ---
     print("Starting BoringTun")
+    udp_fds = {fd:fds[fd] for fd in fds if fds[fd]['Type'] is SocketKind.SOCK_DGRAM}
     boringtun_args = ['boringtun-cli', 'wg0', '--foreground', '--verbosity', 'debug', '--disable-drop-privileges']
+    for fd in udp_fds.keys():
+        boringtun_args.extend(['--fd', str(fd)])
     boringtun_proc = subprocess.Popen(boringtun_args, pass_fds=fds.keys())
 
     # --- Configure WireGuard interface (after it's created by boringtun) ---
