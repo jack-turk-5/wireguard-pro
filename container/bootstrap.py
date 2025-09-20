@@ -41,15 +41,16 @@ def setup_wireguard():
 
         public_key = subprocess.check_output(['wg', 'pubkey'], input=private_key.encode()).decode().strip()
 
-        config_content = f"""
-[Interface]
-PrivateKey = {private_key}
-Address = 10.8.0.1/24, fd86:ea04:1111::1/64
-ListenPort = 51820
-MTU = 1420
-"""
-        with open(conf_file, 'w') as f:
-            f.write(config_content.strip())
+        config = [
+            "[Interface]",
+            f"PrivateKey = {private_key}",
+            "Address = 10.8.0.1/24, fd86:ea04:1111::1/64",
+            "ListenPort = 51820",
+            "MTU = 1420"
+        ]
+
+        with open(conf_file, 'w', newline='\n') as f:
+            f.write("\n".join(config) + "\n")
 
     # Bring up the interface
     run_command(['wg-quick', 'up', 'wg0'])
