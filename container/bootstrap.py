@@ -49,7 +49,7 @@ def setup_wireguard():
             "MTU = 1420"
         ]
         with open(conf_file, 'w') as f:
-            f.write(f"{'/n'.join(config)}\n")
+            f.write('\n'.join(config) + '\n')
 
     # Bring up the interface
     run_command(['wg-quick', 'up', 'wg0'])
