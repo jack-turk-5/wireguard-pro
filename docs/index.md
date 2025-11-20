@@ -1,8 +1,8 @@
 # WG-Dashboard UltraPro
 
-🚀 Rootless WireGuard VPN Dashboard
-⚡ API-driven dynamic VPN peer provisioning   
-🎯 Zero downtime deployments
+- Rootless WireGuard VPN Dashboard
+- API-driven dynamic VPN peer provisioning   
+- Zero downtime deployments
 
 ## Quick Links
 

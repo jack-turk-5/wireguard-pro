@@ -9,15 +9,21 @@
 
 ---
 
-# 1. Install WireGuard Tools from your Distro's Package Manager
+# 1. Install WireGuard Tools and Python from your Distro's Package Manager
 ```bash
-sudo apt-get install wireguard-tools
+sudo apt-get install wireguard-tools python
 # etc...
 ```
 
 ---
 
-# 📦 2. Clone the Project and Deploy
+# 2. Create files for Nftables and environment
+
+Both files are expected to be at %h/.config/wireguard-pro/env (%h is Podman Quadlet shorthand for the home directory). Refer to [env.md](env.md) for a comprehensive list of all environmentally mutable properties and check out [nftables.conf](../container/nftables.conf) to see an example firewall configuration for deploying on a VPS.
+
+---
+
+# 3. Clone the Project and Deploy
 
 ```bash
 git clone https://github.com/jack-turk-5/wireguard-pro.git
@@ -25,18 +31,18 @@ cd wireguard-pro
 make deploy
 ```
 
-That's it! 🎯
+That's it!
 
 ---
 
-# 🌐 3. Access the Dashboard
+# 4. Access the Dashboard
 
 - Visit `http(s)://ip:51819/`
 - Manage peers, view live stats, toggle dark mode, and more!
 
 ---
 
-# 📈 3. Extra Commands
+# 5. Extra Commands
 
 | Command | Purpose |
 |:---|:---|
@@ -49,18 +55,18 @@ That's it! 🎯
 | `make status` | View systemd status |
 | `make logs` | Stream logs live |
 
-Check out the [Makefile](../Makefile) for more details 📖
+Check out the [Makefile](../Makefile) for more details
 
 ---
 
-# 📜 API Docs (Swagger UI)
+# API Docs (Swagger UI)
 
 - Visit: `http(s)://ip:51819/apidocs/`
 - Full auto-generated API explorer (add/delete/list peers live!)
 
 ---
 
-# ⚙️ Systemd Quadlet
+# Systemd Quadlet
 
 - `wireguard-pro.container`
 - `wireguard-pro.socket`
@@ -69,7 +75,7 @@ Deployed automatically by `make start`.
 
 ---
 
-# 📦 What's Inside
+# What's Inside
 
 | Component | Purpose |
 |:---|:---|
@@ -82,7 +88,7 @@ Deployed automatically by `make start`.
 
 ---
 
-# 🔥 Pro Tips
+# Pro Tips
 
 ```bash
 # Enable rootless Podman auto-start on boot (may need to be root)
@@ -100,6 +106,6 @@ make deploy
 
 ---
 
-# 🏆 Congratulations!
+# Congratulations!
 
-You now have one of the **best** WireGuard dashboards available — open source, rootless, and production-grade. 🚀
+You now have one of the **best** WireGuard dashboards available — open source, rootless, and production-grade.
