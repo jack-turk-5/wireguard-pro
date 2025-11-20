@@ -21,6 +21,7 @@ class ServerConfig(BaseModel):
     public_key: str
     endpoint: str
     allowed_ips: str
+    dns_server: str
 
 class Peer(BaseModel):
     public_key: str
