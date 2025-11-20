@@ -39,7 +39,7 @@ class DeleteResponse(BaseModel):
 # --- API Endpoints ---
 @router.get("/config", response_model=ServerConfig)
 async def get_config(request: Request, current_user: str = Depends(verify_token)):
-    if not all([request.app.state.config.wg_public_key, request.app.state.config.wg_endpoint, request.app.state.config.wg_allowed_ips]):
+    if not all([request.app.state.config.wg_public_key, request.app.state.config.wg_endpoint, request.app.state.config.wg_allowed_ips, request.app.state.config.wg_dns_server]):
         raise HTTPException(status_code=503, detail="Server configuration is not available due to a startup error.")
     return {
         "public_key": request.app.state.config.wg_public_key,

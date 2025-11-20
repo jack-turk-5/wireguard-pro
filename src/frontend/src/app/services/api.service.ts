@@ -55,7 +55,7 @@ export class ApiService {
     return this.http.get<Stat[]>('/api/peers/stats', { withCredentials: true });  
   }
 
-  /** Fetch server uptime & load average */  
+  /** Fetch server config properties */  
   getServerConfig(): Observable<ServerConfig> {
     return this.http.get<ServerConfig>('/api/config', { withCredentials: true });  
   }

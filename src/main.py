@@ -18,8 +18,7 @@ async def lifespan(app: FastAPI):
     # Startup
     try:
         init_db()
-        await config.load()
-        app.state.config = config
+        app.state.config = await config.load()
 
         # Seed initial admin user from secrets
         user = open('/run/secrets/admin-user').read().strip()
