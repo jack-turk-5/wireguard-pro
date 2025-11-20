@@ -53,7 +53,6 @@ COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 WORKDIR /app
 COPY src/ .
 COPY container/bootstrap.py /
-COPY container/nftables.conf /etc/nftables.conf
 COPY container/Caddyfile /etc/caddy/Caddyfile
 COPY requirements.txt .
 

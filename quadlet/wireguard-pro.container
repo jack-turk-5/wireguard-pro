@@ -10,6 +10,7 @@ PublishPort=51820:51820/udp
 Network=slirp4netns:mtu=1500,port_handler=slirp4netns,allow_host_loopback=false,enable_ipv6=true
 Volume=boringtun-data:/etc/wireguard:Z,U
 Volume=wg-pro-data:/data:Z,U
+Volume=%h/.config/wireguard-pro/nftables.conf:/etc/nftables.conf
 PodmanArgs=--preserve-fds=1
 
 AddCapability=CAP_NET_ADMIN CAP_NET_RAW CAP_SETUID CAP_SETGID
