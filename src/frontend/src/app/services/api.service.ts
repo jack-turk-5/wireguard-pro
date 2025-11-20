@@ -26,6 +26,7 @@ export interface ServerConfig {
     public_key: string;
     endpoint: string;
     allowed_ips: string;
+    dns_server: string;
 }
 
 @Injectable({ providedIn: 'root' })

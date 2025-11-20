@@ -12,6 +12,7 @@ class AppConfig:
         self.wg_endpoint = None
         self.wg_public_key = None
         self.wg_allowed_ips = None
+        self.wg_dns_server = None
         self.ts = None
 
     async def load(self):
@@ -25,6 +26,7 @@ class AppConfig:
         self.ts = Serializer(self.secret_key, salt='auth-token')
         self.wg_public_key = await get_server_pubkey()
         self.wg_allowed_ips = environ.get('WG_ALLOWED_IPS', '0.0.0.0/0, ::/0')
+        self.wg_dns_server = environ.get('WG_DNS_SERVER', '1.1.1.1')
         logging.info("Successfully loaded server public key and config.")
 
 

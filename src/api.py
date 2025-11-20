@@ -45,6 +45,7 @@ async def get_config(request: Request, current_user: str = Depends(verify_token)
         "public_key": request.app.state.config.wg_public_key,
         "endpoint": request.app.state.config.wg_endpoint,
         "allowed_ips": request.app.state.config.wg_allowed_ips,
+        "dns_server": request.app.state.config.wg_dns_server
     }
 
 @router.post("/peers/new", response_model=Peer, status_code=status.HTTP_201_CREATED)

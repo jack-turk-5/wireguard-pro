@@ -1,7 +1,7 @@
 import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QRCodeComponent } from 'angularx-qrcode';
-import { ApiService, ServerConfig } from '../services/api.service';
+import { ApiService, Peer, ServerConfig } from '../services/api.service';
 
 @Component({
   selector: 'app-peers',
@@ -17,7 +17,8 @@ export class PeersComponent implements OnInit {
   config: ServerConfig = {
     public_key:  '',
     endpoint:    '',
-    allowed_ips: ''
+    allowed_ips: '',
+    dns_server: ''
   };
   @Output() qrClick = new EventEmitter<string>();
   @Output() peerChange = new EventEmitter<void>();
@@ -41,12 +42,12 @@ export class PeersComponent implements OnInit {
     return peer.public_key;
   }
 
-  makeCfg(p: any): string {
+  makeCfg(p: Peer): string {
     return [
       `[Interface]`,
       `PrivateKey = ${p.private_key}`,
       `Address = ${p.ipv4_address}/32`,
-      `DNS = 1.1.1.1`, // Always using CloudFlare unless a better alternative exists???
+      `DNS = ${this.config.dns_server}`,
       ``,
       `[Peer]`,
       `PublicKey = ${this.config.public_key}`,
@@ -56,7 +57,7 @@ export class PeersComponent implements OnInit {
     ].join('\n');
   }
 
-  download(p: any) {
+  download(p: Peer) {
     const blob = new Blob([this.makeCfg(p)], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -73,7 +74,7 @@ export class PeersComponent implements OnInit {
     });
   }
 
-  openQr(peer: any) {
+  openQr(peer: Peer) {
     this.qrClick.emit(this.makeCfg(peer));
   }
   
