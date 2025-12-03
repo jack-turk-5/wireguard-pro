@@ -1,9 +1,10 @@
 import logging
+from aiofiles import open
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import config
+from config import get_config
 from db import init_db, add_or_update_user_db
 from scheduler import scheduler
 from auth import router as auth_router
@@ -18,12 +19,13 @@ async def lifespan(app: FastAPI):
     # Startup
     try:
         init_db()
-        await config.load()
-        app.state.config = config
+        app.state.config = await get_config()
         
         # Seed initial admin user from secrets
-        user = open('/run/secrets/admin-user').read().strip()
-        pw = open('/run/secrets/admin-pass').read().strip()
+        async with open('/run/secrets/admin-user') as f:
+            user = (await f.read()).strip()
+        async with open('/run/secrets/admin-pass') as f:
+            pw = (await f.read()).strip()
         add_or_update_user_db(user, pw)
         logging.info(f"Seeded user `{user}`")
 

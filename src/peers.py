@@ -17,7 +17,7 @@ async def create_peer(days_valid=7):
     priv, pub = await generate_keypair()
 
     # Allocate next free IPv4/IPv6
-    ipv4, ipv6 = next_available_ip()
+    ipv4, ipv6 = await next_available_ip()
 
     # Compute expiration timestamp
     expires = datetime.now(timezone.utc) + timedelta(days=days_valid)
@@ -27,7 +27,7 @@ async def create_peer(days_valid=7):
     add_peer_db(pub, priv, ipv4, ipv6, expires_str)
 
     # Append to the on-disk WireGuard config
-    append_peer_to_wgconf(pub, ipv4, ipv6)
+    await append_peer_to_wgconf(pub, ipv4, ipv6)
 
     # Inject into the running interface without full reload
     await _run_command(f"wg set wg0 peer {pub} allowed-ips {ipv4}/32,{ipv6}/128")
@@ -96,10 +96,14 @@ async def remove_expired_peers():
         if datetime.strptime(p["expires_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc) < now
     ]
 
-    count = 0
-    for peer in peers_to_remove:
-        if await delete_peer(peer["public_key"]):
-            count += 1
-            logging.info(f"Auto-expired and removed peer: {peer['public_key']}")
+    if not peers_to_remove:
+        return 0
 
-    return count
+    removed_count = sum(await asyncio.gather(
+        *(delete_peer(p["public_key"]) for p in peers_to_remove)
+    ))
+
+    if removed_count > 0:
+        logging.info(f"Auto-expired and removed {removed_count} peer(s).")
+        
+    return removed_count

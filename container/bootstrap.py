@@ -23,6 +23,12 @@ def setup_secret_key():
                 f.write(key)
             os.environ['SECRET_KEY'] = key
 
+def get_interface_info():
+    """Get info from environmnet for wg0 interface"""
+    return {"ipv4": os.environ.get("WG_IPV4_BASE_ADDRESS", "10.8.0.1"),
+            "ipv6": os.environ.get("WG_IPV4_BASE_ADDRESS", "fd86:ea04:1111::1"),
+            "port": os.environ.get("WG_PORT", "51820")}
+
 def setup_wireguard():
     """Configure and bring up the WireGuard interface."""
     conf_file = '/etc/wireguard/wg0.conf'
@@ -41,11 +47,12 @@ def setup_wireguard():
 
         public_key = subprocess.check_output(['wg', 'pubkey'], input=private_key.encode()).decode().strip()
 
+        interface_info = get_interface_info()
         config = [
             "[Interface]",
             f"PrivateKey = {private_key}",
-            "Address = 10.8.0.1/24, fd86:ea04:1111::1/64",
-            "ListenPort = 51820",
+            f"Address = {interface_info['ipv4']}, {interface_info['ipv6']}",
+            f"ListenPort = {interface_info['port']}",
             "MTU = 1420"
         ]
 
