@@ -1,6 +1,6 @@
 import asyncio
 from db import get_all_peers
-from src.config import get_config
+from config import get_config
 from aiofiles import open
 
 WG_PATH = "/etc/wireguard/wg0.conf"
@@ -131,4 +131,3 @@ async def remake_peers_file():
 
     # 4) push into the running interface
     await reload_wireguard()
-
