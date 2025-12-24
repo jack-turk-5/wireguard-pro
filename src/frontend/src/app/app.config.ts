@@ -8,12 +8,11 @@ import { JwtInterceptor } from './auth/jwt.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }), 
-    provideRouter(routes), provideClientHydration(withEventReplay()), 
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes), provideClientHydration(withEventReplay()),
     provideHttpClient(
-      withInterceptors([JwtInterceptor]), 
+      withInterceptors([JwtInterceptor]),
       withFetch()
-    ), 
-    provideAnimationsAsync()
+    )
   ]
 }

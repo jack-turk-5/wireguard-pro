@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel
 from os import getloadavg
 from time import gmtime, strftime
+from aiofiles import open
 
 from peers import create_peer, delete_peer, list_peers, peer_stats
 from auth import verify_token
@@ -68,8 +69,9 @@ async def api_peer_stats(current_user: str = Depends(verify_token)):
 @router.get("/serverinfo", response_model=ServerInfo)
 async def server_info(current_user: str = Depends(verify_token)):
     try:
-        with open('/proc/uptime') as f:
-            up = float(f.readline().split()[0])
+        async with open('/proc/uptime') as f:
+            up_str = await f.readline()
+            up = float(up_str.split()[0])
         return {
             'uptime': strftime("%H:%M:%S", gmtime(up)),
             'load': "{:.2f} {:.2f} {:.2f}".format(*getloadavg())
