@@ -5,7 +5,7 @@
 - ✅ Python
 - ✅ Wireguard Tools
 - ✅ Systemd user services enabled
-- ✅ Linux server (Debian/Ubuntu recommended, others untested)
+- ✅ Linux server (Debian, Ubuntu, Arch tested) 
 
 ---
 

@@ -1,8 +1,15 @@
+from asyncio import gather
 from datetime import datetime, timezone, timedelta
 import logging
 
 from db import add_peer_db, remove_peer_db, get_all_peers
-from utils import generate_keypair, next_available_ip, append_peer_to_wgconf, remake_peers_file, _run_command
+from utils import (
+    generate_keypair,
+    next_available_ip,
+    append_peer_to_wgconf,
+    remake_peers_file,
+    _run_command,
+)
 
 # Path to the on-disk WireGuard config file
 WG_PATH = "/etc/wireguard/wg0.conf"
@@ -39,7 +46,7 @@ async def create_peer(days_valid=7):
         "ipv4_address": ipv4,
         "ipv6_address": ipv6,
         "expires_at": expires_str,
-        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
     }
 
 
@@ -75,13 +82,15 @@ async def peer_stats():
         if len(fields) < 8:
             continue
         pub, _, _, _, last_hs, rx, tx, keepalive, *_ = fields
-        stats.append({
-            "public_key": pub,
-            "last_handshake_time": last_hs,
-            "rx_bytes": rx,
-            "tx_bytes": tx,
-            "persistent_keepalive": keepalive,
-        })
+        stats.append(
+            {
+                "public_key": pub,
+                "last_handshake_time": last_hs,
+                "rx_bytes": rx,
+                "tx_bytes": tx,
+                "persistent_keepalive": keepalive,
+            }
+        )
     return stats
 
 
@@ -92,18 +101,22 @@ async def remove_expired_peers():
     """
     now = datetime.now(timezone.utc)
     peers_to_remove = [
-        p for p in get_all_peers()
-        if datetime.strptime(p["expires_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc) < now
+        p
+        for p in get_all_peers()
+        if datetime.strptime(p["expires_at"], "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=timezone.utc
+        )
+        < now
     ]
 
     if not peers_to_remove:
         return 0
 
-    removed_count = sum(await asyncio.gather(
-        *(delete_peer(p["public_key"]) for p in peers_to_remove)
-    ))
+    removed_count = sum(
+        await gather(*(delete_peer(p["public_key"]) for p in peers_to_remove))
+    )
 
     if removed_count > 0:
         logging.info(f"Auto-expired and removed {removed_count} peer(s).")
-        
+
     return removed_count
