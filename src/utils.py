@@ -35,15 +35,6 @@ async def generate_keypair():
     return private_key, public_key
 
 
-async def get_server_pubkey():
-    """
-    Derive server public key from stored private key asynchronously.
-    """
-    async with open("/etc/wireguard/privatekey") as f:
-        priv = (await f.read()).strip()
-    return await _run_command("wg pubkey", stdin_input=priv)
-
-
 async def next_available_ip():
     """
     Allocate the next free IPv4/IPv6 addresses asynchronously.
