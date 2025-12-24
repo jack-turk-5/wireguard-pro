@@ -12,12 +12,16 @@ async def _run_command(command, stdin_input=None):
         command,
         stdin=asyncio.subprocess.PIPE if stdin_input else None,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
+        stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await process.communicate(input=stdin_input.encode() if stdin_input else None)
+    stdout, stderr = await process.communicate(
+        input=stdin_input.encode() if stdin_input else None
+    )
 
     if process.returncode != 0:
-        raise RuntimeError(f"Command '{command}' failed with stderr: {stderr.decode().strip()}")
+        raise RuntimeError(
+            f"Command '{command}' failed with stderr: {stderr.decode().strip()}"
+        )
 
     return stdout.decode().strip()
 
@@ -35,9 +39,9 @@ async def get_server_pubkey():
     """
     Derive server public key from stored private key asynchronously.
     """
-    async with open('/etc/wireguard/privatekey') as f:
+    async with open("/etc/wireguard/privatekey") as f:
         priv = (await f.read()).strip()
-    return await _run_command('wg pubkey', stdin_input=priv)
+    return await _run_command("wg pubkey", stdin_input=priv)
 
 
 async def next_available_ip():
@@ -46,8 +50,8 @@ async def next_available_ip():
     """
     config = await get_config()
     peers = get_all_peers()
-    used_v4 = {p['ipv4_address'] for p in peers}
-    used_v6 = {p['ipv6_address'] for p in peers}
+    used_v4 = {p["ipv4_address"] for p in peers}
+    used_v6 = {p["ipv6_address"] for p in peers}
 
     ipv4_base = config.wg_ipv4_base_addr[:-1]
     ipv6_base = config.wg_ipv6_base_addr[:-1]
@@ -84,7 +88,7 @@ async def append_peer_to_wgconf(public_key, ipv4, ipv6):
             "",
             "[Peer]",
             f"PublicKey = {public_key}",
-            f"AllowedIPs = {allowed_ips}"
+            f"AllowedIPs = {allowed_ips}",
         ]
         await f.write("\n".join(lines) + "\n")
 
@@ -94,11 +98,11 @@ async def reload_wireguard():
     Reload peers dynamically (strip + syncconf) asynchronously.
     """
     stripped_config = await _run_command(f"wg-quick strip {WG_PATH}")
-    
+
     async with open("/tmp/wg0.peers.conf", "w") as f:
         await f.write(stripped_config)
 
-    await _run_command(f"wg syncconf wg0 /tmp/wg0.peers.conf")
+    await _run_command("wg syncconf wg0 /tmp/wg0.peers.conf")
 
 
 async def remake_peers_file():
@@ -121,7 +125,10 @@ async def remake_peers_file():
 
     # 3) re-append every peer from the DB
     for p in get_all_peers():
-        await append_peer_to_wgconf(p["public_key"], p["ipv4_address"], p["ipv6_address"])
+        await append_peer_to_wgconf(
+            p["public_key"], p["ipv4_address"], p["ipv6_address"]
+        )
 
     # 4) push into the running interface
     await reload_wireguard()
+
