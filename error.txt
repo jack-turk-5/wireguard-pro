@@ -1,4 +1,0 @@
-error running container: from /usr/bin/crun creating container for [/bin/sh -c npm ci --omit=optional && npm run build --omit=dev]: sd-bus call: Process org.freedesktop.systemd1 exited with status 1: Input/output error
-: exit status 1
-Error: building at STEP "RUN npm ci --omit=optional && npm run build --omit=dev": while running runtime: exit status 1
-make: *** [Makefile:22: build] Error 1
