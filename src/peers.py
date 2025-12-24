@@ -8,7 +8,7 @@ from utils import (
     next_available_ip,
     append_peer_to_wgconf,
     remake_peers_file,
-    _run_command,
+    run_command,
 )
 
 # Path to the on-disk WireGuard config file
@@ -37,7 +37,7 @@ async def create_peer(days_valid=7):
     await append_peer_to_wgconf(pub, ipv4, ipv6)
 
     # Inject into the running interface without full reload
-    await _run_command(f"wg set wg0 peer {pub} allowed-ips {ipv4}/32,{ipv6}/128")
+    await run_command(f"wg set wg0 peer {pub} allowed-ips {ipv4}/32,{ipv6}/128")
 
     # Return details for frontend
     return {
@@ -74,7 +74,7 @@ async def peer_stats():
     """
     Return live WireGuard peer stats asynchronously.
     """
-    output = await _run_command("wg show wg0 dump")
+    output = await run_command("wg show wg0 dump")
     lines = output.strip().split("\n")[1:]  # Skip header line
     stats = []
     for line in lines:
