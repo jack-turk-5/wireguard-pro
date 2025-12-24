@@ -1,4 +1,4 @@
-import asyncio
+from cli import run_command
 from db import get_all_peers
 from config import get_config
 from aiofiles import open
@@ -6,32 +6,12 @@ from aiofiles import open
 WG_PATH = "/etc/wireguard/wg0.conf"
 
 
-async def _run_command(command, stdin_input=None):
-    """Helper to run a shell command asynchronously."""
-    process = await asyncio.create_subprocess_shell(
-        command,
-        stdin=asyncio.subprocess.PIPE if stdin_input else None,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, stderr = await process.communicate(
-        input=stdin_input.encode() if stdin_input else None
-    )
-
-    if process.returncode != 0:
-        raise RuntimeError(
-            f"Command '{command}' failed with stderr: {stderr.decode().strip()}"
-        )
-
-    return stdout.decode().strip()
-
-
 async def generate_keypair():
     """
     Generate a private/public keypair asynchronously.
     """
-    private_key = await _run_command("wg genkey")
-    public_key = await _run_command("wg pubkey", stdin_input=private_key)
+    private_key = await run_command("wg genkey")
+    public_key = await run_command("wg pubkey", stdin_input=private_key)
     return private_key, public_key
 
 
@@ -88,12 +68,12 @@ async def reload_wireguard():
     """
     Reload peers dynamically (strip + syncconf) asynchronously.
     """
-    stripped_config = await _run_command(f"wg-quick strip {WG_PATH}")
+    stripped_config = await run_command(f"wg-quick strip {WG_PATH}")
 
     async with open("/tmp/wg0.peers.conf", "w") as f:
         await f.write(stripped_config)
 
-    await _run_command("wg syncconf wg0 /tmp/wg0.peers.conf")
+    await run_command("wg syncconf wg0 /tmp/wg0.peers.conf")
 
 
 async def remake_peers_file():

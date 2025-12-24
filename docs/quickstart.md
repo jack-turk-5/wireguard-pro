@@ -79,7 +79,7 @@ Deployed automatically by `make start`.
 
 | Component | Purpose |
 |:---|:---|
-| Flask Backend | WireGuard management API |
+| FastAPI Backend | WireGuard management API |
 | Swagger | API documentation |
 | QR Code | VPN config display |
 | Chart.js | RX/TX traffic graphs |

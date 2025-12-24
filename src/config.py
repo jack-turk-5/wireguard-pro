@@ -1,9 +1,9 @@
 import logging
-import asyncio
 from os import environ
 from itsdangerous import URLSafeTimedSerializer as Serializer
-
-from utils import get_server_pubkey, _run_command
+from cli import run_command
+from asyncio import Lock
+from aiofiles import open
 
 
 class AppConfig:
@@ -20,7 +20,15 @@ class AppConfig:
         self.wg_ipv6_base_addr = None
 
         self._is_loaded = False
-        self._load_lock = asyncio.Lock()
+        self._load_lock = Lock()
+
+    async def _get_server_pubkey(self):
+        """
+        Derive server public key from stored private key asynchronously.
+        """
+        async with open("/etc/wireguard/privatekey") as f:
+            priv = (await f.read()).strip()
+        return await run_command("wg pubkey", stdin_input=priv)
 
     async def load(self):
         """
@@ -38,7 +46,7 @@ class AppConfig:
                 raise Exception("Missing SECRET_KEY and/or WG_ENDPOINT")
 
             self.ts = Serializer(self.secret_key, salt="auth-token")
-            self.wg_public_key = await get_server_pubkey()
+            self.wg_public_key = await self._get_server_pubkey()
             self.wg_allowed_ips = environ.get("WG_ALLOWED_IPS", "0.0.0.0/0, ::/0")
             self.wg_dns_server = environ.get("WG_DNS_SERVER", "1.1.1.1")
             self.wg_ipv4_base_addr = environ.get("WG_IPV4_BASE_ADDR", "10.8.0.1")
@@ -48,14 +56,6 @@ class AppConfig:
 
             self._is_loaded = True
             logging.info("Successfully loaded server public key and config.")
-
-    async def get_server_pubkey(self):
-        """
-        Derive server public key from stored private key asynchronously.
-        """
-        async with open("/etc/wireguard/privatekey") as f:
-            priv = (await f.read()).strip()
-        return await _run_command("wg pubkey", stdin_input=priv)
 
 
 # Create a single, shared instance of the config
