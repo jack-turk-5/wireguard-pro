@@ -12,6 +12,7 @@ class AppConfig:
     def __init__(self):
         self.secret_key = None
         self.wg_endpoint = None
+        self.wg_port = None
         self.wg_public_key = None
         self.wg_allowed_ips = None
         self.wg_dns_server = None
@@ -40,10 +41,11 @@ class AppConfig:
                 return
 
             self.secret_key = environ.get("SECRET_KEY")
-            self.wg_endpoint = environ.get("WG_ENDPOINT")
+            self.wg_endpoint = environ.get("WG_ENDPOINT", "").strip(" '\"")
+            self.wg_port = environ.get("WG_PORT", "").strip(" '\"")
 
-            if not self.secret_key or not self.wg_endpoint:
-                raise Exception("Missing SECRET_KEY and/or WG_ENDPOINT")
+            if not self.secret_key or not self.wg_endpoint or not self.wg_port:
+                raise Exception("Missing SECRET_KEY, WG_PORT, or WG_ENDPOINT")
 
             self.ts = Serializer(self.secret_key, salt="auth-token")
             self.wg_public_key = await self._get_server_pubkey()
@@ -53,7 +55,6 @@ class AppConfig:
             self.wg_ipv6_base_addr = environ.get(
                 "WG_IPV6_BASE_ADDR", "fd86:ea04:1111::1"
             )
-
             self._is_loaded = True
             logging.info("Successfully loaded server public key and config.")
 

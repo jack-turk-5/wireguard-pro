@@ -17,8 +17,9 @@ export class PeersComponent implements OnInit {
   config: ServerConfig = {
     public_key:  '',
     endpoint:    '',
+    port:        '',
     allowed_ips: '',
-    dns_server: ''
+    dns_server:  ''
   };
   @Output() qrClick = new EventEmitter<string>();
   @Output() peerChange = new EventEmitter<void>();
@@ -51,7 +52,7 @@ export class PeersComponent implements OnInit {
       ``,
       `[Peer]`,
       `PublicKey = ${this.config.public_key}`,
-      `Endpoint = ${this.config.endpoint}`,
+      `Endpoint = ${this.config.endpoint}:${this.config.port}`,
       `AllowedIPs = ${this.config.allowed_ips}`,
       `PersistentKeepalive = 25`
     ].join('\n');
@@ -77,5 +78,5 @@ export class PeersComponent implements OnInit {
   openQr(peer: Peer) {
     this.qrClick.emit(this.makeCfg(peer));
   }
-  
+
 }

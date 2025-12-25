@@ -25,6 +25,7 @@ export interface ServerHealthcheck {
 export interface ServerConfig {
     public_key: string;
     endpoint: string;
+    port: string;
     allowed_ips: string;
     dns_server: string;
 }
@@ -35,33 +36,33 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  /** Create a new peer, returns the Peer object */  
+  /** Create a new peer, returns the Peer object */
   createPeer(daysValid: number = 7): Observable<Peer> {
-    return this.http.post<Peer>('/api/peers/new', { days_valid: daysValid }, this.jsonHeaders);  
+    return this.http.post<Peer>('/api/peers/new', { days_valid: daysValid }, this.jsonHeaders);
   }
 
-  /** Delete a peer by public key, returns `{ deleted: boolean }` */  
+  /** Delete a peer by public key, returns `{ deleted: boolean }` */
   deletePeer(publicKey: string): Observable<{ deleted: boolean }> {
-    return this.http.post<{ deleted: boolean }>('/api/peers/delete', { public_key: publicKey }, this.jsonHeaders);  
+    return this.http.post<{ deleted: boolean }>('/api/peers/delete', { public_key: publicKey }, this.jsonHeaders);
   }
 
-  /** List all peers */  
+  /** List all peers */
   listPeers(): Observable<Peer[]> {
-    return this.http.get<Peer[]>('/api/peers/list', { withCredentials: true });  
+    return this.http.get<Peer[]>('/api/peers/list', { withCredentials: true });
   }
 
-  /** Get live peer stats */  
+  /** Get live peer stats */
   getStats(): Observable<Stat[]> {
-    return this.http.get<Stat[]>('/api/peers/stats', { withCredentials: true });  
+    return this.http.get<Stat[]>('/api/peers/stats', { withCredentials: true });
   }
 
-  /** Fetch server config properties */  
+  /** Fetch server config properties */
   getServerConfig(): Observable<ServerConfig> {
-    return this.http.get<ServerConfig>('/api/config', { withCredentials: true });  
+    return this.http.get<ServerConfig>('/api/config', { withCredentials: true });
   }
 
-  /** Fetch server uptime & load average */  
+  /** Fetch server uptime & load average */
   getServerHealth(): Observable<ServerHealthcheck> {
-    return this.http.get<ServerHealthcheck>('/api/serverinfo', { withCredentials: true });  
+    return this.http.get<ServerHealthcheck>('/api/serverinfo', { withCredentials: true });
   }
 }
