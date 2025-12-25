@@ -34,7 +34,7 @@ def get_interface_info():
         raise Exception("Missing WG_PORT")
     return {
         "ipv4": os.environ.get("WG_IPV4_BASE_ADDRESS", "10.8.0.1"),
-        "ipv6": os.environ.get("WG_IPV4_BASE_ADDRESS", "fd86:ea04:1111::1"),
+        "ipv6": os.environ.get("WG_IPV6_BASE_ADDRESS", "fd86:ea04:1111::1"),
         "port": port.strip("'\""),
     }
 
@@ -42,34 +42,47 @@ def get_interface_info():
 def setup_wireguard():
     """Configure and bring up the WireGuard interface."""
     conf_file = "/etc/wireguard/wg0.conf"
+    private_key_file = "/etc/wireguard/privatekey"
     secret_file = "/run/secrets/wg-privatekey"
 
-    if not os.path.isfile(conf_file):
-        os.makedirs(os.path.dirname(conf_file), exist_ok=True)
-        if os.path.exists(secret_file):
-            with open(secret_file) as f:
-                private_key = f.read().strip()
-        else:
-            private_key = subprocess.check_output(["wg", "genkey"]).decode().strip()
-
-        with open("/etc/wireguard/privatekey", "w") as f:
+    # Ensure private key exists
+    if os.path.exists(private_key_file):
+        with open(private_key_file) as f:
+            private_key = f.read().strip()
+    elif os.path.exists(secret_file):
+        with open(secret_file) as f:
+            private_key = f.read().strip()
+        with open(private_key_file, "w") as f:
+            f.write(private_key)
+    else:
+        private_key = subprocess.check_output(["wg", "genkey"]).decode().strip()
+        with open(private_key_file, "w") as f:
             f.write(private_key)
 
-        subprocess.check_output(
-            ["wg", "pubkey"], input=private_key.encode()
-        ).decode().strip()
+    interface_info = get_interface_info()
 
-        interface_info = get_interface_info()
-        config = [
-            "[Interface]",
-            f"PrivateKey = {private_key}",
-            f"Address = {interface_info['ipv4']}, {interface_info['ipv6']}",
-            f"ListenPort = {interface_info['port']}",
-            "MTU = 1420",
-        ]
+    # Check for port changes and warn the user
+    if os.path.exists(conf_file):
+        with open(conf_file, "r") as f:
+            for line in f:
+                if line.strip().startswith("ListenPort"):
+                    existing_port = line.split("=")[1].strip()
+                    if existing_port != interface_info["port"]:
+                        print("!!! WARNING: Port has changed! You will need to update your clients. !!!")
+                        print(f"!!! Old port: {existing_port} -> New port: {interface_info['port']} !!!")
+                    break
 
-        with open(conf_file, "w", newline="\n") as f:
-            f.write("\n".join(config) + "\n")
+    config = [
+        "[Interface]",
+        f"PrivateKey = {private_key}",
+        f"Address = {interface_info['ipv4']}, {interface_info['ipv6']}",
+        f"ListenPort = {interface_info['port']}",
+        "MTU = 1420",
+    ]
+
+    os.makedirs(os.path.dirname(conf_file), exist_ok=True)
+    with open(conf_file, "w", newline="\n") as f:
+        f.write("\n".join(config) + "\n")
 
     # Check file permissions for config
     os.chmod(conf_file, stat.S_IRUSR | stat.S_IWUSR)

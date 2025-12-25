@@ -56,6 +56,7 @@ def add_peer_db(pub, priv, ipv4, ipv6, expires):
 
 def remove_peer_db(pub):
     with db_conn() as conn:
+        # Trailing comma is necessary since pub isn't typechecked
         cur = conn.execute("DELETE FROM peers WHERE public_key = ?", (pub,))
         return cur.rowcount > 0
 
