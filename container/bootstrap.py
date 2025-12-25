@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+import stat
 from secrets import token_urlsafe
 from shutil import which
 
@@ -28,10 +29,13 @@ def setup_secret_key():
 
 def get_interface_info():
     """Get info from environmnet for wg0 interface"""
+    port = os.environ.get("WG_PORT")
+    if not port:
+        raise Exception("Missing WG_PORT")
     return {
         "ipv4": os.environ.get("WG_IPV4_BASE_ADDRESS", "10.8.0.1"),
         "ipv6": os.environ.get("WG_IPV4_BASE_ADDRESS", "fd86:ea04:1111::1"),
-        "port": os.environ.get("WG_PORT", "51820"),
+        "port": port.strip("'\""),
     }
 
 
@@ -67,6 +71,8 @@ def setup_wireguard():
         with open(conf_file, "w", newline="\n") as f:
             f.write("\n".join(config) + "\n")
 
+    # Check file permissions for config
+    os.chmod(conf_file, stat.S_IRUSR | stat.S_IWUSR)
     # Bring up the interface
     run_command(["wg-quick", "up", "wg0"])
 
