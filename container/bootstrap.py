@@ -68,8 +68,12 @@ def setup_wireguard():
                 if line.strip().startswith("ListenPort"):
                     existing_port = line.split("=")[1].strip()
                     if existing_port != interface_info["port"]:
-                        print("!!! WARNING: Port has changed! You will need to update your clients. !!!")
-                        print(f"!!! Old port: {existing_port} -> New port: {interface_info['port']} !!!")
+                        print(
+                            "!!! WARNING: Port has changed! You will need to update your clients. !!!"
+                        )
+                        print(
+                            f"!!! Old port: {existing_port} -> New port: {interface_info['port']} !!!"
+                        )
                     break
 
     config = [
@@ -100,7 +104,7 @@ def main():
         "GUNICORN_CMD_ARGS",
         "--workers 2 --worker-class uvicorn.workers.UvicornWorker --bind unix:/run/gunicorn.sock",
     ).split()
-    subprocess.Popen(["/venv/bin/gunicorn", "main:app", *gunicorn_args])
+    subprocess.Popen(["gunicorn", "main:app", *gunicorn_args])
 
     # Apply nftables rules
     run_command(["nft", "-f", "/etc/nftables.conf"])
