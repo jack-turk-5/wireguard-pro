@@ -41,8 +41,11 @@ FROM debian:trixie-slim AS runtime
 # Install only the necessary runtime dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      wireguard-tools iproute2 nftables ethtool python3-venv python3-pip build-essential libmnl-dev \
+      wireguard-tools iproute2 nftables ethtool build-essential libmnl-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copy all artifacts from the builder stages
 COPY --from=angular-builder /app/dist/frontend/browser /usr/share/caddy/html
@@ -54,14 +57,13 @@ WORKDIR /app
 COPY src/ .
 COPY container/bootstrap.py /
 COPY container/Caddyfile /etc/caddy/Caddyfile
-COPY requirements.txt .
+COPY pyproject.toml uv.lock ./
 
-# Create and populate the Python virtual environment
-RUN python3 -m venv /venv && \
-    /venv/bin/pip install --no-cache-dir -r requirements.txt
+# Install dependencies using uv
+RUN uv sync --frozen --no-dev
 
 # Set up environment
-ENV PATH="/venv/bin:/usr/local/bin:$PATH"
+ENV PATH="/app/.venv/bin:/usr/local/bin:$PATH"
 ENV GUNICORN_CMD_ARGS="--workers 2 --worker-class uvicorn.workers.UvicornWorker --bind unix:/run/gunicorn.sock"
 RUN chmod +x /bootstrap.py
 
