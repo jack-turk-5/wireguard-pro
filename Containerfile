@@ -13,25 +13,29 @@ FROM python:3.13-slim AS builder
 
 # Install build dependencies for BoringTun and Caddy
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      gcc build-essential pkg-config libssl-dev cargo git curl gnupg ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+  apt-get install -y --no-install-recommends \
+  gcc build-essential pkg-config libssl-dev git curl gnupg ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install Rust via rustup
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Configure cargo for faster, non-interactive builds
 RUN mkdir -p /.cargo && \
-    printf '[net]\ngit-fetch-with-cli = true\n' > /.cargo/config.toml
+  printf '[net]\ngit-fetch-with-cli = true\n' > /.cargo/config.toml
 
 # Install BoringTun
 RUN cargo install boringtun-cli --locked --root /usr/local
 
 # Install Caddy
 RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-      | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg && \
-    printf 'deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main\n' \
-      > /etc/apt/sources.list.d/caddy-stable.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends caddy \
-    && rm -rf /var/lib/apt/lists/*
+  | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg && \
+  printf 'deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main\n' \
+  > /etc/apt/sources.list.d/caddy-stable.list && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends caddy \
+  && rm -rf /var/lib/apt/lists/*
 
 
 # === Stage 2: Final Runtime Image ===
@@ -40,9 +44,9 @@ FROM debian:trixie-slim AS runtime
 
 # Install only the necessary runtime dependencies
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      wireguard-tools iproute2 nftables ethtool build-essential libmnl-dev \
-    && rm -rf /var/lib/apt/lists/*
+  apt-get install -y --no-install-recommends \
+  wireguard-tools iproute2 nftables ethtool build-essential libmnl-dev \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
