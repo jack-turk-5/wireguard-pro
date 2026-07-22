@@ -23,18 +23,18 @@ export interface ServerHealthcheck {
 }
 
 export interface ServerConfig {
-    public_key: string;
-    endpoint: string;
-    port: string;
-    allowed_ips: string;
-    dns_server: string;
+  public_key: string;
+  host: string;
+  port: string;
+  allowed_ips: string;
+  dns_server: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private jsonHeaders = { headers: new HttpHeaders({ 'Content-Type': 'application/json' }), withCredentials: true };
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /** Create a new peer, returns the Peer object */
   createPeer(daysValid: number = 7): Observable<Peer> {

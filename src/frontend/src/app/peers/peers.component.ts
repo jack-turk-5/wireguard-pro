@@ -15,16 +15,16 @@ import { ApiService, Peer, ServerConfig } from '../services/api.service';
 export class PeersComponent implements OnInit {
   peers = signal<any[]>([]);
   config: ServerConfig = {
-    public_key:  '',
-    endpoint:    '',
-    port:        '',
+    public_key: '',
+    host: '',
+    port: '',
     allowed_ips: '',
-    dns_server:  ''
+    dns_server: ''
   };
   @Output() qrClick = new EventEmitter<string>();
   @Output() peerChange = new EventEmitter<void>();
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) { }
 
   ngOnInit() {
     this.loadPeers();
@@ -52,7 +52,7 @@ export class PeersComponent implements OnInit {
       ``,
       `[Peer]`,
       `PublicKey = ${this.config.public_key}`,
-      `Endpoint = ${this.config.endpoint}:${this.config.port}`,
+      `Endpoint = ${this.config.host}:${this.config.port}`,
       `AllowedIPs = ${this.config.allowed_ips}`,
       `PersistentKeepalive = 25`
     ].join('\n');

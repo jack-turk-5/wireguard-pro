@@ -44,7 +44,10 @@ def verify_token(request: Request, token: str = Depends(oauth2_scheme)) -> str:
 
 
 @router.post("/login")
-async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+):
     """Endpoint to authenticate a user and provide an access token."""
     if not verify_user_db(form_data.username, form_data.password):
         raise HTTPException(

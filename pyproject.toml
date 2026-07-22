@@ -12,7 +12,9 @@ dependencies = [
   "gunicorn>=25.3.0",
   "itsdangerous>=2.2.0",
   "pydantic>=2.13.3",
+  "pydantic-settings>=2.14.2",
   "python-multipart>=0.0.27",
+  "sqlalchemy>=2.0.51",
   "tzlocal>=5.3.1",
   "uvicorn>=0.46.0",
 ]

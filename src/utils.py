@@ -15,7 +15,7 @@ async def generate_keypair():
     return private_key, public_key
 
 
-async def next_available_ip():
+async def next_available_ip() -> tuple[str, str]:
     """
     Allocate the next free IPv4/IPv6 addresses asynchronously.
     """
@@ -48,7 +48,7 @@ async def next_available_ip():
     return ipv4, ipv6
 
 
-async def append_peer_to_wgconf(public_key, ipv4, ipv6):
+async def append_peer_to_wgconf(public_key: str):
     """
     Append a peer to the wg0.conf file asynchronously.
     """
@@ -80,7 +80,7 @@ async def remake_peers_file():
     """
     Rebuilds the WireGuard config from the database and reloads the interface asynchronously.
     """
-    # 1) read existing file up to—but not including—the first [Peer]
+    # Read existing file up to—but not including—the first Peer
     async with open(WG_PATH, "r") as f:
         content = await f.read()
     lines = content.splitlines()
@@ -90,15 +90,13 @@ async def remake_peers_file():
             break
         interface_section.append(line)
 
-    # 2) overwrite disk config with just the interface
+    # Overwrite disk config with just the interface
     async with open(WG_PATH, "w") as f:
         await f.write("\n".join(interface_section))
 
-    # 3) re-append every peer from the DB
+    # Re-append every peer from the DB
     for p in get_all_peers():
-        await append_peer_to_wgconf(
-            p["public_key"], p["ipv4_address"], p["ipv6_address"]
-        )
+        await append_peer_to_wgconf(str(p.public_key))
 
-    # 4) push into the running interface
+    # Push into the running interface
     await reload_wireguard()

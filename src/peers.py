@@ -2,7 +2,7 @@ from asyncio import gather
 from datetime import datetime, timezone, timedelta
 import logging
 
-from db import add_peer_db, remove_peer_db, get_all_peers
+from db import Peer, add_peer_db, remove_peer_db, get_all_peers
 from utils import (
     generate_keypair,
     next_available_ip,
@@ -15,7 +15,7 @@ from utils import (
 WG_PATH = "/etc/wireguard/wg0.conf"
 
 
-async def create_peer(days_valid=7):
+async def create_peer(days_valid: int = 7) -> Peer:
     """
     Generate a new peer, store it in the DB, append to disk config,
     and inject into the running WireGuard interface asynchronously.
@@ -34,23 +34,23 @@ async def create_peer(days_valid=7):
     add_peer_db(pub, priv, ipv4, ipv6, expires_str)
 
     # Append to the on-disk WireGuard config
-    await append_peer_to_wgconf(pub, ipv4, ipv6)
+    await append_peer_to_wgconf(pub)
 
     # Inject into the running interface without full reload
     await run_command(f"wg set wg0 peer {pub} allowed-ips {ipv4}/32,{ipv6}/128")
 
     # Return details for frontend
-    return {
-        "private_key": priv,
-        "public_key": pub,
-        "ipv4_address": ipv4,
-        "ipv6_address": ipv6,
-        "expires_at": expires_str,
-        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
-    }
+    return Peer(
+        priv,
+        pub,
+        ipv4,
+        ipv6,
+        expires_str,
+        datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+    )
 
 
-async def delete_peer(public_key):
+async def delete_peer(public_key: str):
     """
     Remove a peer by public key: delete from DB, remove stanza on disk,
     and remove from the running interface asynchronously.
@@ -94,7 +94,7 @@ async def peer_stats():
     return stats
 
 
-async def remove_expired_peers():
+async def remove_expired_peers() -> int:
     """
     Remove all peers whose `expires_at` is in the past.
     Returns the number of peers that were removed.
@@ -103,7 +103,7 @@ async def remove_expired_peers():
     peers_to_remove = [
         p
         for p in get_all_peers()
-        if datetime.strptime(p["expires_at"], "%Y-%m-%d %H:%M:%S").replace(
+        if datetime.strptime(str(p.expires_at), "%Y-%m-%d %H:%M:%S").replace(
             tzinfo=timezone.utc
         )
         < now

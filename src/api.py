@@ -23,7 +23,7 @@ class ServerInfo(BaseModel):
 
 class ServerConfig(BaseModel):
     public_key: str
-    endpoint: str
+    host: str
     port: str
     allowed_ips: str
     dns_server: str
@@ -48,11 +48,14 @@ class DeleteResponse(BaseModel):
 
 # --- API Endpoints ---po
 @router.get("/config", response_model=ServerConfig)
-async def get_config(request: Request, current_user: str = Depends(verify_token)):
+async def get_config(
+    request: Request,
+    current_user: str = Depends(verify_token),
+):
     if not all(
         [
             request.app.state.config.wg_public_key,
-            request.app.state.config.wg_endpoint,
+            request.app.state.config.wg_host,
             request.app.state.config.wg_port,
             request.app.state.config.wg_allowed_ips,
             request.app.state.config.wg_dns_server,
@@ -64,7 +67,7 @@ async def get_config(request: Request, current_user: str = Depends(verify_token)
         )
     return {
         "public_key": request.app.state.config.wg_public_key,
-        "endpoint": request.app.state.config.wg_endpoint,
+        "host": request.app.state.config.wg_host,
         "port": request.app.state.config.wg_port,
         "allowed_ips": request.app.state.config.wg_allowed_ips,
         "dns_server": request.app.state.config.wg_dns_server,
@@ -78,7 +81,8 @@ async def api_create_peer(req: PeerCreate, current_user: str = Depends(verify_to
 
 @router.post("/peers/delete", response_model=DeleteResponse)
 async def api_delete_peer(
-    req: DeletePeerRequest, current_user: str = Depends(verify_token)
+    req: DeletePeerRequest,
+    current_user: str = Depends(verify_token),
 ):
     return {"deleted": await delete_peer(req.public_key)}
 

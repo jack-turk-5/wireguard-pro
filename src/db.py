@@ -1,140 +1,113 @@
-from os import makedirs, path
-from sqlite3 import connect, Row, IntegrityError
+import os
+from sqlalchemy import create_engine, Column, String, LargeBinary, func
+from sqlalchemy.orm import declarative_base, sessionmaker, Mapped
+from sqlalchemy.exc import IntegrityError
 from bcrypt import checkpw, hashpw, gensalt
 
-
 DB_FILE = "/data/peers.db"
+DATABASE_URL = f"sqlite:///{DB_FILE}"
 
 
 def _ensure_dir():
-    makedirs(path.dirname(DB_FILE), exist_ok=True)
+    os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
 
 
-def db_conn():
-    _ensure_dir()
-    conn = connect(DB_FILE)
-    conn.row_factory = Row
-    return conn
+_ensure_dir()
+
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
+class Peer(Base):
+    __tablename__ = "peers"
+    public_key: Mapped[str] = Column(String, primary_key=True)
+    private_key: Mapped[str] = Column(String)
+    ipv4_address: Mapped[str] = Column(String)
+    ipv6_address: Mapped[str] = Column(String)
+    created_at: Mapped[str] = Column(String, server_default=func.datetime("now"))
+    expires_at: Mapped[str] = Column(String)
+
+
+class User(Base):
+    __tablename__ = "users"
+    username: Mapped[str] = Column(String, primary_key=True)
+    password_hash: Mapped[bytes] = Column(LargeBinary, nullable=False)
+    created_at: Mapped[str] = Column(String, server_default=func.datetime("now"))
 
 
 def init_db():
-    conn = db_conn()
-    c = conn.cursor()
-    c.execute("""
-      CREATE TABLE IF NOT EXISTS peers (
-        public_key TEXT PRIMARY KEY,
-        private_key TEXT,
-        ipv4_address TEXT,
-        ipv6_address TEXT,
-        created_at TEXT DEFAULT (datetime('now')),
-        expires_at TEXT
-      )
-    """)
-    c.execute("""
-      CREATE TABLE IF NOT EXISTS users (
-        username TEXT PRIMARY KEY,
-        password_hash BLOB NOT NULL,
-        created_at TEXT DEFAULT (datetime('now'))
-      )
-    """)
-    conn.commit()
-    c.close()
-    conn.close()
+    Base.metadata.create_all(bind=engine)
 
 
-def add_peer_db(pub, priv, ipv4, ipv6, expires):
-    with db_conn() as conn:
-        conn.execute(
-            """
-          INSERT INTO peers
-            (public_key, private_key, ipv4_address, ipv6_address, expires_at)
-          VALUES (?, ?, ?, ?, ?)
-        """,
-            (pub, priv, ipv4, ipv6, expires),
+def add_peer_db(pub: str, priv: str, ipv4: str, ipv6: str, expires):
+    with SessionLocal() as session:
+        peer = Peer(
+            public_key=pub,
+            private_key=priv,
+            ipv4_address=ipv4,
+            ipv6_address=ipv6,
+            expires_at=expires,
         )
+        session.add(peer)
+        session.commit()
 
 
-def remove_peer_db(pub):
-    with db_conn() as conn:
-        # Trailing comma is necessary since pub isn't typechecked
-        cur = conn.execute("DELETE FROM peers WHERE public_key = ?", (pub,))
-        return cur.rowcount > 0
+def remove_peer_db(pub_key: str) -> bool:
+    with SessionLocal() as session:
+        peer = session.query(Peer).filter(Peer.public_key == pub_key).first()
+        if peer:
+            session.delete(peer)
+            session.commit()
+            return True
+        return False
 
 
-def get_all_peers():
-    with db_conn() as conn:
-        cur = conn.execute("""
-          SELECT public_key,
-                 private_key,
-                 ipv4_address,
-                 ipv6_address,
-                 created_at,
-                 expires_at
-            FROM peers
-        """)
-        rows = cur.fetchall()
-    return [dict(row) for row in rows]
+def get_all_peers() -> list[Peer]:
+    with SessionLocal() as session:
+        peers = session.query(Peer).all()
+        return peers
 
 
 def add_user_db(username: str, password: str) -> bool:
-    """
-    Hashes `password` with bcrypt and inserts a new user.
-    Returns True on success, False if username already exists.
-    """
     pwd_hash = hashpw(password.encode("utf-8"), gensalt())
-    try:
-        with db_conn() as conn:
-            conn.execute(
-                "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-                (username, pwd_hash),
-            )
-        return True
-    except IntegrityError:
-        # username already exists
-        return False
+    with SessionLocal() as session:
+        user = User(username=username, password_hash=pwd_hash)
+        session.add(user)
+        try:
+            session.commit()
+            return True
+        except IntegrityError:
+            session.rollback()
+            return False
 
 
 def add_or_update_user_db(username: str, password: str) -> None:
-    """
-    Inserts a new user or, if they already exist, updates their password_hash.
-    """
-    pwd_hash = hashpw(password.encode("utf-8"), gensalt())
-    conn = db_conn()
-    try:
-        conn.execute(
-            "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-            (username, pwd_hash),
-        )
-    except IntegrityError:
-        # user exists → update their password
-        conn.execute(
-            "UPDATE users SET password_hash = ? WHERE username = ?",
-            (pwd_hash, username),
-        )
-    finally:
-        conn.commit()
-        conn.close()
+    with SessionLocal() as session:
+        user = session.query(User).filter(User.username == username).first()
+        pwd_hash = hashpw(password.encode("utf-8"), gensalt())
+        if user:
+            user.password_hash = pwd_hash
+        else:
+            user = User(username=username, password_hash=pwd_hash)
+            session.add(user)
+        session.commit()
 
 
 def verify_user_db(username: str, password: str) -> bool:
-    """
-    Fetches the stored hash for `username` and verifies `password`.
-    Returns True if credentials match.
-    """
-    row = (
-        db_conn()
-        .execute("SELECT password_hash FROM users WHERE username = ?", (username,))
-        .fetchone()
-    )
-    if not row:
-        return False
-    stored_hash = row["password_hash"]
-    return checkpw(password.encode("utf-8"), stored_hash)
+    with SessionLocal() as session:
+        user = session.query(User).filter(User.username == username).first()
+        if not user:
+            return False
+
+        return checkpw(password.encode("utf-8"), user.password_hash)
 
 
 def remove_user_db(username: str) -> bool:
-    """Deletes a user; returns True if a row was removed."""
-    with db_conn() as conn:
-        cur = conn.execute("DELETE FROM users WHERE username = ?", (username,))
-        return cur.rowcount > 0
-
+    with SessionLocal() as session:
+        user = session.query(User).filter(User.username == username).first()
+        if user:
+            session.delete(user)
+            session.commit()
+            return True
+        return False
