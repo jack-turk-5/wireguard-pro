@@ -20,6 +20,7 @@ Every environment variable that affects WireGuard Pro's behavior, read by `inter
 | `DB_FILE` | `/data/peers.db` | Path to the SQLite database file storing peers and dashboard users. |
 | `NFT_CONF_FILE` | `/etc/nftables.json` | Path to the nftables ruleset, in libnftables JSON schema (see [nftables.json](../container/nftables.json)). Applied directly via netlink at startup. |
 | `FRONTEND_DIR` | (unset) | If set, serves the dashboard frontend from this directory instead of the build embedded in the binary. Useful for dropping in a new frontend build without rebuilding the image. |
+| `LOG_LEVEL` | `error` | Controls wireguard-go's own device logger: `silent`, `error`, or `verbose`. `verbose` logs every handshake attempt/keepalive -- useful when debugging, too noisy for normal operation. |
 
 ## Secrets (not environment variables)
 

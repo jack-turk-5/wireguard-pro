@@ -111,6 +111,7 @@ func run() error {
 		IPv4Addr:      cfg.WGIPv4BaseAddr + ipv4Prefix,
 		IPv6Addr:      cfg.WGIPv6BaseAddr + ipv6Prefix,
 		Bind:          bind,
+		LogLevel:      cfg.LogLevel,
 	})
 	if err != nil {
 		return fmt.Errorf("bring up %s: %w", ifaceName, err)

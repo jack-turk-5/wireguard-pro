@@ -26,6 +26,7 @@ type Config struct {
 	WGIPv6BaseAddr string
 	DBFile         string
 	NFTConfFile    string
+	LogLevel       string
 }
 
 // Load reads and validates configuration from the environment.
@@ -39,6 +40,7 @@ func Load() (*Config, error) {
 		WGIPv6BaseAddr: envOr("WG_IPV6_BASE_ADDR", "fd86:ea04:1111::1"),
 		DBFile:         envOr("DB_FILE", "/data/peers.db"),
 		NFTConfFile:    envOr("NFT_CONF_FILE", "/etc/nftables.json"),
+		LogLevel:       envOr("LOG_LEVEL", "error"),
 	}
 
 	var missing []string

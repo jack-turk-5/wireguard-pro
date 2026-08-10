@@ -3,6 +3,7 @@ package wgengine
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/vishvananda/netlink"
 	"golang.zx2c4.com/wireguard/conn"
@@ -29,6 +30,9 @@ type Config struct {
 	// *FdBind wrapping a systemd-activated socket in production; tests/local
 	// dev without socket activation can pass conn.NewStdNetBind() instead.
 	Bind conn.Bind
+	// LogLevel is "silent", "error", or "verbose" (case-insensitive);
+	// anything else falls back to "error".
+	LogLevel string
 }
 
 // Up creates the TUN device, assigns addresses/brings the link up via
@@ -52,7 +56,7 @@ func Up(cfg Config) (*Engine, error) {
 		return nil, err
 	}
 
-	logger := device.NewLogger(device.LogLevelVerbose, fmt.Sprintf("(%s) ", realName))
+	logger := device.NewLogger(parseLogLevel(cfg.LogLevel), fmt.Sprintf("(%s) ", realName))
 	dev := device.NewDevice(tunDev, cfg.Bind, logger)
 
 	uapiFile, err := ipc.UAPIOpen(realName)
@@ -83,6 +87,17 @@ func Up(cfg Config) (*Engine, error) {
 	}
 
 	return &Engine{Tun: tunDev, Device: dev, uapi: uapiListener}, nil
+}
+
+func parseLogLevel(s string) int {
+	switch strings.ToLower(s) {
+	case "silent":
+		return device.LogLevelSilent
+	case "verbose":
+		return device.LogLevelVerbose
+	default:
+		return device.LogLevelError
+	}
 }
 
 // Close tears down the UAPI listener and the wireguard-go device (which in
