@@ -14,7 +14,7 @@ env:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,3 +41,4 @@ jobs:
           podman push "$LATEST_TAG"
           podman push "$RELEASE_TAG"
           podman push "$SHA_TAG"
+

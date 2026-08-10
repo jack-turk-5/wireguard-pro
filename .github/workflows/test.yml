@@ -1,0 +1,20 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build test image
+        run: podman build -t wireguard-pro-test -f hack/Containerfile.test .
+
+      - name: Run test suite
+        run: podman run --rm --device /dev/net/tun wireguard-pro-test ./... -v -count=1

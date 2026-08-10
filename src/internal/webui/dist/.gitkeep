@@ -1,0 +1,5 @@
+This directory is populated with the built Angular frontend (dist/frontend/browser
+from src/frontend) by the Containerfile's go-builder stage before `go build` runs.
+It's committed with just this placeholder so `go build ./...` still works on a
+checkout that hasn't run a frontend build -- go:embed requires the directory to
+exist and contain at least one file.

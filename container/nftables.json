@@ -1,0 +1,158 @@
+{
+    "nftables": [
+        {
+            "table": {
+                "family": "inet",
+                "name": "filter"
+            }
+        },
+        {
+            "chain": {
+                "family": "inet",
+                "table": "filter",
+                "name": "forward",
+                "type": "filter",
+                "hook": "forward",
+                "prio": 0,
+                "policy": "accept"
+            }
+        },
+        {
+            "rule": {
+                "family": "inet",
+                "table": "filter",
+                "chain": "forward",
+                "expr": [
+                    {
+                        "match": {
+                            "op": "in",
+                            "left": { "ct": { "key": "state" } },
+                            "right": ["established", "related"]
+                        }
+                    },
+                    { "accept": null }
+                ]
+            }
+        },
+        {
+            "rule": {
+                "family": "inet",
+                "table": "filter",
+                "chain": "forward",
+                "expr": [
+                    {
+                        "match": {
+                            "op": "==",
+                            "left": { "meta": { "key": "iifname" } },
+                            "right": "wg0"
+                        }
+                    },
+                    {
+                        "match": {
+                            "op": "==",
+                            "left": { "payload": { "protocol": "ip", "field": "daddr" } },
+                            "right": {
+                                "set": [
+                                    { "prefix": { "addr": "10.0.0.0", "len": 8 } },
+                                    { "prefix": { "addr": "172.16.0.0", "len": 12 } },
+                                    { "prefix": { "addr": "192.168.0.0", "len": 16 } },
+                                    { "prefix": { "addr": "169.254.0.0", "len": 16 } },
+                                    { "prefix": { "addr": "127.0.0.0", "len": 8 } }
+                                ]
+                            }
+                        }
+                    },
+                    { "reject": { "type": "icmp", "expr": "port-unreachable" } }
+                ]
+            }
+        },
+        {
+            "rule": {
+                "family": "inet",
+                "table": "filter",
+                "chain": "forward",
+                "expr": [
+                    {
+                        "match": {
+                            "op": "==",
+                            "left": { "meta": { "key": "iifname" } },
+                            "right": "wg0"
+                        }
+                    },
+                    {
+                        "match": {
+                            "op": "==",
+                            "left": { "payload": { "protocol": "ip6", "field": "daddr" } },
+                            "right": {
+                                "set": [
+                                    { "prefix": { "addr": "fc00::", "len": 7 } },
+                                    { "prefix": { "addr": "fe80::", "len": 10 } },
+                                    { "prefix": { "addr": "::1", "len": 128 } }
+                                ]
+                            }
+                        }
+                    },
+                    { "reject": { "type": "icmpv6", "expr": "port-unreachable" } }
+                ]
+            }
+        },
+        {
+            "rule": {
+                "family": "inet",
+                "table": "filter",
+                "chain": "forward",
+                "expr": [
+                    {
+                        "match": {
+                            "op": "==",
+                            "left": { "meta": { "key": "iifname" } },
+                            "right": "wg0"
+                        }
+                    },
+                    {
+                        "match": {
+                            "op": "==",
+                            "left": { "meta": { "key": "oifname" } },
+                            "right": "tap*"
+                        }
+                    },
+                    { "accept": null }
+                ]
+            }
+        },
+        {
+            "table": {
+                "family": "ip",
+                "name": "nat"
+            }
+        },
+        {
+            "chain": {
+                "family": "ip",
+                "table": "nat",
+                "name": "postrouting",
+                "type": "nat",
+                "hook": "postrouting",
+                "prio": 100,
+                "policy": "accept"
+            }
+        },
+        {
+            "rule": {
+                "family": "ip",
+                "table": "nat",
+                "chain": "postrouting",
+                "expr": [
+                    {
+                        "match": {
+                            "op": "==",
+                            "left": { "meta": { "key": "oifname" } },
+                            "right": "tap*"
+                        }
+                    },
+                    { "masquerade": null }
+                ]
+            }
+        }
+    ]
+}
