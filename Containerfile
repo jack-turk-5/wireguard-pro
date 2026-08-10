@@ -7,69 +7,22 @@ COPY src/frontend/ .
 RUN npm ci --omit=optional && npm run build --omit=dev
 
 
-# === Stage 1: Build Python venv, BoringTun, and Caddy ===
-# Use a full Python image here to get build tools for dependencies.
-FROM python:3.13-slim AS builder
-
-# Install build dependencies for BoringTun and Caddy
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends \
-  gcc build-essential pkg-config libssl-dev git curl gnupg ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
-
-# Install Rust via rustup
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Configure cargo for faster, non-interactive builds
-RUN mkdir -p /.cargo && \
-  printf '[net]\ngit-fetch-with-cli = true\n' > /.cargo/config.toml
-
-# Install BoringTun
-RUN cargo install boringtun-cli --locked --root /usr/local
-
-# Install Caddy
-RUN curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-  | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg && \
-  printf 'deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/caddy/stable/deb/debian any-version main\n' \
-  > /etc/apt/sources.list.d/caddy-stable.list && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends caddy \
-  && rm -rf /var/lib/apt/lists/*
+# === Stage 1: Build the Go binary ===
+FROM golang:1.26-alpine AS go-builder
+WORKDIR /app
+COPY src/go.mod src/go.sum ./
+RUN go mod download
+COPY src/ .
+# Frontend must be in place before `go build` so //go:embed picks it up.
+COPY --from=angular-builder /app/dist/frontend/browser internal/webui/dist
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /wireguard-pro ./cmd/wireguard-pro
 
 
 # === Stage 2: Final Runtime Image ===
-# Use a minimal Debian base image for the final stage.
+# No shell-outs left in the app (wgctrl/netlink/nftables are all in-process),
+# so the runtime image needs nothing but the binary itself.
 FROM debian:trixie-slim AS runtime
 
-# Install only the necessary runtime dependencies
-RUN apt-get update && \
-  apt-get install -y --no-install-recommends \
-  wireguard-tools iproute2 nftables ethtool build-essential libmnl-dev \
-  && rm -rf /var/lib/apt/lists/*
+COPY --from=go-builder /wireguard-pro /usr/local/bin/wireguard-pro
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-
-# Copy all artifacts from the builder stages
-COPY --from=angular-builder /app/dist/frontend/browser /usr/share/caddy/html
-COPY --from=builder /usr/local/bin/boringtun-cli /usr/local/bin/
-COPY --from=builder /usr/bin/caddy /usr/bin/caddy
-
-# Copy application code and configs
-WORKDIR /app
-COPY src/ .
-COPY container/bootstrap.py /
-COPY container/Caddyfile /etc/caddy/Caddyfile
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies using uv
-RUN uv sync --frozen --no-dev
-
-# Set up environment
-ENV PATH="/app/.venv/bin:/usr/local/bin:$PATH"
-ENV GUNICORN_CMD_ARGS="--workers 2 --worker-class uvicorn.workers.UvicornWorker --bind unix:/run/gunicorn.sock"
-RUN chmod +x /bootstrap.py
-
-# Set the entrypoint
-ENTRYPOINT ["/bootstrap.py"]
+ENTRYPOINT ["/usr/local/bin/wireguard-pro"]

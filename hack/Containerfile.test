@@ -1,0 +1,20 @@
+# Isolated test environment: only Podman is required on the host, not Go or
+# any other toolchain. Builds the module and runs the full test suite via
+# hack/testrun, which creates its own unprivileged user+net namespace so the
+# privileged internal/nft and end-to-end tests run for real instead of
+# skipping.
+#
+# Usage (from the repo root):
+#   podman build -t wireguard-pro-test -f hack/Containerfile.test .
+#   podman run --rm wireguard-pro-test [go test args...]   # defaults to ./...
+FROM golang:1.26-alpine
+
+WORKDIR /repo
+COPY src/go.mod src/go.sum src/
+RUN cd src && go mod download
+COPY src/ src/
+COPY container/ container/
+COPY hack/testrun/ hack/testrun/
+
+WORKDIR /repo/hack/testrun
+ENTRYPOINT ["go", "run", "."]

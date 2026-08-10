@@ -65,6 +65,7 @@ func (e *fdEndpoint) DstToBytes() []byte {
 func (e *fdEndpoint) DstIP() netip.Addr { return e.addr.Addr() }
 func (e *fdEndpoint) SrcIP() netip.Addr { return netip.Addr{} }
 
+// ParseEndpoint parses s (an "ip:port" address) into a conn.Endpoint.
 func (b *FdBind) ParseEndpoint(s string) (conn.Endpoint, error) {
 	addr, err := netip.ParseAddrPort(s)
 	if err != nil {
@@ -73,6 +74,9 @@ func (b *FdBind) ParseEndpoint(s string) (conn.Endpoint, error) {
 	return &fdEndpoint{addr: addr}, nil
 }
 
+// Open returns a single receive function reading from the wrapped
+// net.PacketConn, and the port it's actually bound to. It does not bind a
+// new socket -- see the FdBind doc comment for why.
 func (b *FdBind) Open(port uint16) ([]conn.ReceiveFunc, uint16, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -138,6 +142,7 @@ func (b *FdBind) SetMark(mark uint32) error {
 	return nil
 }
 
+// Send writes each of bufs to ep as a separate UDP datagram.
 func (b *FdBind) Send(bufs [][]byte, ep conn.Endpoint) error {
 	b.mu.Lock()
 	pc := b.pc

@@ -14,6 +14,8 @@ import (
 	"github.com/coreos/go-systemd/v22/activation"
 )
 
+// Files is the resolved set of systemd-activated file descriptors for this
+// process, in .socket-unit declaration order.
 type Files struct {
 	files []*os.File
 }
@@ -24,6 +26,7 @@ func Load() *Files {
 	return &Files{files: activation.Files(true)}
 }
 
+// Len reports how many activated fds are available.
 func (f *Files) Len() int {
 	return len(f.files)
 }

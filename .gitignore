@@ -174,9 +174,16 @@ cython_debug/
 .pypirc
 **/.DS_Store/**
 
+
 # WireGuard keys
 wg-privatekey
 wg-publickey
+
+# src/internal/webui/dist holds the built Angular frontend, embedded into the
+# Go binary via go:embed -- committing only the placeholder that satisfies
+# the embed directive on a checkout without a frontend build.
+!src/internal/webui/dist
+!src/internal/webui/dist/.gitkeep
 
 # Flask secret
 flask-secret
