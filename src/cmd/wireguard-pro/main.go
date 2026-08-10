@@ -7,6 +7,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -87,6 +89,14 @@ func run() error {
 
 	seedAdminUser(database)
 
+	// Colocated with the DB rather than a fixed path, so it follows DB_FILE
+	// overrides to wherever the app's persistent data actually lives.
+	secretKeyPath := filepath.Join(filepath.Dir(cfg.DBFile), "secret_key")
+	secretKey, err := loadOrCreateSecretKey(secretKeyPath)
+	if err != nil {
+		return fmt.Errorf("load/create secret key: %w", err)
+	}
+
 	files := sockact.Load()
 
 	bind, vpnPort, err := buildBind(files)
@@ -141,7 +151,7 @@ func run() error {
 		Config:      cfg,
 		DB:          database,
 		WGMgr:       wgm,
-		Tokens:      auth.New(cfg.SecretKey, tokenMaxAge),
+		Tokens:      auth.New(secretKey, tokenMaxAge),
 		WGPublicKey: pub.String(),
 	}
 	frontendFS, err := webui.FS(os.Getenv("FRONTEND_DIR"))
@@ -282,7 +292,7 @@ func loadOrCreateServerKey(path, secretPath string) (wgtypes.Key, error) {
 		if err != nil {
 			return wgtypes.Key{}, fmt.Errorf("parse %s: %w", secretPath, err)
 		}
-		if err := writeKeyFile(path, key); err != nil {
+		if err := writeKeyFile(path, key.String()); err != nil {
 			return wgtypes.Key{}, err
 		}
 		return key, nil
@@ -294,19 +304,45 @@ func loadOrCreateServerKey(path, secretPath string) (wgtypes.Key, error) {
 	if err != nil {
 		return wgtypes.Key{}, fmt.Errorf("generate key: %w", err)
 	}
-	if err := writeKeyFile(path, key); err != nil {
+	if err := writeKeyFile(path, key.String()); err != nil {
 		return wgtypes.Key{}, err
 	}
 	return key, nil
 }
 
-func writeKeyFile(path string, key wgtypes.Key) error {
+// loadOrCreateSecretKey mirrors loadOrCreateServerKey's persist-once
+// behavior for the dashboard's JWT signing key: reuse it if already
+// persisted, else generate a fresh random one and persist it. Unlike the
+// WireGuard key, there's no "import from a mounted secret" path -- an
+// operator can't reasonably supply their own JWT secret ahead of time the
+// way they might already have a WireGuard key from `wg genkey`, so this
+// deliberately doesn't live in the environment at all (see internal/config's
+// doc comment).
+func loadOrCreateSecretKey(path string) (string, error) {
+	if data, err := os.ReadFile(path); err == nil {
+		return strings.TrimSpace(string(data)), nil
+	} else if !os.IsNotExist(err) {
+		return "", fmt.Errorf("read %s: %w", path, err)
+	}
+
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return "", fmt.Errorf("generate secret key: %w", err)
+	}
+	key := base64.RawURLEncoding.EncodeToString(buf)
+	if err := writeKeyFile(path, key); err != nil {
+		return "", err
+	}
+	return key, nil
+}
+
+func writeKeyFile(path, contents string) error {
 	if dir := filepath.Dir(path); dir != "" && dir != "." {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("create dir for %s: %w", path, err)
 		}
 	}
-	if err := os.WriteFile(path, []byte(key.String()+"\n"), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(contents+"\n"), 0o600); err != nil {
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	return nil

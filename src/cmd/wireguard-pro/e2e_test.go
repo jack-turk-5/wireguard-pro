@@ -137,7 +137,6 @@ func TestEndToEnd(t *testing.T) {
 		activationHelperEnv+"="+bin,
 		"LISTEN_FDS=2",
 		"LISTEN_FDNAMES=dashboard:vpn",
-		"SECRET_KEY=test-secret-key",
 		"WG_HOST=test.example.com",
 		"WG_PORT=51820",
 		"DB_FILE="+filepath.Join(t.TempDir(), "peers.db"),

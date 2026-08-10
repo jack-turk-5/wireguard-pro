@@ -27,7 +27,6 @@ Create `~/.config/wireguard-pro/env` with at least the required variables:
 
 ```bash
 cat > ~/.config/wireguard-pro/env <<'EOF'
-SECRET_KEY=change-me-to-a-long-random-value
 WG_HOST=vpn.example.com
 WG_PORT=51820
 EOF

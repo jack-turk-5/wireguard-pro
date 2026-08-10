@@ -6,7 +6,6 @@ Every environment variable that affects WireGuard Pro's behavior, read by `inter
 
 | Variable | Description |
 |:---|:---|
-| `SECRET_KEY` | Secret key used to sign dashboard bearer tokens. Generate a strong random value and keep it stable across restarts, or existing sessions will be invalidated. |
 | `WG_HOST` | The hostname or IP address clients use to reach this server, returned to the dashboard as part of the server config. |
 | `WG_PORT` | The WireGuard UDP port clients connect to. Must match the `ListenDatagram=` port configured in `wireguard-pro.socket`. |
 
@@ -31,3 +30,5 @@ These are read from files, not environment variables, so they can be provided as
 | `admin-user`, `admin-pass` | Seed or rotate the dashboard's admin account on startup. See `make credentials`. |
 
 The WireGuard server key pair is generated automatically on first boot and persisted to `/etc/wireguard/privatekey` (backed by the `wg-keydata` Podman volume); no secret is needed for it.
+
+The dashboard's JWT signing key works the same way: generated automatically on first boot and persisted next to the database (`secret_key` alongside `DB_FILE`, so it follows `DB_FILE` if you override it) rather than being set via the environment.

@@ -11,11 +11,14 @@ import (
 )
 
 // Config holds all application configuration, loaded from environment
-// variables by Load.
+// variables by Load. The dashboard's JWT signing key is deliberately not
+// part of this -- it's generated once and persisted by the application
+// itself (see cmd/wireguard-pro/main.go's loadOrCreateSecretKey), the same
+// way the WireGuard server key pair is, rather than living in the
+// environment.
 type Config struct {
-	SecretKey string
-	WGHost    string
-	WGPort    string
+	WGHost string
+	WGPort string
 
 	WGAllowedIPs   string
 	WGDNSServer    string
@@ -28,7 +31,6 @@ type Config struct {
 // Load reads and validates configuration from the environment.
 func Load() (*Config, error) {
 	cfg := &Config{
-		SecretKey:      os.Getenv("SECRET_KEY"),
 		WGHost:         os.Getenv("WG_HOST"),
 		WGPort:         os.Getenv("WG_PORT"),
 		WGAllowedIPs:   envOr("WG_ALLOWED_IPS", "0.0.0.0/0, ::/0"),
@@ -40,9 +42,6 @@ func Load() (*Config, error) {
 	}
 
 	var missing []string
-	if cfg.SecretKey == "" {
-		missing = append(missing, "SECRET_KEY")
-	}
 	if cfg.WGHost == "" {
 		missing = append(missing, "WG_HOST")
 	}

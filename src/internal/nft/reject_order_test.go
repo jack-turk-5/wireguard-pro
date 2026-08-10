@@ -141,10 +141,15 @@ func TestForwardChain_RejectsPrivateDestinationBeforeAccept(t *testing.T) {
 	}
 
 	setNS(t, gwNS)
-	if err := os.WriteFile("/proc/sys/net/ipv4/ip_forward", []byte("1"), 0o644); err != nil {
-		t.Fatalf("enable ip_forward in gateway namespace: %v", err)
-	}
+	err = os.WriteFile("/proc/sys/net/ipv4/ip_forward", []byte("1"), 0o644)
 	setNS(t, orig)
+	if err != nil {
+		// /proc/sys's mount policy inside the outer container varies by
+		// container runtime/version -- some mount it read-only even within
+		// a nested namespace that otherwise has CAP_NET_ADMIN. Not something
+		// this test can control, so skip cleanly rather than fail.
+		t.Skipf("skipping: cannot enable ip_forward in the gateway namespace (read-only /proc/sys under this container runtime): %v", err)
+	}
 
 	conn, err := nftables.New(nftables.WithNetNSFd(int(gwNS)))
 	if err != nil {
