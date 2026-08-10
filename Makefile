@@ -1,6 +1,6 @@
 IMAGE_NAME=localhost/wireguard/wireguard-pro
 CONTAINER_NAME=wireguard-pro
-BORINGTUN_DATA=boringtun-data
+WG_KEYDATA=wg-keydata
 UI_DATA=wg-pro-data
 
 .PHONY: build reload start stop credentials clean upgrade deploy status logs test
@@ -48,7 +48,7 @@ stop:
 clean:
 	-podman container rm -f $(CONTAINER_NAME)
 	-podman rmi $(IMAGE_NAME):latest
-	-podman volume rm $(BORINGTUN_DATA) $(UI_DATA)
+	-podman volume rm $(WG_KEYDATA) $(UI_DATA)
 	systemctl --user daemon-reload
 
 ## Check container status

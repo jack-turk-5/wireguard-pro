@@ -7,7 +7,7 @@ After=wireguard-pro.socket
 Image=localhost/wireguard/wireguard-pro:latest
 ContainerName=wireguard-pro
 Network=pasta:--mtu,1500
-Volume=boringtun-data:/etc/wireguard:Z,U
+Volume=wg-keydata:/etc/wireguard:Z,U
 Volume=wg-pro-data:/data:Z,U
 Volume=%h/.config/wireguard-pro/nftables.json:/etc/nftables.json:Z
 

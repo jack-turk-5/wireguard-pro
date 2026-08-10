@@ -512,23 +512,28 @@ func prefixRange(p jsonPrefix) (start, exclusiveEnd []byte, err error) {
 	return network, upper, nil
 }
 
-// icmpPortUnreachableCode is the raw ICMP destination-unreachable code for
-// "port unreachable" (RFC 792) -- there's no golang.org/x/sys/unix constant
-// for it (that package covers syscall-level constants, not ICMP wire
-// codes). Verified against this project's actual ruleset via
-// `nft --debug=netlink`, which showed "reject type 0 code 3" for
-// `ip daddr {...} reject` (nft infers the concrete "icmp" type here, rather
-// than the family-generic "icmpx" abstraction, because the rule already
-// matches on `ip daddr` specifically).
-const icmpPortUnreachableCode = 3
+// icmpPortUnreachableCode/icmpv6PortUnreachableCode are the raw ICMP/ICMPv6
+// destination-unreachable codes for "port unreachable" (RFC 792 / RFC 4443)
+// -- there's no golang.org/x/sys/unix constant for either (that package
+// covers syscall-level constants, not ICMP wire codes). Verified against
+// real rules via `nft --debug=netlink`: both use the same family-generic
+// `reject type 0 (NFT_REJECT_ICMP_UNREACH)`, with the kernel picking
+// ICMP vs ICMPv6 wire encoding from the packet's actual protocol at
+// evaluation time -- only the code differs (3 for IPv4, 4 for IPv6).
+const (
+	icmpPortUnreachableCode   = 3
+	icmpv6PortUnreachableCode = 4
+)
 
-// buildReject translates a `reject` statement. Only the two combinations
-// this project's ruleset uses (icmp port-unreachable, tcp reset) are
+// buildReject translates a `reject` statement. Only the combinations this
+// project's ruleset uses (icmp/icmpv6 port-unreachable, tcp reset) are
 // supported.
 func buildReject(r jsonReject) (expr.Any, error) {
 	switch {
 	case r.Type == "icmp" && r.Expr == "port-unreachable":
 		return &expr.Reject{Type: unix.NFT_REJECT_ICMP_UNREACH, Code: icmpPortUnreachableCode}, nil
+	case r.Type == "icmpv6" && r.Expr == "port-unreachable":
+		return &expr.Reject{Type: unix.NFT_REJECT_ICMP_UNREACH, Code: icmpv6PortUnreachableCode}, nil
 	case r.Type == "tcp" && r.Expr == "reset":
 		return &expr.Reject{Type: unix.NFT_REJECT_TCP_RST}, nil
 	default:

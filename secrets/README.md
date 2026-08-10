@@ -1,12 +1,18 @@
 # Secrets Directory
 
-Place your generated `wg-privatekey` here and create a Podman secret:
+`create_credentials.py` creates the `admin-user`/`admin-pass` Podman secrets, prompting for values on stdin. Run it directly, or via `make credentials`:
 
 ```bash
-podman secret create wg-privatekey ./secrets/wg-privatekey
+make credentials
 ```
 
-Secrets can be injected into a container at runtime by using the `--secret id=wg-privatekey` flag or with `Secret=wg-privatekey` in quadlet flavor. 
+If a secret already exists, it's left as-is (the script skips it rather than prompting again). To change the admin credentials, delete the existing secrets first, then rerun:
 
-## UI User Setup
-The UI will automatically seed one user whose credentials are stored in the `admin-user` and `admin-pass` secrets. If you want to change them, delete the secrets and rerun `make credentials` to rerun the script to re-collect values from stdin.
+```bash
+podman secret rm admin-user admin-pass
+make credentials
+```
+
+The dashboard reads these secrets on startup to seed or rotate the admin account.
+
+The WireGuard server key pair does not use a secret: it's generated automatically on first boot and persisted to the `wg-keydata` Podman volume (see [env.md](../docs/env.md)).

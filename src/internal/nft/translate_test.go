@@ -213,9 +213,10 @@ func TestBuildReject(t *testing.T) {
 		wantErr bool
 	}{
 		{"icmp port-unreachable", jsonReject{Type: "icmp", Expr: "port-unreachable"}, &expr.Reject{Type: 0, Code: 3}, false},
+		{"icmpv6 port-unreachable", jsonReject{Type: "icmpv6", Expr: "port-unreachable"}, &expr.Reject{Type: 0, Code: 4}, false},
 		{"tcp reset", jsonReject{Type: "tcp", Expr: "reset"}, &expr.Reject{Type: 1}, false},
 		{"bare reject unsupported", jsonReject{}, nil, true},
-		{"unknown combo", jsonReject{Type: "icmpv6", Expr: "port-unreachable"}, nil, true},
+		{"unknown combo", jsonReject{Type: "icmpv4", Expr: "host-unreachable"}, nil, true},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

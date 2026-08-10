@@ -1,111 +1,69 @@
-# 🚀 WireGuard Pro — Quickstart Guide
+# Quickstart Guide
 
-### 🛠 Requirements:
-- ✅ Podman (rootless)
-- ✅ Python
-- ✅ Wireguard Tools
-- ✅ Systemd user services enabled
-- ✅ Linux server (Debian, Ubuntu, Arch tested) 
+## Requirements
 
----
+- Podman (rootless), with `pasta` for rootless networking
+- Systemd user services enabled (`loginctl enable-linger <user>` if running unattended)
+- A Linux host with a `tun` kernel module available
+- `wireguard-tools` (optional; only needed if you want to inspect the running device with `wg show`)
 
-# 1. Install WireGuard Tools and Python from your Distro's Package Manager
-```bash
-sudo apt-get install wireguard-tools python
-# etc...
-```
-
----
-
-# 2. Create files for Nftables and environment
-
-Both files are expected to be at %h/.config/wireguard-pro/env (%h is Podman Quadlet shorthand for the home directory). Refer to [env.md](env.md) for a comprehensive list of all environmentally mutable properties and check out [nftables.conf](../container/nftables.conf) to see an example firewall configuration for deploying on a VPS.
-
----
-
-# 3. Clone the Project and Deploy
+## 1. Clone the repository
 
 ```bash
 git clone https://github.com/jack-turk-5/wireguard-pro.git
 cd wireguard-pro
-make deploy
 ```
 
-That's it!
+## 2. Create the config directory
 
----
-
-# 4. Access the Dashboard
-
-- Visit `http(s)://ip:51819/`
-- Manage peers, view live stats, toggle dark mode, and more!
-
----
-
-# 5. Extra Commands
-
-| Command | Purpose |
-|:---|:---|
-| `make build` | Build Podman image |
-| `make start` | Start service and socket |
-| `make stop` | Stop service and socket |
-| `make reload` | Reload container/socket |
-| `make upgrade` | Rebuild + reload |
-| `make clean` | Full reset |
-| `make status` | View systemd status |
-| `make logs` | Stream logs live |
-
-Check out the [Makefile](../Makefile) for more details
-
----
-
-# API Docs (Swagger UI)
-
-- Visit: `http(s)://ip:51819/apidocs/`
-- Full auto-generated API explorer (add/delete/list peers live!)
-
----
-
-# Systemd Quadlet
-
-- `wireguard-pro.container`
-- `wireguard-pro.socket`
-
-Deployed automatically by `make start`.
-
----
-
-# What's Inside
-
-| Component | Purpose |
-|:---|:---|
-| FastAPI Backend | WireGuard management API |
-| Swagger | API documentation |
-| QR Code | VPN config display |
-| Chart.js | RX/TX traffic graphs |
-| Dark Mode | User toggle |
-| Server Info | Uptime/load metrics |
-
----
-
-# Pro Tips
+The Quadlet unit expects an environment file and the nftables ruleset at `%h/.config/wireguard-pro/` (`%h` is Quadlet shorthand for your home directory):
 
 ```bash
-# Enable rootless Podman auto-start on boot (may need to be root)
-(sudo) loginctl enable-linger $(whoami)
+mkdir -p ~/.config/wireguard-pro
+cp container/nftables.json ~/.config/wireguard-pro/nftables.json
+```
 
-# Easy upgrade
-git pull
-make upgrade
+Create `~/.config/wireguard-pro/env` with at least the required variables:
 
-# Clean reset
-make stop
-make clean
+```bash
+cat > ~/.config/wireguard-pro/env <<'EOF'
+SECRET_KEY=change-me-to-a-long-random-value
+WG_HOST=vpn.example.com
+WG_PORT=51820
+EOF
+chmod 600 ~/.config/wireguard-pro/env
+```
+
+See [env.md](env.md) for the full list of variables, including optional ones.
+
+## 3. Deploy
+
+```bash
 make deploy
 ```
 
----
+This creates the `admin-user`/`admin-pass` secrets (prompting for values on first run), builds the image, and starts the service and socket.
 
-# Congratulations!
+## 4. Access the dashboard
 
-You now have one of the **best** WireGuard dashboards available — open source, rootless, and production-grade.
+Visit `http(s)://<host>:51819/` and sign in with the credentials from step 3.
+
+## Common commands
+
+See the [Makefile](../Makefile) for the full list; the most common ones:
+
+```bash
+make upgrade   # rebuild and reload
+make logs      # stream logs
+make status    # view systemd unit status
+make stop      # stop the service and socket
+make clean     # remove the container, image, and volumes
+```
+
+## Testing changes
+
+The test suite runs in an isolated container and only requires Podman on the host:
+
+```bash
+make test
+```

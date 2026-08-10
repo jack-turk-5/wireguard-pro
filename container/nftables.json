@@ -50,11 +50,19 @@
                     {
                         "match": {
                             "op": "==",
-                            "left": { "meta": { "key": "oifname" } },
-                            "right": "tap*"
+                            "left": { "payload": { "protocol": "ip", "field": "daddr" } },
+                            "right": {
+                                "set": [
+                                    { "prefix": { "addr": "10.0.0.0", "len": 8 } },
+                                    { "prefix": { "addr": "172.16.0.0", "len": 12 } },
+                                    { "prefix": { "addr": "192.168.0.0", "len": 16 } },
+                                    { "prefix": { "addr": "169.254.0.0", "len": 16 } },
+                                    { "prefix": { "addr": "127.0.0.0", "len": 8 } }
+                                ]
+                            }
                         }
                     },
-                    { "accept": null }
+                    { "reject": { "type": "icmp", "expr": "port-unreachable" } }
                 ]
             }
         },
@@ -74,16 +82,41 @@
                     {
                         "match": {
                             "op": "==",
-                            "left": { "payload": { "protocol": "ip", "field": "daddr" } },
+                            "left": { "payload": { "protocol": "ip6", "field": "daddr" } },
                             "right": {
                                 "set": [
-                                    { "prefix": { "addr": "172.26.0.0", "len": 24 } },
-                                    { "prefix": { "addr": "172.26.15.0", "len": 24 } }
+                                    { "prefix": { "addr": "fc00::", "len": 7 } },
+                                    { "prefix": { "addr": "fe80::", "len": 10 } },
+                                    { "prefix": { "addr": "::1", "len": 128 } }
                                 ]
                             }
                         }
                     },
-                    { "reject": { "type": "icmp", "expr": "port-unreachable" } }
+                    { "reject": { "type": "icmpv6", "expr": "port-unreachable" } }
+                ]
+            }
+        },
+        {
+            "rule": {
+                "family": "inet",
+                "table": "filter",
+                "chain": "forward",
+                "expr": [
+                    {
+                        "match": {
+                            "op": "==",
+                            "left": { "meta": { "key": "iifname" } },
+                            "right": "wg0"
+                        }
+                    },
+                    {
+                        "match": {
+                            "op": "==",
+                            "left": { "meta": { "key": "oifname" } },
+                            "right": "tap*"
+                        }
+                    },
+                    { "accept": null }
                 ]
             }
         },
