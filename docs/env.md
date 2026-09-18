@@ -21,6 +21,18 @@ Every environment variable that affects WireGuard Pro's behavior, read by `inter
 | `NFT_CONF_FILE` | `/etc/nftables.json` | Path to the nftables ruleset, in libnftables JSON schema (see [nftables.json](../container/nftables.json)). Applied directly via netlink at startup. |
 | `FRONTEND_DIR` | (unset) | If set, serves the dashboard frontend from this directory instead of the build embedded in the binary. Useful for dropping in a new frontend build without rebuilding the image. |
 | `LOG_LEVEL` | `error` | Controls wireguard-go's own device logger: `silent`, `error`, or `verbose`. `verbose` logs every handshake attempt/keepalive -- useful when debugging, too noisy for normal operation. |
+| `WG_MTU` | `1420` | The `wg0` interface's MTU (valid range 1280-65535). See [design-doc.md](design-doc.md) §2.5 on why this is independent of pasta's tap MTU -- forwarded GSO packets are re-segmented at `gso_size` regardless of tap MTU. |
+
+## Go runtime tuning
+
+`GOGC` and `GOMAXPROCS` aren't read by this application directly -- they're
+the Go runtime's own standard environment variables, and since
+`EnvironmentFile=` in the Quadlet unit passes the whole env file straight
+through to the process, setting them there works without any code change.
+`GOMAXPROCS` is usually best left unset: Go >= 1.25's runtime is
+cgroup-aware and already sizes itself to the container's CPU quota. `GOGC`
+is the one worth experimenting with under load (see the `hack/bench/`
+results table) if GC pauses show up as jitter in the throughput numbers.
 
 ## Secrets (not environment variables)
 

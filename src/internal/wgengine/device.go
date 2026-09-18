@@ -26,8 +26,9 @@ type Config struct {
 	MTU           int
 	IPv4Addr      string // CIDR, e.g. "10.8.0.1/24"
 	IPv6Addr      string // CIDR, e.g. "fd86:ea04:1111::1/64"
-	// Bind is the conn.Bind to use for the device's UDP transport. Pass an
-	// *FdBind wrapping a systemd-activated socket in production; tests/local
+	// Bind is the conn.Bind to use for the device's UDP transport. Pass a
+	// *stdbind.StdNetBind adopting systemd-activated socket(s) in
+	// production (see cmd/wireguard-pro/main.go's buildBind); tests/local
 	// dev without socket activation can pass conn.NewStdNetBind() instead.
 	Bind conn.Bind
 	// LogLevel is "silent", "error", or "verbose" (case-insensitive);

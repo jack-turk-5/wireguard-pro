@@ -20,7 +20,7 @@ A rootless, socket-activated WireGuard VPN dashboard: a single Go binary that br
 
 The application is a single statically-linked Go binary (`cmd/wireguard-pro`) that:
 
-- Brings up the `wg0` interface via `wireguard-go`, using a systemd-activated socket for the VPN UDP listener when available
+- Brings up the `wg0` interface via `wireguard-go`, adopting systemd-activated IPv4/IPv6 sockets for the VPN UDP listener when available -- full `recvmmsg`/`sendmmsg`, UDP GSO/GRO batch path, not a naive one-packet-at-a-time fallback (see `internal/wgengine/stdbind`)
 - Applies the nftables ruleset directly via netlink (no shelling out to `nft(8)`)
 - Manages peers through `wgctrl` against a SQLite database, which is the sole source of truth for peer state
 - Serves the dashboard API and the built Angular frontend (embedded in the binary) over HTTP

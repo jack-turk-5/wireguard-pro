@@ -33,23 +33,25 @@ import (
 	"wireguard-pro/internal/sockact"
 	"wireguard-pro/internal/webui"
 	"wireguard-pro/internal/wgengine"
+	"wireguard-pro/internal/wgengine/stdbind"
 	"wireguard-pro/internal/wgmgr"
 )
 
 const (
 	ifaceName = "wg0"
-	mtu       = 1420
 
 	// Peer address allocation (internal/wgmgr.NextAvailableIP) assumes a /24
 	// and /64, so the interface itself is brought up with matching prefixes.
 	ipv4Prefix = "/24"
 	ipv6Prefix = "/64"
 
-	// Indexes into the systemd-activated fd list, matching the declaration
-	// order in quadlet/wireguard-pro.socket (ListenStream before
-	// ListenDatagram): 0 = dashboard TCP, 1 = VPN UDP.
-	dashSocketIndex = 0
-	vpnSocketIndex  = 1
+	// rcvbufKernelClamp is net.core.rmem_max's kernel-default (212992),
+	// doubled by the kernel's own bookkeeping overhead -- the effective
+	// SO_RCVBUF read back when SO_RCVBUFFORCE fails (no CAP_NET_ADMIN in
+	// this netns/userns) and the host hasn't applied the Phase 2 sysctl
+	// bump yet. See docs/design-doc.md §2.4 and the startup diagnostics
+	// below.
+	rcvbufKernelClamp = 212992 * 2
 
 	// Matches bootstrap.py's hardcoded paths exactly, so an existing
 	// deployment's persisted key/secrets keep working unchanged.
@@ -97,9 +99,13 @@ func run() error {
 		return fmt.Errorf("load/create secret key: %w", err)
 	}
 
-	files := sockact.Load()
+	sockets, err := sockact.Load()
+	if err != nil {
+		return fmt.Errorf("resolve systemd-activated sockets: %w", err)
+	}
+	log.Printf("wireguard-pro: sockets: %s", sockets.Describe())
 
-	bind, vpnPort, err := buildBind(files)
+	bind, vpnPort, err := buildBind(sockets)
 	if err != nil {
 		return fmt.Errorf("build VPN bind: %w", err)
 	}
@@ -107,7 +113,7 @@ func run() error {
 
 	eng, err := wgengine.Up(wgengine.Config{
 		InterfaceName: ifaceName,
-		MTU:           mtu,
+		MTU:           cfg.WGMTU,
 		IPv4Addr:      cfg.WGIPv4BaseAddr + ipv4Prefix,
 		IPv6Addr:      cfg.WGIPv6BaseAddr + ipv6Prefix,
 		Bind:          bind,
@@ -117,6 +123,8 @@ func run() error {
 		return fmt.Errorf("bring up %s: %w", ifaceName, err)
 	}
 	defer eng.Close()
+
+	logStartupDiagnostics(bind, eng)
 
 	if err := nft.Apply(cfg.NFTConfFile); err != nil {
 		return fmt.Errorf("apply nftables ruleset: %w", err)
@@ -165,14 +173,21 @@ func run() error {
 	mux.Handle("/", webui.Handler(frontendFS))
 	httpServer := &http.Server{Handler: mux}
 
-	listener, err := dashListener(files)
+	listeners, err := dashListeners(sockets)
 	if err != nil {
-		return fmt.Errorf("build dashboard listener: %w", err)
+		return fmt.Errorf("build dashboard listener(s): %w", err)
 	}
-	log.Printf("wireguard-pro: dashboard listening on %s", listener.Addr())
+	for _, ln := range listeners {
+		log.Printf("wireguard-pro: dashboard listening on %s", ln.Addr())
+	}
 
-	serveErrCh := make(chan error, 1)
-	go func() { serveErrCh <- httpServer.Serve(listener) }()
+	// Buffered to len(listeners): Shutdown below closes every listener
+	// Serve is called on, and each of those goroutines then sends its own
+	// (non-blocking, thanks to the buffer) error here.
+	serveErrCh := make(chan error, len(listeners))
+	for _, ln := range listeners {
+		go func(ln net.Listener) { serveErrCh <- httpServer.Serve(ln) }(ln)
+	}
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -191,36 +206,83 @@ func run() error {
 	return httpServer.Shutdown(shutdownCtx)
 }
 
-// buildBind prefers the systemd-activated UDP socket for the VPN listener,
-// falling back to a self-bound conn.StdNetBind for non-systemd local dev.
-func buildBind(files *sockact.Files) (conn.Bind, uint16, error) {
-	if files.Len() > vpnSocketIndex {
-		pc, err := files.PacketConn(vpnSocketIndex)
-		if err != nil {
-			return nil, 0, fmt.Errorf("resolve activated VPN socket: %w", err)
-		}
-		actualPort := uint16(0)
-		if udpAddr, ok := pc.LocalAddr().(*net.UDPAddr); ok {
-			actualPort = uint16(udpAddr.Port)
-		}
-		log.Printf("wireguard-pro: using systemd-activated socket for VPN UDP listener")
-		return wgengine.NewFdBind(pc), actualPort, nil
+// buildBind adopts the systemd-activated UDP socket(s) for the VPN
+// listener via stdbind, falling back to a self-bound conn.StdNetBind for
+// non-systemd local dev. A self-bound port inside pasta's netns would be
+// unreachable from outside it, so an activated process with no UDP socket
+// at all is a startup error, not a silent fallback -- that shape means
+// ListenDatagram= is missing from the socket unit, not that activation
+// wasn't used.
+func buildBind(s *sockact.Sockets) (conn.Bind, uint16, error) {
+	if !s.Activated() {
+		log.Printf("wireguard-pro: no systemd-activated sockets found, falling back to self-bound (local dev only)")
+		return conn.NewStdNetBind(), vpnDevFallbackPort, nil
+	}
+	if s.UDP4 == nil && s.UDP6 == nil {
+		return nil, 0, fmt.Errorf("socket-activated but no UDP socket passed; check ListenDatagram= in wireguard-pro.socket")
 	}
 
-	log.Printf("wireguard-pro: no systemd-activated VPN socket found, falling back to self-bound (local dev only)")
-	return conn.NewStdNetBind(), vpnDevFallbackPort, nil
+	b, err := stdbind.New(stdbind.Options{UDP4: s.UDP4, UDP6: s.UDP6})
+	if err != nil {
+		return nil, 0, err
+	}
+	log.Printf("wireguard-pro: using systemd-activated socket(s) for VPN UDP listener")
+	return b, b.Port(), nil
 }
 
-// dashListener prefers the systemd-activated TCP socket for the dashboard,
-// falling back to a self-bound listener for non-systemd local dev.
-func dashListener(files *sockact.Files) (net.Listener, error) {
-	if files.Len() > dashSocketIndex {
-		log.Printf("wireguard-pro: using systemd-activated socket for dashboard listener")
-		return files.Listener(dashSocketIndex)
+// dashListeners returns every systemd-activated TCP listener for the
+// dashboard, falling back to a single self-bound listener for non-systemd
+// local dev.
+func dashListeners(s *sockact.Sockets) ([]net.Listener, error) {
+	if len(s.Listeners) > 0 {
+		log.Printf("wireguard-pro: using %d systemd-activated socket(s) for the dashboard listener", len(s.Listeners))
+		return s.Listeners, nil
 	}
 
 	log.Printf("wireguard-pro: no systemd-activated dashboard socket found, falling back to self-bound (local dev only)")
-	return net.Listen("tcp", dashDevFallbackAddr)
+	ln, err := net.Listen("tcp", dashDevFallbackAddr)
+	if err != nil {
+		return nil, err
+	}
+	return []net.Listener{ln}, nil
+}
+
+// logStartupDiagnostics prints the "bind:"/"tun:" lines described in
+// docs/design-doc.md §4.4, once eng.Up has populated offload flags.
+func logStartupDiagnostics(bind conn.Bind, eng *wgengine.Engine) {
+	if sb, ok := bind.(*stdbind.StdNetBind); ok {
+		d := sb.Describe()
+		log.Printf("wireguard-pro: bind: %s%s", d, rcvbufClampHint(d))
+	} else {
+		log.Printf("wireguard-pro: bind: upstream StdNetBind (self-bound)")
+	}
+
+	vnetHdr, udpGSO := wgengine.TunOffloads(eng.Tun)
+	name, _ := eng.Tun.Name()
+	mtu, _ := eng.Tun.MTU()
+	log.Printf("wireguard-pro: tun: %s mtu=%d batch=%d vnet_hdr=%s udp_gso=%s",
+		name, mtu, eng.Tun.BatchSize(), onOff(vnetHdr), onOff(udpGSO))
+}
+
+// rcvbufClampHint flags the specific effective SO_RCVBUF value that means
+// "SO_RCVBUFFORCE failed and net.core.rmem_max is still at its kernel
+// default" -- i.e. the Phase 2 sysctl bump (docs/quickstart.md) hasn't been
+// applied yet. Empty once it has (or once the buffer isn't clamped at that
+// exact value for some other reason).
+func rcvbufClampHint(d stdbind.Description) string {
+	clamped := (d.IPv4 != nil && d.IPv4.RcvBuf == rcvbufKernelClamp) ||
+		(d.IPv6 != nil && d.IPv6.RcvBuf == rcvbufKernelClamp)
+	if !clamped {
+		return ""
+	}
+	return " (rcvbuf clamped to net.core.rmem_max default; see docs/quickstart.md's sysctl note if UdpRcvbufErrors grows under load)"
+}
+
+func onOff(b bool) string {
+	if b {
+		return "on"
+	}
+	return "off"
 }
 
 // reconcilePeers pushes every peer stored in the DB onto the freshly-created
