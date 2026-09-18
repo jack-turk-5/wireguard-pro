@@ -1,0 +1,7 @@
+# Benchmark sidecar: joins the running wireguard-pro container's network
+# namespace (--network=container:wireguard-pro, see sidecar.sh) to measure
+# the WG hop alone -- traffic between two processes sharing a netns never
+# crosses pasta, which only forwards host/LAN <-> netns traffic.
+FROM docker.io/library/alpine:3.22
+RUN apk add --no-cache iperf3 iproute2 ethtool tcpdump
+ENTRYPOINT ["/bin/sh", "-c"]
