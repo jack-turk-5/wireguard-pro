@@ -9,9 +9,6 @@ import { ApiService, Peer, ServerConfig } from '../services/api.service';
   imports: [CommonModule, QRCodeComponent],
   templateUrl: './peers.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styles: `.qrcode {
-  width: 80px; height: 80px; margin: auto;
-}`
 })
 export class PeersComponent implements OnInit {
   peers = signal<any[]>([]);
@@ -23,7 +20,11 @@ export class PeersComponent implements OnInit {
     dns_server: ''
   };
   @Output() qrClick = new EventEmitter<string>();
-  @Output() peerChange = new EventEmitter<void>();
+  // Was "peerChange", while the parent template bound (peerDeleted) --
+  // that binding was always a silent no-op (strictTemplates is off, so
+  // Angular never caught the mismatch). Renamed to match what's actually
+  // wired up, rather than leaving the dead binding in place.
+  @Output() peerDeleted = new EventEmitter<void>();
 
   constructor(private api: ApiService) { }
 
@@ -71,7 +72,7 @@ export class PeersComponent implements OnInit {
     this.api.deletePeer(key).subscribe(res => {
       this.loadPeers();
       if (res.deleted) {
-        this.peerChange.emit();
+        this.peerDeleted.emit();
       }
     });
   }

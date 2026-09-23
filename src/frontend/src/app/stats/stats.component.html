@@ -1,35 +1,40 @@
 @if (stats.length > 0) {
-  <div class="stats-container">
-    <table id="statsTable">
-      <thead>
-        <tr>
-          <th>Public Key</th>
-          <th>Last Handshake (s ago)</th>
-          <th>Received (MB)</th>
-          <th>Sent (MB)</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (s of stats; let i = $index; track trackByKey(i, s)) {
+  <div class="space-y-6">
+    <div class="table-wrap">
+      <table>
+        <thead>
           <tr>
-            <td>{{ s.public_key }}</td>
-            <td
-              [class.good]="s.last_handshake_time < 60"
-              [class.warn]="s.last_handshake_time >= 60 && s.last_handshake_time < 300"
-              [class.stale]="s.last_handshake_time >= 300">
-              {{ s.last_handshake_time }}
-            </td>
-            <td>{{ (s.tx_bytes / 1e6) | number:'1.2-2' }}</td>
-            <td>{{ (s.rx_bytes / 1e6) | number:'1.2-2' }}</td>
+            <th>Public Key</th>
+            <th>Last Handshake</th>
+            <th>Received (MB)</th>
+            <th>Sent (MB)</th>
           </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (s of stats; let i = $index; track trackByKey(i, s)) {
+            <tr>
+              <td class="font-mono text-xs">{{ s.public_key }}</td>
+              <td>
+                <span
+                  class="badge"
+                  [class.badge-good]="s.last_handshake_time < 60"
+                  [class.badge-warn]="s.last_handshake_time >= 60 && s.last_handshake_time < 300"
+                  [class.badge-stale]="s.last_handshake_time >= 300">
+                  {{ s.last_handshake_time }}s ago
+                </span>
+              </td>
+              <td>{{ (s.tx_bytes / 1e6) | number:'1.2-2' }}</td>
+              <td>{{ (s.rx_bytes / 1e6) | number:'1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
-    <div class="charts">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
       @for (s of stats; let i = $index; track trackByKey(i, s)) {
-        <div class="client-chart">
-          <h3>{{ s.public_key }}</h3>
+        <div class="card">
+          <h3 class="mb-2 truncate font-mono text-xs text-slate-500 dark:text-slate-400">{{ s.public_key }}</h3>
           <apx-chart
             #chart
             [series]="chartConfig.series"
@@ -44,5 +49,5 @@
     </div>
   </div>
 } @else {
-  <p>No statistics to display.</p>
+  <p class="py-8 text-center text-slate-500 dark:text-slate-400">No statistics to display.</p>
 }

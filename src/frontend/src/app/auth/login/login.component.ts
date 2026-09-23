@@ -14,89 +14,49 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <form [formGroup]="loginForm" (ngSubmit)="submit()">
+    <form class="card mx-auto mt-16 flex max-w-sm flex-col gap-4" [formGroup]="loginForm" (ngSubmit)="submit()">
+      <h2 class="text-lg">Sign in</h2>
+
       @if (errorMessage) {
-        <div class="error">
-          {{ errorMessage }}
-        </div>
-      }
-      <label for="user">Username</label>
-      <input
-        id="user"
-        type="text"
-        formControlName="user"
-        placeholder="Username"
-        (focus)="clearError()"
-      />
-      @if (loginForm.controls.user.invalid && loginForm.controls.user.touched) {
-        <div class="error-inline">
-          Username is required.
-        </div>
+        <div class="form-error">{{ errorMessage }}</div>
       }
 
-      <label for="pass">Password</label>
-      <input
-        id="pass"
-        type="password"
-        formControlName="pass"
-        placeholder="Password"
-        (focus)="clearError()"
-      />
-      @if (loginForm.controls.pass.invalid && loginForm.controls.pass.touched) {
-        <div class="error-inline">
-          Password is required.
-        </div>
-      }
+      <div>
+        <label class="mb-1 block text-sm font-medium" for="user">Username</label>
+        <input
+          id="user"
+          class="input"
+          type="text"
+          formControlName="user"
+          placeholder="Username"
+          (focus)="clearError()"
+        />
+        @if (loginForm.controls.user.invalid && loginForm.controls.user.touched) {
+          <div class="field-error">Username is required.</div>
+        }
+      </div>
 
-      <button type="submit" [disabled]="loginForm.invalid">
+      <div>
+        <label class="mb-1 block text-sm font-medium" for="pass">Password</label>
+        <input
+          id="pass"
+          class="input"
+          type="password"
+          formControlName="pass"
+          placeholder="Password"
+          (focus)="clearError()"
+        />
+        @if (loginForm.controls.pass.invalid && loginForm.controls.pass.touched) {
+          <div class="field-error">Password is required.</div>
+        }
+      </div>
+
+      <button class="btn btn-primary mt-2" type="submit" [disabled]="loginForm.invalid">
         Login
       </button>
     </form>
   `,
   changeDetection: ChangeDetectionStrategy.Eager,
-  styles: [`
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-width: 320px;
-      margin: 50px auto;
-    }
-    label {
-      font-weight: bold;
-    }
-    input {
-      padding: 8px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .error {
-      color: #d9534f;
-      font-size: 0.875rem;
-      margin-bottom: 10px;
-      padding: 10px;
-      border-radius: 4px;
-      background-color: #f2dede;
-      border: 1px solid #ebccd1;
-      text-align: center;
-    }
-    .error-inline {
-      color: #d9534f;
-      font-size: 0.875rem;
-    }
-    button {
-      margin-top: 1rem;
-      background-color: #198754; color: white;
-      border: none; padding: 8px 12px;
-      cursor: pointer; border-radius: 4px;
-      transition: background-color 0.2s;
-    }
-
-    button:hover {
-      background-color: #145c32;
-    }
-  `]
 })
 export class LoginComponent {
   errorMessage: string | null = null;
