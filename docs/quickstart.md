@@ -66,3 +66,40 @@ The test suite runs in an isolated container and only requires Podman on the hos
 ```bash
 make test
 ```
+
+## Upgrading
+
+### The socket unit now binds four sockets
+
+`wireguard-pro.socket` binds separate IPv4/IPv6 sockets for both the
+dashboard and the VPN listener (four `Listen*=` lines total) instead of one
+dual-stack pair, so the VPN UDP path can use the full `recvmmsg`/`sendmmsg`,
+GSO/GRO batch path per address family. If you deployed before this change,
+reinstall the unit and reload:
+
+```bash
+make build   # installs the updated quadlet/wireguard-pro.socket
+make reload
+```
+
+A bare `systemctl --user restart wireguard-pro.socket` is **not** enough:
+systemd only hands activated file descriptors to the service at service
+*start*, not on a socket-only restart, so the service would keep running
+against its old (now-stale) fd set until it's restarted too -- `make reload`
+restarts both.
+
+### Optional: raise the host's UDP socket buffer ceiling
+
+Only apply this if `UdpRcvbufErrors` (see `hack/bench/host-collect.sh`) is
+still climbing under load after the socket-unit upgrade above -- the
+batched receive path already absorbs the vast majority of what used to
+overflow the old one-packet-at-a-time bind. This is a one-shot, root-only
+host step; nothing at runtime needs root.
+
+```bash
+sudo tee /etc/sysctl.d/90-wireguard-pro.conf <<'EOF'
+net.core.rmem_max=7340032
+net.core.wmem_max=7340032
+EOF
+sudo sysctl --system
+```

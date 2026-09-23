@@ -1,3 +1,5 @@
+//go:build linux
+
 // Package nft applies an nftables ruleset described in libnftables' JSON
 // schema (see libnftables-json(5); `nft -j list ruleset` produces it,
 // `nft -j -f` consumes it) directly via netlink, using google/nftables --

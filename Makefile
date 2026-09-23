@@ -3,7 +3,7 @@ CONTAINER_NAME=wireguard-pro
 WG_KEYDATA=wg-keydata
 UI_DATA=wg-pro-data
 
-.PHONY: build reload start stop credentials clean upgrade deploy status logs test
+.PHONY: build reload start stop credentials clean upgrade deploy status logs test vet bench-sidecar
 
 ## Upgrade container (build + reload)
 upgrade: build reload status
@@ -22,6 +22,14 @@ build:
 test:
 	podman build -t wireguard-pro-test -f hack/Containerfile.test .
 	podman run --rm --device /dev/net/tun wireguard-pro-test
+
+## Vet the module for both this dev machine's GOOS and the Linux deploy target
+vet:
+	cd src && go vet ./... && GOOS=linux go vet ./...
+
+## Run the benchmark sidecar against the running container (see hack/bench/README.md)
+bench-sidecar:
+	./hack/bench/sidecar.sh
 
 ## Reload the container and socket (zero downtime)
 reload:

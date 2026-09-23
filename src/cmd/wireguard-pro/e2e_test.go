@@ -1,7 +1,10 @@
+//go:build linux
+
 package main
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -18,6 +21,11 @@ import (
 	"golang.zx2c4.com/wireguard/wgctrl"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
+
+// testMTU stands in for the removed mtu constant (now cfg.WGMTU, sourced
+// from WG_MTU) -- this test doesn't exercise WG_MTU itself, just needs a
+// valid value for the CreateTUN capability probe below.
+const testMTU = 1420
 
 // activationHelperEnv, when set in this test binary's own environment,
 // turns it into a one-shot activation shim instead of a test runner: see
@@ -53,9 +61,10 @@ func TestMain(m *testing.M) {
 
 // TestEndToEnd smoke-tests the real, built wireguard-pro binary's startup
 // sequence: config/db bring-up, TUN creation, netlink address/link-up, the
-// wireguard-go device + UAPI socket, FdBind over a *real* systemd-activated
-// fd, and wgctrl's wguser backend round-tripping the persisted server key
-// against that same UAPI socket.
+// wireguard-go device + UAPI socket, stdbind adopting *real* systemd-
+// activated fds (scrambled order, v4+best-effort-v6), and wgctrl's wguser
+// backend round-tripping the persisted server key against that same UAPI
+// socket.
 //
 // It runs the binary as a genuinely separate process (fork+exec via
 // TestMain's activation shim above) rather than calling run() in-process:
@@ -73,7 +82,7 @@ func TestMain(m *testing.M) {
 // user+net+mount namespace. Run bare, it skips cleanly. Also skips if
 // /dev/net/tun has no bound kernel driver on this host.
 func TestEndToEnd(t *testing.T) {
-	probe, err := tun.CreateTUN("wgprotest-probe", mtu)
+	probe, err := tun.CreateTUN("wgprotest-probe", testMTU)
 	if err != nil {
 		t.Skipf("skipping: cannot create a TUN device (no CAP_NET_ADMIN, or no tun kernel module on this host) -- run via `go -C hack/testrun run .`: %v", err)
 	}
@@ -122,23 +131,55 @@ func TestEndToEnd(t *testing.T) {
 		t.Fatalf("dup dashboard socket: %v", err)
 	}
 
-	vpnConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	vpn4Conn, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
 	if err != nil {
-		t.Fatalf("listen VPN socket: %v", err)
+		t.Fatalf("listen VPN udp4 socket: %v", err)
 	}
-	vpnFile, err := vpnConn.File()
+	vpnPort := vpn4Conn.LocalAddr().(*net.UDPAddr).Port
+	vpn4File, err := vpn4Conn.File()
 	if err != nil {
-		t.Fatalf("dup VPN socket: %v", err)
+		t.Fatalf("dup VPN udp4 socket: %v", err)
+	}
+
+	files := []*os.File{dashFile, vpn4File}
+	names := []string{"dashboard", "vpn-v4"}
+	closers := []func() error{dashLn.Close, vpn4Conn.Close}
+
+	// vpn6 is best-effort, on the same port as vpn4 -- stdbind.New requires
+	// matching ports when both families are adopted (see sockact/stdbind).
+	vpn6Conn, err := net.ListenUDP("udp6", &net.UDPAddr{IP: net.IPv6loopback, Port: vpnPort})
+	if err != nil {
+		t.Logf("best-effort udp6 [::1]:%d unavailable, testing UDP4-only: %v", vpnPort, err)
+	} else {
+		vpn6File, err := vpn6Conn.File()
+		if err != nil {
+			t.Fatalf("dup VPN udp6 socket: %v", err)
+		}
+		files = append(files, vpn6File)
+		names = append(names, "vpn-v6")
+		closers = append(closers, vpn6Conn.Close)
+	}
+
+	// Scramble fd order: Podman's LISTEN_FDNAMES propagation isn't
+	// guaranteed, and sockact classifies by SO_TYPE/address family, never
+	// by position (see docs/design-doc.md §7) -- this is the regression
+	// test for that. Each name travels with its file through the shuffle.
+	order := rand.Perm(len(files))
+	scrambledFiles := make([]*os.File, len(files))
+	scrambledNames := make([]string, len(files))
+	for i, j := range order {
+		scrambledFiles[i] = files[j]
+		scrambledNames[i] = names[j]
 	}
 
 	child := exec.Command(os.Args[0])
-	child.ExtraFiles = []*os.File{dashFile, vpnFile} // become fd 3, 4 in the child
+	child.ExtraFiles = scrambledFiles // become fd 3, 4, [5] in the child, in this (scrambled) order
 	child.Env = append(os.Environ(),
 		activationHelperEnv+"="+bin,
-		"LISTEN_FDS=2",
-		"LISTEN_FDNAMES=dashboard:vpn",
+		fmt.Sprintf("LISTEN_FDS=%d", len(scrambledFiles)),
+		"LISTEN_FDNAMES="+strings.Join(scrambledNames, ":"),
 		"WG_HOST=test.example.com",
-		"WG_PORT=51820",
+		"WG_PORT="+strconv.Itoa(vpnPort),
 		"DB_FILE="+filepath.Join(t.TempDir(), "peers.db"),
 		"NFT_CONF_FILE="+filepath.Join("..", "..", "..", "container", "nftables.json"),
 	)
@@ -154,10 +195,12 @@ func TestEndToEnd(t *testing.T) {
 	// copies now (the child has its own, independent dup via ExtraFiles)
 	// just leaves cleanup unambiguous; the real readiness signal is the
 	// HTTP-level probe in waitForDashboard below.
-	dashFile.Close()
-	vpnFile.Close()
-	dashLn.Close()
-	vpnConn.Close()
+	for _, f := range files {
+		f.Close()
+	}
+	for _, close := range closers {
+		close()
+	}
 	t.Cleanup(func() {
 		child.Process.Signal(syscall.SIGTERM)
 		done := make(chan error, 1)
@@ -202,6 +245,21 @@ func TestEndToEnd(t *testing.T) {
 	if dev.PublicKey != priv.PublicKey() {
 		t.Errorf("device public key %s does not match persisted key's public key %s", dev.PublicKey, priv.PublicKey())
 	}
+	if dev.ListenPort != vpnPort {
+		t.Errorf("device ListenPort = %d, want the adopted VPN4 socket's port %d", dev.ListenPort, vpnPort)
+	}
+
+	// A garbage (non-WireGuard) datagram at the VPN port must not wedge the
+	// receive loop -- the dashboard must still answer afterward.
+	garbage, err := net.Dial("udp4", fmt.Sprintf("127.0.0.1:%d", vpnPort))
+	if err != nil {
+		t.Fatalf("dial garbage datagram: %v", err)
+	}
+	if _, err := garbage.Write([]byte("not a wireguard packet")); err != nil {
+		t.Fatalf("send garbage datagram: %v", err)
+	}
+	garbage.Close()
+	waitForDashboard(t, dashAddr)
 }
 
 // waitForDashboard polls with a real HTTP request rather than a bare TCP

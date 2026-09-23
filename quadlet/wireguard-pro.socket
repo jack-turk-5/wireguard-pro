@@ -2,10 +2,14 @@
 Description=Socket Activation for WireGuard Pro
 
 [Socket]
+ListenStream=0.0.0.0:51819
 ListenStream=[::]:51819
+ListenDatagram=0.0.0.0:51820
 ListenDatagram=[::]:51820
-BindIPv6Only=both
+BindIPv6Only=ipv6-only
 SocketMode=0600
+ReceiveBuffer=7M
+SendBuffer=7M
 Service=wireguard-pro.service
 
 [Install]
