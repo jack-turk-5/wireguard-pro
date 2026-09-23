@@ -3,8 +3,7 @@
 FROM node:24-alpine AS angular-builder
 WORKDIR /app
 COPY src/frontend/ .
-# Use --no-optional to skip unnecessary packages like puppeteer
-RUN npm ci --omit=optional && npm run build --omit=dev
+RUN npm ci && npm run build --omit=dev
 
 
 # === Stage 1: Build the Go binary ===
@@ -21,7 +20,7 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /wireguard-pro ./cmd/wi
 # === Stage 2: Final Runtime Image ===
 # No shell-outs left in the app (wgctrl/netlink/nftables are all in-process),
 # so the runtime image needs nothing but the binary itself.
-FROM debian:trixie-slim AS runtime
+FROM gcr.io/distroless/static-debian12 AS runtime
 
 COPY --from=go-builder /wireguard-pro /usr/local/bin/wireguard-pro
 
