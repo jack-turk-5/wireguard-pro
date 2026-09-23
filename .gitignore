@@ -190,3 +190,4 @@ flask-secret
 src/frontend/gemini.md
 
 .DS_Store
+hack/bench/results

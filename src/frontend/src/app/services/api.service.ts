@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 export interface Peer {
   private_key: string;
   public_key: string;
+  nickname: string;
   ipv4_address: string;
   ipv6_address: string;
   expires_at?: string;
@@ -44,6 +45,11 @@ export class ApiService {
   /** Delete a peer by public key, returns `{ deleted: boolean }` */
   deletePeer(publicKey: string): Observable<{ deleted: boolean }> {
     return this.http.post<{ deleted: boolean }>('/api/peers/delete', { public_key: publicKey }, this.jsonHeaders);
+  }
+
+  /** Set a peer's nickname, returns `{ nickname: string }` */
+  renamePeer(publicKey: string, nickname: string): Observable<{ nickname: string }> {
+    return this.http.post<{ nickname: string }>('/api/peers/rename', { public_key: publicKey, nickname }, this.jsonHeaders);
   }
 
   /** List all peers */

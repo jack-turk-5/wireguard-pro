@@ -1,124 +1,142 @@
-/* You can add global styles to this file, and also import other style files */
-/* styles.css */
+@import "tailwindcss";
 
-/* General Styling */
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  margin: 0; padding: 0 20px;
-  transition: background-color 0.3s, color 0.3s;
-}
-body.modal-open { overflow: hidden; }
-.banner {
-  background-color: #0d6efd; color: white;
-  text-align: center; padding: 10px;
-  font-weight: bold;
-}
-button {
-  background-color: #198754; color: white;
-  border: none; padding: 8px 12px;
-  cursor: pointer; border-radius: 4px;
-  transition: background-color 0.2s;
-}
-button:hover {
-  background-color: #145c32;
+/* Dark mode is toggled explicitly (ThemeService adds/removes .dark on
+   <html>), not just derived from prefers-color-scheme -- see dark:
+   variants below. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Brand/semantic colors -- the only hand-picked hex values in the whole
+     app. Everything else (backgrounds, borders, text) uses Tailwind's own
+     slate scale directly with dark: variants, so there's exactly one place
+     that defines what "primary" or "danger" mean. */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-success: #16a34a;
+  --color-success-hover: #15803d;
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-warning: #d97706;
 }
 
-/* Updated darkmode + logout container */
-.toggle-darkmode {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 1rem 0;
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100;
+    @apply font-sans antialiased transition-colors duration-200;
+    margin: 0;
+  }
+  body.modal-open {
+    overflow: hidden;
+  }
+  h1, h2, h3 {
+    @apply font-semibold tracking-tight;
+  }
 }
 
-.server-metrics {
-  margin: 10px; text-align: center;
-}
-.server-metrics h2 {
-  margin-bottom: 10px;
-}
-.container {
-  margin-top: 50px;
-}
-.container h2 {
-  text-align: center; margin-bottom: 10px;
-}
-.table, th, td {
-  width: 100%; border-collapse: collapse;
-  border: 1px solid #ddd; padding: 10px;
-  text-align: left;
-}
-th {
-  background-color: #0d6efd; color: white;
+@layer components {
+  /* Buttons -- .btn is the base (neutral/secondary look by itself); pair
+     it with a color modifier in markup (class="btn btn-primary") for
+     anything else. Tailwind v4 can't @apply a locally-defined component
+     class from within another one, hence the split instead of the
+     modifiers including .btn themselves. */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2
+           text-sm font-medium cursor-pointer select-none
+           border border-slate-300 bg-white text-slate-700 hover:bg-slate-50
+           dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700
+           transition-colors duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply border-transparent bg-primary text-white hover:bg-primary-hover
+           dark:border-transparent dark:bg-primary dark:hover:bg-primary-hover;
+  }
+  .btn-success {
+    @apply border-transparent bg-success text-white hover:bg-success-hover
+           dark:border-transparent dark:bg-success dark:hover:bg-success-hover;
+  }
+  .btn-danger {
+    @apply border-transparent bg-danger text-white hover:bg-danger-hover
+           dark:border-transparent dark:bg-danger dark:hover:bg-danger-hover;
+  }
+  .btn-sm {
+    @apply px-2 py-1 text-xs;
+  }
+
+  /* Cards -- the one panel style used for every major section. */
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white p-6 shadow-sm
+           dark:border-slate-800 dark:bg-slate-800/60;
+  }
+
+  /* Form inputs. */
+  .input {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+           placeholder:text-slate-400
+           focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20
+           dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100;
+  }
+  .field-error {
+    @apply mt-1 text-xs text-danger;
+  }
+  .form-error {
+    @apply rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger text-center;
+  }
+
+  /* Status badges -- last-handshake recency (peers/stats tables). .badge is
+     the base; pair with a color modifier in markup (see .btn above for why
+     the modifiers don't @apply badge themselves). */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+  .badge-good {
+    @apply bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300;
+  }
+  .badge-warn {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300;
+  }
+  .badge-stale {
+    @apply bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300;
+  }
+
+  /* Tables -- one look, shared by the peers and stats tables. */
+  .table-wrap {
+    @apply overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800;
+  }
+  .table-wrap table {
+    @apply w-full border-collapse text-sm;
+  }
+  .table-wrap thead {
+    @apply bg-slate-100 dark:bg-slate-800;
+  }
+  .table-wrap th {
+    @apply px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap;
+  }
+  .table-wrap td {
+    @apply px-4 py-3 border-t border-slate-200 dark:border-slate-800 align-middle;
+  }
+  .table-wrap tbody tr {
+    @apply transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/60;
+  }
+
+  /* Modal (QR zoom). */
+  .modal-backdrop {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm;
+    animation: modal-fade-in 0.2s ease;
+  }
+  .modal-content {
+    @apply relative rounded-xl bg-white p-6 shadow-xl dark:bg-slate-800;
+    animation: modal-pop-in 0.2s ease;
+  }
 }
 
-/* Updated stats-container spacing */
-.stats-container {
-  margin-top: 50px;
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.stats-container h2 {
-  text-align: center; margin-bottom: 10px;
-}
-.refreshStatsBtn {
-  margin-bottom: 10px;
-  background-color: #ffc107; color: black;
-}
-.refreshStatsBtn:hover {
-  background-color: #d39e00;
-}
-
-/* Updated button-group spacing */
-.button-group {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 1em 0;
-}
-
-/* Peer-table action buttons */
-td.good { color: green; font-weight: bold; }
-td.warn { color: orange; font-weight: bold; }
-td.stale { color: red; font-weight: bold; }
-
-td.actions {
-  vertical-align: middle; text-align: center;
-}
-.action-container {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 0.5rem;
-}
-.action-container .action-btn {
-  width: 120px; padding: 0.5em 1em;
-  box-sizing: border-box;
-}
-
-.charts {
-  display: flex; justify-content: space-around;
-  margin-top: 30px; flex-direction: column;
-  align-items: center; gap: 20px;
-}
-.charts canvas {
-  background-color: #fff; padding: 10px;
-  border-radius: 10px;
-}
-
-/* Dark mode overrides */
-body.darkmode {
-  background-color: #121212; color: #f9f9f9;
-}
-body.darkmode .banner {
-  background-color: #212121;
-}
-body.darkmode th {
-  background-color: #333;
-}
-body.darkmode td {
-  background-color: #1f1f1f;
-}
-body.darkmode table,
-body.darkmode .charts canvas {
-  background-color: #2b2b2b;
+@keyframes modal-pop-in {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }

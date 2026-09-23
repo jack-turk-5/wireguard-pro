@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChildren, QueryList } from '@angular/core';
+import { Component, OnInit, ViewChildren, QueryList, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ChartComponent,
@@ -16,6 +16,7 @@ import { ApiService, Stat } from '../services/api.service';
   selector: 'app-stats',
   standalone: true,
   imports: [CommonModule, NgApexchartsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './stats.component.html'
 })
 export class StatsComponent implements OnInit {
@@ -39,7 +40,10 @@ export class StatsComponent implements OnInit {
     dataLabels: { enabled: false } as ApexDataLabels,
     xaxis: { categories: [] } as ApexXAxis,
     tooltip: {
-      theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+      // ThemeService (applied at app bootstrap) already set .dark on
+      // <html> by the time this component constructs -- reflects the
+      // user's actual persisted choice, not just the OS preference.
+      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
       x: {
         show: true,
         formatter: (idx: number): string => this.timeLabels[idx] || ''
