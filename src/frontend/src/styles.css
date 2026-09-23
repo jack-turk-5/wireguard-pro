@@ -61,6 +61,9 @@
     @apply border-transparent bg-danger text-white hover:bg-danger-hover
            dark:border-transparent dark:bg-danger dark:hover:bg-danger-hover;
   }
+  .btn-sm {
+    @apply px-2 py-1 text-xs;
+  }
 
   /* Cards -- the one panel style used for every major section. */
   .card {

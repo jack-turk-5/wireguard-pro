@@ -28,6 +28,7 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/config", s.requireAuth(s.handleGetConfig))
 	mux.HandleFunc("POST /api/peers/new", s.requireAuth(s.handleCreatePeer))
 	mux.HandleFunc("POST /api/peers/delete", s.requireAuth(s.handleDeletePeer))
+	mux.HandleFunc("POST /api/peers/rename", s.requireAuth(s.handleRenamePeer))
 	mux.HandleFunc("GET /api/peers/list", s.requireAuth(s.handleListPeers))
 	mux.HandleFunc("GET /api/peers/stats", s.requireAuth(s.handlePeerStats))
 	mux.HandleFunc("GET /api/serverinfo", s.requireAuth(s.handleServerInfo))

@@ -20,6 +20,7 @@ const peerTimeLayout = "2006-01-02 15:04:05"
 type peerResponse struct {
 	PublicKey   string `json:"public_key"`
 	PrivateKey  string `json:"private_key"`
+	Nickname    string `json:"nickname"`
 	IPv4Address string `json:"ipv4_address"`
 	IPv6Address string `json:"ipv6_address"`
 	ExpiresAt   string `json:"expires_at"`
@@ -31,6 +32,7 @@ func peerToResponse(p db.Peer) peerResponse {
 	return peerResponse{
 		PublicKey:   p.PublicKey,
 		PrivateKey:  p.PrivateKey,
+		Nickname:    p.Nickname,
 		IPv4Address: p.IPv4Address,
 		IPv6Address: p.IPv6Address,
 		ExpiresAt:   p.ExpiresAt,
@@ -136,6 +138,32 @@ func (s *Server) handleDeletePeer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]bool{"deleted": deleted})
+}
+
+type renamePeerRequest struct {
+	PublicKey string `json:"public_key"`
+	Nickname  string `json:"nickname"`
+}
+
+// handleRenamePeer sets a peer's nickname (POST /api/peers/rename).
+func (s *Server) handleRenamePeer(w http.ResponseWriter, r *http.Request) {
+	var req renamePeerRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	renamed, err := s.DB.RenamePeer(req.PublicKey, req.Nickname)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !renamed {
+		writeError(w, http.StatusNotFound, "peer not found")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"nickname": req.Nickname})
 }
 
 // handleListPeers returns every stored peer (GET /api/peers/list).

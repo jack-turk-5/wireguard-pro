@@ -53,6 +53,7 @@ const schema = `
 CREATE TABLE IF NOT EXISTS peers (
 	public_key   TEXT PRIMARY KEY,
 	private_key  TEXT NOT NULL,
+	nickname     TEXT NOT NULL DEFAULT '',
 	ipv4_address TEXT NOT NULL,
 	ipv6_address TEXT NOT NULL,
 	created_at   TEXT NOT NULL DEFAULT (datetime('now')),

@@ -2,13 +2,28 @@
   <table>
     <thead>
       <tr>
-        <th>Public Key</th><th>IPv4</th><th>IPv6</th><th>Expires</th><th>QR Code</th><th>Actions</th>
+        <th>Name</th><th>Public Key</th><th>IPv4</th><th>IPv6</th><th>Expires</th><th>QR Code</th><th>Actions</th>
       </tr>
     </thead>
     <tbody>
       @for (peer of peers(); track peer.public_key) {
         <tr>
-          <td class="font-mono text-xs">{{ peer.public_key }}</td>
+          <td class="w-40">
+            <input
+              class="input"
+              [value]="displayName(peer)"
+              (blur)="rename(peer, $any($event.target).value)"
+              (keyup.enter)="$any($event.target).blur()"
+            />
+          </td>
+          <td class="w-32">
+            <div class="flex justify-center gap-2">
+              <button class="btn btn-sm" (click)="copyKey(peer.public_key)">
+                {{ copiedKey === peer.public_key ? '✓ Copied' : '📋 Copy' }}
+              </button>
+              <button class="btn btn-sm" (click)="viewKey(peer.public_key)">👁 View</button>
+            </div>
+          </td>
           <td class="font-mono text-xs">{{ peer.ipv4_address }}</td>
           <td class="font-mono text-xs">{{ peer.ipv6_address }}</td>
           <td>{{ peer.expires_at?.split('T')[0] || 'N/A' }}</td>
@@ -30,7 +45,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="6" class="py-8 text-center text-slate-500 dark:text-slate-400">
+          <td colspan="7" class="py-8 text-center text-slate-500 dark:text-slate-400">
             No peers yet -- add one to get started.
           </td>
         </tr>
@@ -38,3 +53,12 @@
     </tbody>
   </table>
 </div>
+
+@if (viewedKey()) {
+  <div class="modal-backdrop" (click)="closeKeyModal()">
+    <div class="modal-content max-w-md" (click)="$event.stopPropagation()">
+      <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Public Key</h3>
+      <p class="break-all font-mono text-sm">{{ viewedKey() }}</p>
+    </div>
+  </div>
+}

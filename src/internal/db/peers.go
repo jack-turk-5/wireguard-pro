@@ -13,6 +13,7 @@ import (
 type Peer struct {
 	PublicKey   string
 	PrivateKey  string
+	Nickname    string
 	IPv4Address string
 	IPv6Address string
 	CreatedAt   string
@@ -45,10 +46,23 @@ func (d *DB) RemovePeer(publicKey string) (bool, error) {
 	return n > 0, nil
 }
 
+// RenamePeer sets a peer's nickname. Reports whether a row was updated.
+func (d *DB) RenamePeer(publicKey, nickname string) (bool, error) {
+	res, err := d.sql.Exec(`UPDATE peers SET nickname = ? WHERE public_key = ?`, nickname, publicKey)
+	if err != nil {
+		return false, fmt.Errorf("db: rename peer %s: %w", publicKey, err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("db: rename peer %s: %w", publicKey, err)
+	}
+	return n > 0, nil
+}
+
 // ListPeers returns all stored peers.
 func (d *DB) ListPeers() ([]Peer, error) {
 	rows, err := d.sql.Query(
-		`SELECT public_key, private_key, ipv4_address, ipv6_address, created_at, expires_at FROM peers`,
+		`SELECT public_key, private_key, nickname, ipv4_address, ipv6_address, created_at, expires_at FROM peers`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("db: list peers: %w", err)
@@ -58,7 +72,7 @@ func (d *DB) ListPeers() ([]Peer, error) {
 	var peers []Peer
 	for rows.Next() {
 		var p Peer
-		if err := rows.Scan(&p.PublicKey, &p.PrivateKey, &p.IPv4Address, &p.IPv6Address, &p.CreatedAt, &p.ExpiresAt); err != nil {
+		if err := rows.Scan(&p.PublicKey, &p.PrivateKey, &p.Nickname, &p.IPv4Address, &p.IPv6Address, &p.CreatedAt, &p.ExpiresAt); err != nil {
 			return nil, fmt.Errorf("db: list peers: scan: %w", err)
 		}
 		peers = append(peers, p)
@@ -73,10 +87,10 @@ func (d *DB) ListPeers() ([]Peer, error) {
 func (d *DB) GetPeer(publicKey string) (Peer, error) {
 	var p Peer
 	err := d.sql.QueryRow(
-		`SELECT public_key, private_key, ipv4_address, ipv6_address, created_at, expires_at
+		`SELECT public_key, private_key, nickname, ipv4_address, ipv6_address, created_at, expires_at
 		 FROM peers WHERE public_key = ?`,
 		publicKey,
-	).Scan(&p.PublicKey, &p.PrivateKey, &p.IPv4Address, &p.IPv6Address, &p.CreatedAt, &p.ExpiresAt)
+	).Scan(&p.PublicKey, &p.PrivateKey, &p.Nickname, &p.IPv4Address, &p.IPv6Address, &p.CreatedAt, &p.ExpiresAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Peer{}, fmt.Errorf("db: get peer %s: %w", publicKey, sql.ErrNoRows)
 	}

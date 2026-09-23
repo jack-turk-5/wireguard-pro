@@ -27,6 +27,9 @@ export class DemoApiService {
     {
       public_key: fakeKey('alice-laptop'),
       private_key: fakeKey('alice-laptop-priv'),
+      // Left blank on purpose -- exercises the "falls back to the
+      // wg-peer-<ip> filename" default display/download name.
+      nickname: '',
       ipv4_address: '10.8.0.2',
       ipv6_address: 'fd86:ea04:1111::2',
       expires_at: new Date((NOW + 3 * 86400) * 1000).toISOString(),
@@ -35,6 +38,7 @@ export class DemoApiService {
     {
       public_key: fakeKey('bobs-phone'),
       private_key: fakeKey('bobs-phone-priv'),
+      nickname: '',
       ipv4_address: '10.8.0.3',
       ipv6_address: 'fd86:ea04:1111::3',
       expires_at: new Date((NOW + 21 * 86400) * 1000).toISOString(),
@@ -43,6 +47,8 @@ export class DemoApiService {
     {
       public_key: fakeKey('homelab-nas'),
       private_key: fakeKey('homelab-nas-priv'),
+      // Already renamed -- shows what a nicknamed peer looks like.
+      nickname: 'Homelab NAS',
       ipv4_address: '10.8.0.4',
       ipv6_address: 'fd86:ea04:1111::4',
       // No expiry -- a permanent peer, exercises the "N/A" display branch.
@@ -51,6 +57,7 @@ export class DemoApiService {
     {
       public_key: fakeKey('new-tablet'),
       private_key: fakeKey('new-tablet-priv'),
+      nickname: '',
       ipv4_address: '10.8.0.5',
       ipv6_address: 'fd86:ea04:1111::5',
       expires_at: new Date((NOW + 7 * 86400) * 1000).toISOString(),
@@ -65,6 +72,7 @@ export class DemoApiService {
     const peer: DemoPeer = {
       public_key: fakeKey(`new-peer-${n}-${Date.now()}`),
       private_key: fakeKey(`new-peer-${n}-priv-${Date.now()}`),
+      nickname: '',
       ipv4_address: `10.8.0.${this.nextIP++}`,
       ipv6_address: `fd86:ea04:1111::${this.nextIP - 1}`,
       expires_at: new Date((NOW + daysValid * 86400) * 1000).toISOString(),
@@ -78,6 +86,14 @@ export class DemoApiService {
     const before = this.peers.length;
     this.peers = this.peers.filter(p => p.public_key !== publicKey);
     return of({ deleted: this.peers.length < before }).pipe(delay(150));
+  }
+
+  renamePeer(publicKey: string, nickname: string): Observable<{ nickname: string }> {
+    const peer = this.peers.find(p => p.public_key === publicKey);
+    if (peer) {
+      peer.nickname = nickname;
+    }
+    return of({ nickname }).pipe(delay(100));
   }
 
   listPeers(): Observable<Peer[]> {
