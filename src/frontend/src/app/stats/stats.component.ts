@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChildren, QueryList } from '@angular/core';
+import { Component, OnInit, ViewChildren, QueryList, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ChartComponent,
@@ -16,6 +16,7 @@ import { ApiService, Stat } from '../services/api.service';
   selector: 'app-stats',
   standalone: true,
   imports: [CommonModule, NgApexchartsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './stats.component.html'
 })
 export class StatsComponent implements OnInit {

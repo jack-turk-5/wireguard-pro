@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import {
@@ -53,6 +53,7 @@ import { AuthService } from '../../services/auth.service';
       </button>
     </form>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     form {
       display: flex;

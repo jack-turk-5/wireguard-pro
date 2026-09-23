@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, signal, ViewChild } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { ApiService, ServerHealthcheck } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { PeersComponent } from '../peers/peers.component';
@@ -12,6 +12,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
   standalone: true,
   imports: [CommonModule, PeersComponent, QRCodeComponent, StatsComponent],
   templateUrl: './dashboard.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {

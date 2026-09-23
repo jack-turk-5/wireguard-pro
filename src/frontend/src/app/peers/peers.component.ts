@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { ApiService, Peer, ServerConfig } from '../services/api.service';
@@ -8,6 +8,7 @@ import { ApiService, Peer, ServerConfig } from '../services/api.service';
   standalone: true,
   imports: [CommonModule, QRCodeComponent],
   templateUrl: './peers.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: `.qrcode {
   width: 80px; height: 80px; margin: auto;
 }`
